@@ -13,6 +13,28 @@ const mapControls = document.querySelector(".map-controls");
 const mapActions = mapControls ? mapControls.querySelectorAll("[data-map-action]") : [];
 
 const timelineTrack = document.querySelector(".timeline-track");
+let timelineScrollFrame = 0;
+const animatePageScrollTo = (target, duration = 1500) => {
+  if (timelineScrollFrame) window.cancelAnimationFrame(timelineScrollFrame);
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    window.scrollTo(0, target);
+    return;
+  }
+  const start = window.scrollY;
+  const distance = target - start;
+  const startedAt = performance.now();
+  const easeInOut = (progress) => progress < 0.5
+    ? 4 * progress * progress * progress
+    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+  const frame = (now) => {
+    const progress = Math.min(1, (now - startedAt) / duration);
+    window.scrollTo(0, start + distance * easeInOut(progress));
+    if (progress < 1) timelineScrollFrame = window.requestAnimationFrame(frame);
+    else timelineScrollFrame = 0;
+  };
+  timelineScrollFrame = window.requestAnimationFrame(frame);
+};
+
 if (timelineTrack && timelineEntries.length) {
   const entries = [...timelineEntries];
   const entryYears = entries.map((entry) => new Date(entry.dataset.date).getFullYear());
@@ -55,10 +77,16 @@ if (timelineTrack && timelineEntries.length) {
         item.classList.toggle("is-active", expanded);
         item.querySelector(".timeline-year-marker").setAttribute("aria-expanded", String(expanded));
       });
+      const mobileScroll = window.matchMedia("(max-width: 700px)").matches;
       window.setTimeout(() => {
-        centerGroup(group);
         timelineTrack.classList.remove("is-switching");
-      }, 850);
+        if (mobileScroll) {
+          const target = Math.max(0, group.getBoundingClientRect().top + window.scrollY - 24);
+          animatePageScrollTo(target, 2100);
+        } else {
+          centerGroup(group);
+        }
+      }, mobileScroll ? 180 : 850);
     });
     timelineTrack.append(group);
   });
@@ -80,13 +108,31 @@ if (mapStats && timezoneLabel) {
 }
 
 timelineEntries.forEach((entry) => {
+  const dot = entry.querySelector(".timeline-dot");
+  dot?.addEventListener("click", (event) => {
+    if (!window.matchMedia("(max-width: 700px)").matches) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const wasExpanded = entry.classList.contains("is-expanded");
+    timelineEntries.forEach((item) => item.classList.remove("is-expanded", "is-dot-collapsed"));
+    if (!wasExpanded) {
+      entry.classList.add("is-expanded");
+    } else {
+      entry.classList.add("is-dot-collapsed");
+    }
+  });
   entry.addEventListener("click", (event) => {
-    if (window.matchMedia("(max-width: 700px)").matches) {
-      const wasExpanded = entry.classList.contains("is-expanded");
+    const clickedCard = event.target.closest(".timeline-card");
+    const isExpanded = entry.classList.contains("is-expanded");
+    const isMobile = window.matchMedia("(max-width: 700px)").matches;
+    if (isMobile && entry.matches("a") && (!clickedCard || !isExpanded)) {
+      event.preventDefault();
+    }
+    if (isMobile) {
+      const wasExpanded = isExpanded;
       timelineEntries.forEach((item) => item.classList.remove("is-expanded"));
       if (!wasExpanded) {
         entry.classList.add("is-expanded");
-        if (!entry.matches("a")) event.preventDefault();
       }
     }
   });

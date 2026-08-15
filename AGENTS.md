@@ -296,6 +296,9 @@ git diff --check
 - Google Maps 使用 `https://www.google.com/maps/search/?api=1&query=...` 通用連結；桌面版以新分頁開啟，手機版交由系統優先開啟 Google Maps App，未安裝時回到行動網頁。
 - 小樽、定山溪、札幌的景點 modal 可使用各自獨立的地點資料表；不可讓所有內容項目共用同一份地點資料。小樽、定山溪與札幌的資料可持續擴充，但新增資料必須維持各自條件分支或資料來源。
 - 目前互動集中在原生 Vanilla JavaScript：`main.js` 處理首頁，`region-showcase.js` 處理日本地區 showcase，`region-detail.js` 處理地區頁導覽、光暈、動態內容與 modal。
+- 首頁手機版時間軸改為垂直排列；年份群組點擊後以自訂 `requestAnimationFrame` 平滑捲動定位，並保留減速銜接感。
+- 手機版時間軸的圓點點擊只控制該旅程資訊卡：第一次點擊展開，第二次點擊收回資訊卡、圓點高亮與卡片浮起狀態；年份群組本身不因第二次點擊而整段收折。
+- 手機版時間軸資訊卡收回時，必須保留第一次點擊前的原始佔位高度，避免後續圓點位置與垂直時間軸線被過度往上推移。
 - 滑鼠追蹤位置更新應使用 `requestAnimationFrame`；不可對光暈的 `left`／`top` 使用追趕式 transition。所有新增動畫仍須支援 `prefers-reduced-motion`。
 - 地區 Hero 圖片使用主題色柔邊與窄幅 CSS mask 漸層，四角使用適度圓角；不要重新加入明顯白色邊框或固定白色光暈。
 
