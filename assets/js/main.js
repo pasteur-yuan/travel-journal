@@ -2,6 +2,8 @@
 
 const worldMap = document.querySelector("#world-map");
 const timezoneLabel = document.querySelector("#timezone-label");
+const countryTooltip = document.querySelector("#country-tooltip");
+const japanMarker = document.querySelector("#japan-marker");
 const nightZone = document.querySelector("#night-zone");
 const countryStrip = document.querySelector(".country-strip");
 const countryCards = [...document.querySelectorAll(".country-card")];
@@ -169,29 +171,72 @@ if (worldMap && timezoneLabel) {
       const areas = chart.series.push(am5map.MapPolygonSeries.new(root, { geoJSON: am5geodata_worldTimeZoneAreasHigh }));
       areas.mapPolygons.template.setAll({ fill: am5.color(0xd8cda9), fillOpacity: 0.86, stroke: am5.color(0x668b84), strokeOpacity: 0.78, strokeWidth: 0.7, interactive: true });
       areas.mapPolygons.template.states.create("hover", { fill: am5.color(0xf09a55), fillOpacity: 0.95 });
-      // 使用 GeoJSON Point，讓標記與地圖圖層共用完全相同的投影轉換。
-      const destinations = chart.series.push(am5map.MapPointSeries.new(root, {
-        geoJSON: {
-          type: "FeatureCollection",
-          features: [{
-            type: "Feature",
-            properties: { name: "日本", timezone: "UTC+09:00" },
-            geometry: { type: "Point", coordinates: [139.6503, 35.6762] }
-          }]
-        }
-      }));
+      // 使用 MapPointSeries 原生的 latitude/longitude 資料欄位，讓 marker
+      // 與同一個 MapChart 的投影、縮放及平移保持同步。
+      const destinations = chart.series.push(am5map.MapPointSeries.new(root, {}));
       destinations.bullets.push(() => {
-        const marker = am5.Container.new(root, { centerX: am5.p50, centerY: am5.p50, cursorOverStyle: "pointer", interactiveChildren: true });
-        const emoji = am5.Label.new(root, { text: "🇯🇵", fontSize: 14, centerX: am5.p50, centerY: am5.p50 });
-        const label = am5.Label.new(root, { text: "🇯🇵 日本 · UTC+09:00", fontSize: 12, x: 16, centerY: am5.p50, opacity: 0, fill: am5.color(0xf7fbf7), background: am5.RoundedRectangle.new(root, { fill: am5.color(0x24454a), fillOpacity: 0.94, cornerRadiusTL: 8, cornerRadiusTR: 8, cornerRadiusBL: 8, cornerRadiusBR: 8 }), paddingLeft: 7, paddingRight: 7, paddingTop: 4, paddingBottom: 4 });
-        marker.children.push(emoji); marker.children.push(label);
-        marker.events.on("pointerover", () => { label.animate({ key: "opacity", to: 1, duration: 150 }); if (timezoneLabel) timezoneLabel.style.opacity = "0"; });
-        marker.events.on("pointerout", () => { label.animate({ key: "opacity", to: 0, duration: 150 }); if (timezoneLabel) timezoneLabel.style.opacity = "1"; });
+        const marker = am5.Container.new(root, { width: 20, height: 20, centerX: am5.p50, centerY: am5.p50, cursorOverStyle: "pointer", interactive: true, interactiveChildren: true });
+        const emoji = am5.Label.new(root, { text: "🇯🇵", fontSize: 14, x: 10, y: 10, centerX: am5.p50, centerY: am5.p50, interactive: true, focusable: true, ariaLabel: "日本，東京，UTC+09:00", role: "button" });
+        marker.children.push(emoji);
+        const showDestinationTooltip = () => {
+          if (!countryTooltip) return;
+          const point = chart.convert({ longitude: 139.6503, latitude: 35.6762 });
+          countryTooltip.textContent = "🇯🇵 日本 · UTC+09:00";
+          countryTooltip.style.left = `${point.x}px`;
+          countryTooltip.style.top = `${point.y}px`;
+          countryTooltip.classList.add("is-visible");
+          countryTooltip.setAttribute("aria-hidden", "false");
+          if (timezoneLabel) timezoneLabel.style.opacity = "0";
+        };
+        const hideDestinationTooltip = () => {
+          if (countryTooltip) { countryTooltip.classList.remove("is-visible"); countryTooltip.setAttribute("aria-hidden", "true"); }
+          if (timezoneLabel) timezoneLabel.style.opacity = "1";
+        };
+        marker.events.on("pointerover", showDestinationTooltip);
+        marker.events.on("pointerout", hideDestinationTooltip);
+        emoji.events.on("pointerover", showDestinationTooltip);
+        emoji.events.on("pointerout", hideDestinationTooltip);
+        emoji.events.on("focus", showDestinationTooltip);
+        emoji.events.on("blur", hideDestinationTooltip);
         marker.events.on("click", () => { window.location.href = "countries/japan/index.html"; });
         return am5.Bullet.new(root, { sprite: marker });
       });
+      destinations.pushDataItem({
+        name: "日本",
+        timezone: "UTC+09:00",
+        latitude: 35.6762,
+        longitude: 139.6503
+      });
       chart.set("zoomLevel", 1.42);
       chart.set("centerGeoPoint", { longitude: 0, latitude: 3 });
+      if (japanMarker) {
+        const positionJapanMarker = () => {
+          const point = chart.convert({ longitude: 139.6503, latitude: 35.6762 });
+          japanMarker.style.left = `${point.x}px`;
+          japanMarker.style.top = `${point.y}px`;
+        };
+        const showJapanTooltip = () => {
+          const point = chart.convert({ longitude: 139.6503, latitude: 35.6762 });
+          countryTooltip.textContent = "🇯🇵 日本 · UTC+09:00";
+          countryTooltip.style.left = `${point.x}px`;
+          countryTooltip.style.top = `${point.y}px`;
+          countryTooltip.classList.add("is-visible");
+          countryTooltip.setAttribute("aria-hidden", "false");
+          if (timezoneLabel) timezoneLabel.style.opacity = "0";
+        };
+        const hideJapanTooltip = () => {
+          countryTooltip.classList.remove("is-visible");
+          countryTooltip.setAttribute("aria-hidden", "true");
+          if (timezoneLabel) timezoneLabel.style.opacity = "1";
+        };
+        positionJapanMarker();
+        chart.events.on("boundschanged", positionJapanMarker);
+        japanMarker.addEventListener("pointerenter", showJapanTooltip);
+        japanMarker.addEventListener("pointerleave", hideJapanTooltip);
+        japanMarker.addEventListener("focus", showJapanTooltip);
+        japanMarker.addEventListener("blur", hideJapanTooltip);
+        japanMarker.addEventListener("click", () => { window.location.href = "countries/japan/index.html"; });
+      }
       mapActions.forEach((button) => {
         button.addEventListener("click", () => {
           const action = button.dataset.mapAction;
