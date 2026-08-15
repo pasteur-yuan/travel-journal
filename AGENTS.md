@@ -279,3 +279,22 @@ git diff --check
 - 修改外部圖片或 CDN 時，確認 HTTPS 與 GitHub Pages 相容。
 - 不要將本機絕對路徑、測試檔案或敏感資訊提交到 repository。
 - 推送前檢查所有 HTML、CSS、JavaScript 的相對路徑。
+
+## 目前實作基準（2026-08）
+
+以下規則反映目前網站已採用的實際框架與互動，後續修改應以此為基準：
+
+- 首頁由世界時區地圖、國家入口卡片與旅行時間軸組成；國家入口目前包含日本，以及韓國、泰國、紐西蘭的 Coming soon 卡片。
+- 日本國家頁使用全視窗地區 showcase，目前包含北海道、東京、名古屋、大阪、伊勢志摩與福岡；地區頁路徑統一為 `countries/japan/<region>/index.html`。
+- 地區頁固定包含 `overview`、`spots`、`food`、`stays`、`notes` 五個章節；分類導覽使用頁內錨點與 `IntersectionObserver` 更新狀態。
+- 地區 Hero 上方英文小標由 `region-detail.js` 依地區 class 顯示，例如 `HOKKAIDO`、`TOKYO`、`NAGOYA`、`OSAKA`、`ISE-SHIMA`、`FUKUOKA`。
+- `stays` 顯示為 `STAY`／「住宿」；交通目前不作為獨立內容呈現。住宿項目會在載入時轉換為與其他內容相同的條列項目結構。
+- 景點、美食、住宿與旅行筆記項目統一使用左側標籤或年月、右側標題與敘述的編輯式條列卡片；項目之間可使用淡色 separator，但不可形成項目外框。
+- 所有上述內容項目支援滑鼠追蹤 radial 光暈、hover／focus 浮起與柔和陰影；動態新增項目必須透過事件代理自動取得相同互動。
+- 內容項目可用滑鼠、Enter 或 Space 開啟共用 modal。modal 必須支援背景點擊、關閉按鈕、Escape 關閉，以及關閉後恢復原本 focus。
+- modal 內文字訊息下方使用可垂直滑動、隱藏 scrollbar 的資料表；欄位順序固定為「地名、資訊、交通方式、Google Map」。資料列之間不使用分隔線，標題列與資料列之間只保留一條 separator。
+- Google Maps 使用 `https://www.google.com/maps/search/?api=1&query=...` 通用連結；桌面版以新分頁開啟，手機版交由系統優先開啟 Google Maps App，未安裝時回到行動網頁。
+- 小樽、定山溪、札幌的景點 modal 可使用各自獨立的地點資料表；不可讓所有內容項目共用同一份地點資料。小樽、定山溪與札幌的資料可持續擴充，但新增資料必須維持各自條件分支或資料來源。
+- 目前互動集中在原生 Vanilla JavaScript：`main.js` 處理首頁，`region-showcase.js` 處理日本地區 showcase，`region-detail.js` 處理地區頁導覽、光暈、動態內容與 modal。
+- 滑鼠追蹤位置更新應使用 `requestAnimationFrame`；不可對光暈的 `left`／`top` 使用追趕式 transition。所有新增動畫仍須支援 `prefers-reduced-motion`。
+- 地區 Hero 圖片使用主題色柔邊與窄幅 CSS mask 漸層，四角使用適度圓角；不要重新加入明顯白色邊框或固定白色光暈。
