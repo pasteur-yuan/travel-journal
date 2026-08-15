@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="旅行足跡與目的地紀錄" />
+    <title>Travel Journal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html"><i class="fa-solid fa-plane-up" aria-hidden="true"></i><span>出去玩</span></a>
+      <nav class="theme-switcher" aria-label="主題切換">
+        <details class="theme-menu"><summary aria-label="開啟主題切換選單" title="切換主題">◐</summary><div class="theme-menu-panel"><button data-theme="landscape">自然景觀</button><button data-theme="ocean">海洋景觀</button><button data-theme="phototravel">自然旅拍</button><button data-theme="retro">復古手帳</button><button data-theme="city">城市觀光</button></div></details>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="hero hero-map">
+        <div class="world-map" id="world-map" role="img" aria-label="世界時區地圖，已加入的國家會顯示在地圖上">
+          <div class="night-zone" id="night-zone" aria-hidden="true"></div>
+          <div class="timezone-label" id="timezone-label">UTC +09:00</div>
+          <div id="timezone-chart" aria-label="精細世界時區地圖"></div>
+          <a class="map-country map-japan" href="countries/japan/index.html" aria-label="前往日本旅行紀錄"><span class="country-emoji">🇯🇵</span><span class="country-name">🇯🇵 日本 · UTC+09:00</span></a>
+        </div>
+      </section>
+
+      <section class="country-explorer" aria-labelledby="country-explorer-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">Explore by country</p><h2 id="country-explorer-title">選擇一個國家出發</h2></div>
+          <span class="scroll-hint">左右滑動探索 <span aria-hidden="true">→</span></span>
+        </div>
+        <nav class="country-strip" aria-label="國家導覽">
+          <a class="country-card country-card-japan" href="countries/japan/index.html">
+            <span class="country-code">JP</span><span class="country-name">日本</span><span class="country-meta">北海道・東京・福岡　→</span>
+          </a>
+          <div class="country-card country-card-coming" aria-label="韓國，即將加入"><span class="country-code">KR</span><span class="country-name">韓國</span><span class="country-meta">Coming soon</span></div>
+          <div class="country-card country-card-coming" aria-label="泰國，即將加入"><span class="country-code">TH</span><span class="country-name">泰國</span><span class="country-meta">Coming soon</span></div>
+        </nav>
+      </section>
+
+      <section class="country-section">
+        <p class="eyebrow">Destinations</p>
+        <h2>從一個國家開始</h2>
+        <div class="card-grid">
+          <a class="card" href="countries/japan/index.html">
+            <span class="card-label">Japan</span>
+            <h3>日本</h3>
+            <p>北海道・東京・福岡</p>
+          </a>
+        </div>
+      </section>
+
+      <section class="intro-grid">
+        <div><p class="eyebrow">The journal</p><h2>不是行程表，<br />而是旅行留下的痕跡。</h2></div>
+        <p>這裡會慢慢收集每一次出發的地圖、街道、食物與風景。每個地區都是一個可以持續累積的故事。</p>
+      </section>
+
+    </main>
+
+    <footer class="site-footer">Travel Journal</footer>
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script><script src="https://cdn.amcharts.com/lib/5/map.js"></script><script src="https://cdn.amcharts.com/lib/5/geodata/worldTimeZonesHigh.js"></script><script src="https://cdn.amcharts.com/lib/5/geodata/worldTimeZoneAreasHigh.js"></script><script src="assets/js/main.js"></script><script src="assets/js/themes.js"></script><script src="assets/js/theme-switcher.js"></script>
+  </body>
+</html>
