@@ -26,3 +26,4 @@
 ## GitHub Pages
 
 將 repository 的 Pages Source 設定為 `main` branch 的根目錄即可發布。
+# travel-journal
