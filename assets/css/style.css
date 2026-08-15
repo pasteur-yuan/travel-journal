@@ -328,9 +328,11 @@ h2 { margin-bottom: 1.5rem; }
 .region-content-card h3, .region-content-list h3 { margin: .35rem 0; }
 .region-content-card p, .region-content-list p { margin: 0; color: var(--muted); line-height: 1.7; }
 .region-content-list { display: grid; gap: .55rem; }
-.region-content-list article { position: relative; display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 1rem; padding: 1.25rem; border: 0; border-radius: .9rem; transition: background .3s ease, box-shadow .35s ease, transform .35s cubic-bezier(.2,.75,.25,1); }
+.region-content-list article, .region-content-list-item { position: relative; display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 1rem; padding: 1.25rem; border: 0; border-radius: .9rem; transition: background .3s ease, box-shadow .35s ease, transform .35s cubic-bezier(.2,.75,.25,1); }
 .region-content-list article + article::before { content: ""; position: absolute; top: -.3rem; right: 1.25rem; left: 1.25rem; height: 1px; background: color-mix(in srgb, var(--accent) 18%, var(--line)); }
 .region-content-list article:hover, .region-content-list article:focus-within { background: color-mix(in srgb, var(--surface) 82%, var(--accent) 18%); box-shadow: 0 14px 28px color-mix(in srgb, var(--accent) 16%, transparent), 0 0 26px color-mix(in srgb, var(--accent) 12%, transparent); transform: translateY(-2px); }
+.region-content-list article.modal-just-closed:hover, .region-content-list article.modal-just-closed:focus-within { background: transparent; box-shadow: none; transform: none; }
+.region-card-grid .region-content-card.modal-just-closed:hover, .region-card-grid .region-content-card.modal-just-closed:focus-within, .region-note.modal-just-closed:hover, .region-note.modal-just-closed:focus-within { background: transparent; box-shadow: none; transform: none; }
 .region-note { position: relative; display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 1rem; align-items: baseline; padding: 1.25rem; border: 0; border-radius: .9rem; transition: background .3s ease, box-shadow .35s ease, transform .35s cubic-bezier(.2,.75,.25,1); }
 .region-note:hover { background: color-mix(in srgb, var(--surface) 82%, var(--accent) 18%); box-shadow: 0 14px 28px color-mix(in srgb, var(--accent) 16%, transparent), 0 0 26px color-mix(in srgb, var(--accent) 12%, transparent); transform: translateY(-2px); }
 .region-note p { margin: 0; color: var(--muted); }
