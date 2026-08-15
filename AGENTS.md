@@ -12,7 +12,7 @@ Travel Journal 是一個以 GitHub Pages 部署的純前端靜態旅遊網站，
 - 不引入 React、Vue、Angular 或其他前端框架。
 - 不新增需要建置流程的依賴，除非使用者明確要求。
 - 優先沿用現有的 CSS custom properties、DOM 結構與互動邏輯。
-- 外部資源目前可使用 Font Awesome、amCharts 與圖片 CDN，但必須確認 GitHub Pages 能正常載入。
+- 外部程式資源目前可使用 Font Awesome 與 amCharts；圖片應優先下載至 `assets/images/`，避免依賴圖片 CDN。
 - 所有相對路徑必須以實際頁面所在目錄為基準，避免本機可用但 GitHub Pages 失效。
 
 ## 專案結構
@@ -22,9 +22,11 @@ travel-journal/
 ├── index.html                    # 首頁：世界地圖、國家入口與旅行時間軸
 ├── AGENTS.md                     # Codex 專案規範
 ├── assets/
+│   ├── images/                   # 全站本地圖片資產
 │   ├── css/style.css             # 全站共用樣式與主題樣式
 │   └── js/
 │       ├── main.js               # 首頁地圖、時間軸與卡片互動
+│       ├── region-showcase.js     # 國家頁地區背景與清單互動
 │       ├── themes.js             # 主題名稱與主題狀態
 │       └── theme-switcher.js     # 隱藏式主題切換
 └── countries/
@@ -32,6 +34,9 @@ travel-journal/
         ├── index.html            # 日本國家頁
         ├── hokkaido/index.html   # 北海道地區頁
         ├── tokyo/index.html      # 東京地區頁
+        ├── nagoya/index.html     # 名古屋地區頁
+        ├── osaka/index.html      # 大阪地區頁
+        ├── ise-shima/index.html  # 伊勢志摩地區頁
         └── fukuoka/index.html    # 福岡地區頁
 ```
 
@@ -55,6 +60,14 @@ countries/<country>/<region>/index.html
 - 元件使用細邊框、圓角與柔和陰影，不使用厚重黑框或過度鮮豔的 UI。
 - 互動效果應該有銜接感，使用緩和的 transition，避免突然跳動、左右重新排版或彈跳。
 - 圖片與地圖需要有沉浸感，但文字與資訊不能被背景干擾。
+
+## 字型規範
+
+- 全站主字型使用 Google Fonts 的 `Huninn`（粉圓），營造輕鬆、親和但清楚的繁體中文閱讀感。
+- `Noto Sans TC`、`PingFang TC` 與 `Microsoft JhengHei` 作為 fallback，避免字元缺漏。
+- 不要讓不同頁面各自指定完全不同的中文字型；標題、卡片、地圖資訊與互動元件應維持一致字體家族。
+- 標題可使用較重字重，正文與 tooltip 保持中等或一般字重，避免圓體在小尺寸下過度膨脹。
+- 若未來需要編輯感更強的長篇旅記，可局部使用襯線字體，但不可套用到地圖、導航或小尺寸 UI。
 
 ## 色彩系統
 
@@ -148,6 +161,20 @@ countries/<country>/<region>/index.html
 - 滑鼠在卡片之間移動時，離開的卡片必須立即恢復，新的卡片要順暢接續 focus 狀態。
 - 手機版必須支援水平滑動與鍵盤焦點。
 
+## 國家頁地區 Showcase
+
+國家頁（目前為日本）使用全視窗 editorial showcase，不使用一般多欄地區卡片網格。
+
+- 導覽列以下的背景、國家資訊與地區清單整合在同一個 viewport 區塊。
+- 左側顯示國家名稱（例如 `JAPAN` 與 `日本`），右側顯示所有地區項目。
+- 外層國家頁不可上下滾動；只有右側 `.region-showcase-list` 地區清單可垂直滾動。
+- 地區清單第一項必須從頂端開始，最上方與最下方不顯示外框分隔線，中間項目保留分隔線。
+- 每個地區項目使用原生 `<a>`，整列可點擊並可鍵盤 focus。
+- hover、focus 或目前項目可切換背景圖片、提高文字對比並顯示箭頭；不可造成其他項目水平跳動。
+- 背景圖片使用 `assets/images/` 的本地檔案，透過 `data-image` 與 `region-showcase.js` 切換。
+- 桌面版採左右欄；手機版改為上下排列，但地區清單仍維持內部滾動。
+- `prefers-reduced-motion` 下停用背景與文字動畫。
+
 ## 旅行時間軸
 
 時間軸採用水平編年方式，概念如下：
@@ -176,6 +203,21 @@ countries/<country>/<region>/index.html
 - 小螢幕改用垂直時間軸，並保留點擊展開內容的能力。
 
 ## 響應式設計
+
+## 地區詳細頁
+
+地區頁採用單頁章節式結構，分類內容直接攤平在同一頁，不建立額外的景點、美食或筆記子頁面。
+
+- 主視覺下方使用 Sticky 分類導覽列，分類可包含旅程摘要、景點、美食、住宿與交通、旅行筆記。
+- 分類導覽使用頁內錨點，例如 `#spots`，不得因切換分類重新載入頁面。
+- 所有主要分類都應保留在 DOM 中，避免使用 Tabs 隱藏主要旅行內容。
+- 導覽列目前分類使用暖橘色文字與底線表示，並透過 `IntersectionObserver` 隨捲動位置更新。
+- 點擊分類時使用 JavaScript 自訂慢速平滑捲動，抵達目標前要有明顯且連續的減速感。
+- 捲動目標必須扣除 header 與 Sticky 導覽列高度，避免章節標題被遮住。
+- 不得讓頁面外層與內容區域同時形成兩個垂直捲動容器。
+- 手機版分類列可水平滑動，但章節內容仍使用頁面本身的垂直捲動。
+- 互動動畫需支援 `prefers-reduced-motion`，降低或停用自訂平滑捲動與 hover 動畫。
+- 地區內容優先使用編輯式版型：章節編號、大標題、圖片區塊、資訊列與旅行筆記，而非電商式密集卡片。
 
 - 桌面版內容最大寬度約為 1100px，並置中顯示。
 - 手機版使用較小的水平內距，避免內容貼齊螢幕邊緣。
@@ -224,4 +266,3 @@ git diff --check
 - 修改外部圖片或 CDN 時，確認 HTTPS 與 GitHub Pages 相容。
 - 不要將本機絕對路徑、測試檔案或敏感資訊提交到 repository。
 - 推送前檢查所有 HTML、CSS、JavaScript 的相對路徑。
-

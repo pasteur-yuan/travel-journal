@@ -3,5 +3,6 @@ const themes = {
   ocean: { name: "海洋景觀", className: "theme-ocean" },
   phototravel: { name: "自然旅拍", className: "theme-phototravel" },
   retro: { name: "復古手帳", className: "theme-retro" },
-  city: { name: "城市觀光", className: "theme-city" }
+  city: { name: "城市觀光", className: "theme-city" },
+  glass: { name: "液態玻璃", className: "theme-glass" }
 };
