@@ -13,6 +13,7 @@ export const showcase = suite("國家頁 · 地區 showcase", async (b, t) => {
       count: items.length,
       allLinks: items.every(i => i.tagName === "A" && i.getAttribute("href")),
       allHaveImage: items.every(i => !!i.dataset.image),
+      noItemIndexes: items.every(i => !i.querySelector(".region-showcase-index")),
       arrowsAsIcons: items.every(i => !!i.querySelector(".region-showcase-arrow i")),
       bound: items.every(i => i.dataset.showcaseBound === "true"),
       activeCount: items.filter(i => i.classList.contains("is-active")).length,
@@ -24,6 +25,7 @@ export const showcase = suite("國家頁 · 地區 showcase", async (b, t) => {
   t.check("地區項目由 HTML 列出", shape.count >= 2, `${shape.count} 個`);
   t.check("每個項目都是可聚焦的連結", shape.allLinks);
   t.check("每個項目都有背景圖資料", shape.allHaveImage);
+  t.check("地區選項不顯示編號", shape.noItemIndexes);
   t.check("箭頭自動換成 Font Awesome 圖示", shape.arrowsAsIcons);
   t.check("所有項目都已綁定互動", shape.bound);
   t.check("同時只有一個項目是 active", shape.activeCount === 1, `${shape.activeCount} 個`);
@@ -92,8 +94,7 @@ export const showcaseDynamic = suite("國家頁 · 動態新增地區項目", as
     el.id = "dynamic-region";
     el.dataset.image = "../../assets/images/osaka.jpg";
     el.href = "osaka/index.html";
-    el.innerHTML = '<span class="region-showcase-index">99</span>' +
-      '<span><h3>動態地區</h3><p>測試</p></span>' +
+    el.innerHTML = '<span><h3>動態地區</h3><p>測試</p></span>' +
       '<span class="region-showcase-arrow" aria-hidden="true">↗</span>';
     list.append(el);
     await new Promise(r => setTimeout(r, 400));
