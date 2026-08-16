@@ -279,6 +279,28 @@ h2 { margin-bottom: 1.5rem; }
 .region-hero-osaka { background-image: url("../images/osaka.jpg"); }
 .region-hero-ise-shima { background-image: url("../images/ise-shima.jpg"); }
 .region-hero-fukuoka { background-image: url("../images/fukuoka.jpg"); }
+.region-hero-kumamoto { background-image: url("../images/kumamoto.svg"); }
+.region-hero-miyazaki { background-image: url("../images/miyazaki.svg"); }
+.region-hero-gifu { background-image: url("../images/gifu.svg"); }
+.region-hero-kagoshima { background-image: url("../images/kagoshima.svg"); }
+.region-hero-oita { background-image: url("../images/oita.svg"); }
+.region-hero-saga { background-image: url("../images/saga.svg"); }
+.region-hero-kyoto { background-image: url("../images/kyoto.svg"); }
+.region-hero-kobe { background-image: url("../images/kobe.svg"); }
+.region-hero-nagano { background-image: url("../images/nagano.svg"); }
+.region-hero-kagawa { background-image: url("../images/kagawa.svg"); }
+.region-hero-kanagawa { background-image: url("../images/kanagawa.svg"); }
+.region-hero-yokkaichi { background-image: url("../images/yokkaichi.svg"); }
+.region-hero-ehime { background-image: url("../images/ehime.svg"); }
+.region-hero-kochi { background-image: url("../images/kochi.svg"); }
+.region-hero-ishikawa { background-image: url("../images/ishikawa.svg"); }
+.region-hero-toyama { background-image: url("../images/toyama.svg"); }
+.region-hero-shizuoka { background-image: url("../images/shizuoka.svg"); }
+.region-hero-yamanashi { background-image: url("../images/yamanashi.svg"); }
+.region-hero-shiga { background-image: url("../images/shiga.svg"); }
+.region-hero-okayama { background-image: url("../images/okayama.svg"); }
+.region-hero-shimane { background-image: url("../images/shimane.svg"); }
+.region-hero-nagasaki { background-image: url("../images/nagasaki.svg"); }
 body.is-region-entering .region-hero { clip-path: inset(0 50% 0 50% round 1.5rem); opacity: 0; transform: scale(.985); }
 body.is-region-entering .region-hero-content { opacity: 0; transform: translateY(1rem); }
 body.is-region-entered .region-hero { clip-path: inset(0 0 0 0 round 1.5rem); opacity: 1; transform: scale(1); transition: clip-path 1.45s cubic-bezier(.08,.72,.16,1), opacity .8s ease, transform 1.45s cubic-bezier(.08,.72,.16,1); }

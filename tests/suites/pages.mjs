@@ -1,16 +1,12 @@
 // 全站健康檢查：每個頁面都要能載入、資源路徑正確、導覽可用。
 // GitHub Pages 大小寫敏感，相對路徑錯誤在本機 file:// 下常常看不出來。
 import { suite } from "../harness.mjs";
+import { REGIONS, REGION_NAMES, regionPage } from "../regions.mjs";
 
 const PAGES = [
   ["首頁", "/index.html"],
   ["日本國家頁", "/countries/japan/index.html"],
-  ["北海道", "/countries/japan/hokkaido/index.html"],
-  ["東京", "/countries/japan/tokyo/index.html"],
-  ["名古屋", "/countries/japan/nagoya/index.html"],
-  ["大阪", "/countries/japan/osaka/index.html"],
-  ["伊勢志摩", "/countries/japan/ise-shima/index.html"],
-  ["福岡", "/countries/japan/fukuoka/index.html"]
+  ...REGIONS.map((region) => [REGION_NAMES[region], regionPage(region)])
 ];
 
 export const health = suite("全站 · 頁面載入與資源路徑", async (b, t) => {

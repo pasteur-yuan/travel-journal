@@ -18,7 +18,7 @@ open index.html                     # 直接以 file:// 開啟
 python3 -m http.server 8000         # 靜態伺服器，http://localhost:8000
 
 # 自動測試（需 Node 22+ 與 Google Chrome，全部跑約 2 分鐘）
-node tests/run.mjs                  # 全部：25 個群組
+node tests/run.mjs                  # 全部：25 個群組、涵蓋 28 個地區頁
 node tests/run.mjs timeline         # 只跑檔名或群組名稱含關鍵字的
 node tests/run.mjs 手機版            # 中文關鍵字也可以
 CHROME_PATH="/path/to/chrome" node tests/run.mjs
@@ -26,7 +26,7 @@ CHROME_PATH="/path/to/chrome" node tests/run.mjs
 git diff --check
 ```
 
-測試涵蓋 DOM 狀態、CSS 計算值、捲動位置、動畫中途取樣、鍵盤與 focus 行為、資源載入、連結有效性。**不涵蓋**實機觸控手感與視覺美感，這些仍要手動確認：首頁、日本國家頁，以及 hokkaido / tokyo / nagoya / osaka / ise-shima / fukuoka 六個地區頁。
+測試涵蓋 DOM 狀態、CSS 計算值、捲動位置、動畫中途取樣、鍵盤與 focus 行為、資源載入、連結有效性。**不涵蓋**實機觸控手感與視覺美感，這些仍要手動確認：首頁、日本國家頁，以及至少 hokkaido / tokyo / nagoya / osaka / ise-shima / fukuoka 六個內容最完整的地區頁。
 
 改動互動或動畫時，除了「測試通過」，還要確認**測試會因為這個改動而失敗**——把修正還原一次，看它有沒有紅。細節見 `tests/README.md`（含三個容易踩到的 CDP 陷阱）。
 
@@ -58,7 +58,7 @@ git diff --check
 
 ## region-detail.js 的資料流
 
-地區身分由 `.region-hero` 上的 `region-hero-<region>` class 決定，解析成 `regionKey`（如 `tokyo`、`ise-shima`）。**六個地區走完全相同的程式路徑**，沒有任何地區有專屬分支。所有資料 map 都以 `regionKey` 為 key：
+地區身分由 `.region-hero` 上的 `region-hero-<region>` class 決定，解析成 `regionKey`（如 `tokyo`、`ise-shima`）。**所有地區走完全相同的程式路徑**，沒有任何地區有專屬分支或專屬陣列。所有資料 map 都以 `regionKey` 為 key：
 
 1. `regionContent[regionKey]` — 覆寫前 N 筆 spots / food，以及 stay、note 文字。
 2. `stayBaseContent[regionKey]` — `#stays` 第一筆項目的內容。
@@ -71,12 +71,14 @@ git diff --check
 
 點擊任一內容項目會開啟共用 modal，`renderItemTable(item)` 以「項目 `<span>` 的文字」＋「所屬 section id」查表，只有兩層：
 
-1. `regionalVenueData[regionKey][sectionName][place]` — 六個地區統一的資料來源，結構固定是「地區 → 分類 → 項目標籤 → 資料列陣列」。每筆資料列是 `[名稱, 說明, 交通, 地圖網址?]`，第四欄省略時自動以名稱產生 Google Maps 查詢。
-2. Fallback：單列表格，查詢字串補上 `regionSearchNames[regionKey]`（例：`原宿 東京`）。`#notes` 章節不產生地圖連結，欄位顯示 `—`，因為筆記的標籤是年月而非地點。
+1. `regionalVenueData[regionKey][sectionName][place]` — 全部地區統一的資料來源，結構固定是「地區 → 分類 → 項目標籤 → 資料列陣列」。每筆資料列是 `[名稱, 說明, 交通, 地圖網址?]`，第四欄省略時自動以名稱產生 Google Maps 查詢。
+2. Fallback：單列表格，查詢字串補上 `regionSearchNames[regionKey]`（例：`原宿 東京`）。**`#notes` 章節例外**：筆記的標籤是年月而非地點，四個欄位沒有一欄填得出真實內容，因此整張資料表隱藏（`.spot-modal-table-wrap` 設 `hidden`）而不是填佔位字串。
 
 Google Maps 連結統一由 `mapSearchUrl()` 產生（`https://www.google.com/maps/search/?api=1&query=<encodeURIComponent(名稱)>`），儲存格統一由 `mapCell()` 產生（`target="_blank" rel="noopener noreferrer"`）。渲染統一走 `renderRows()`——不要為單一地區另寫渲染函式。
 
-**內容深度落差**：北海道在 `regionalVenueData` 裡有約 60 列資料，其他五個地區各 13～19 列，因此其他地區較常落到 fallback。這是**資料撰寫**的差距，不是程式差異；補內容就是往 `regionalVenueData` 加項目。
+**內容深度落差**：目前共 28 個地區頁，資料量從北海道的 78 列到單一景點地區的 4 列不等，量少的地區較常落到 fallback。這是**資料撰寫**的差距，不是程式差異；補內容就是往 `regionalVenueData` 加項目。
+
+新地區頁的主視覺目前是 `assets/images/<slug>.svg` 的程式產生漸層佔位圖，取得實拍照片後直接替換同名檔案並改 CSS 的副檔名即可。
 
 ## 互動實作慣例
 
@@ -125,7 +127,8 @@ marker 由 `main.js` 頂端的 `travelDestinations` 陣列產生：每筆資料�
 ## 新增內容的檢查點
 
 - 新增國家：`countries/<country>/index.html` + `countries/<country>/<region>/index.html`，在 `main.js` 的 `travelDestinations` 加一筆，並在首頁加 `.country-card`（尚未建頁時用非連結的 `<div>`，不可留失效連結）。
-- 新增地區頁：需要 `region-hero-<region>` class、五個章節 id（`overview` / `spots` / `food` / `stays` / `notes`），並在 `region-detail.js` 的 `regionNames`、`regionSearchNames`、`regionContent`、`stayBaseContent`、`regionalVenueData` 補上對應 key。
+- 新增地區頁：需要 `region-hero-<region>` class、五個章節 id（`overview` / `spots` / `food` / `stays` / `notes`），並在 `region-detail.js` 的 `regionNames`、`regionSearchNames`、`regionContent`、`regionalVenueData` 補上對應 key（`stayBaseContent` 只有已累積住宿資料的地區才需要）；另外要在 `countries/japan/index.html` 加 showcase 項目、`style.css` 加 `.region-hero-<region>` 背景，以及 `tests/regions.mjs` 的 `REGION_NAMES`——測試群組的地區清單全部由那一份推導。
+- 景點卡片只有一張時，記得刪掉 HTML 樣板裡第二張佔位卡；沒刪的話它會產生一列 fallback 假資料與無意義的地圖查詢。
 - 新增時間軸項目：`.timeline-entry` 必須有 `data-date`、`data-country`、`data-region`，缺 `data-date` 會被跳過並在 console 警告。
 - 圖片放 `assets/images/`，不依賴圖片 CDN。
 - GitHub Pages 大小寫敏感，路徑大小寫必須與檔案系統完全一致。

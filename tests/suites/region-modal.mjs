@@ -1,10 +1,6 @@
 import { sleep, suite } from "../harness.mjs";
+import { REGIONS, REGION_SEARCH_NAMES as REGION_NAMES } from "../regions.mjs";
 
-const REGIONS = ["hokkaido", "tokyo", "nagoya", "osaka", "ise-shima", "fukuoka"];
-const REGION_NAMES = {
-  hokkaido: "北海道", tokyo: "東京", nagoya: "名古屋",
-  osaka: "大阪", "ise-shima": "伊勢志摩", fukuoka: "福岡"
-};
 const ITEM_SELECTOR = "#spots .region-content-card, #food .region-content-list article, " +
   "#stays .region-content-list article, #notes .region-note, #notes .region-content-list article";
 const page = (r) => `/countries/japan/${r}/index.html`;
@@ -165,7 +161,10 @@ export const mapLinks = suite("地區頁 · Google Maps 連結", async (b, t) =>
 // 重構查表結構時，資料很容易在合併過程中靜默消失——連結仍然正確，只是列數變少。
 // 這裡把每個地區的資料深度釘住，數字下降就會失敗。
 const EXPECTED_ROWS = {
-  hokkaido: 60, tokyo: 19, nagoya: 30, osaka: 13, "ise-shima": 14, fukuoka: 13
+  hokkaido: 78, tokyo: 26, nagoya: 33, osaka: 16, "ise-shima": 18, fukuoka: 63, kumamoto: 16,
+  miyazaki: 13, gifu: 12, kagoshima: 9, oita: 9, saga: 9, kyoto: 9, kobe: 9, nagano: 8,
+  kagawa: 7, kanagawa: 6, yokkaichi: 6, ehime: 5, kochi: 5, ishikawa: 4, toyama: 4,
+  shizuoka: 4, yamanashi: 4, shiga: 4, okayama: 4, shimane: 4, nagasaki: 4
 };
 
 export const dataDepth = suite("地區頁 · 彈窗地點資料深度", async (b, t) => {

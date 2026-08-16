@@ -1,6 +1,7 @@
 import { sleep, suite } from "../harness.mjs";
 
-export const REGIONS = ["hokkaido", "tokyo", "nagoya", "osaka", "ise-shima", "fukuoka"];
+export { REGIONS } from "../regions.mjs";
+import { REGIONS } from "../regions.mjs";
 const SECTIONS = ["overview", "spots", "food", "stays", "notes"];
 const page = (r) => `/countries/japan/${r}/index.html`;
 
@@ -114,7 +115,17 @@ export const nav = suite("地區頁 · 分類導覽", async (b, t) => {
 
   const before = await b.eval("Math.round(window.scrollY)");
   await b.click('.region-section-nav a[href="#food"]');
-  await sleep(2600);
+  // 捲動時長依距離而定（最長 3.2 秒），內容變多時固定 sleep 會提早判斷。
+  // 也不能等「捲動位置不再變化」：easing 是 1-(1-p)^20，約七成進度就已視覺靜止，
+  // 但收尾的 setActive 與 replaceState 要到動畫真正結束才執行。
+  await b.eval(`new Promise((resolve) => {
+    const deadline = performance.now() + 4000;
+    const tick = () => {
+      if (location.hash === "#food" || performance.now() > deadline) resolve(location.hash);
+      else requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  })`);
   const after = await b.eval(`(() => {
     const nav = document.querySelector(".region-section-nav");
     const header = document.querySelector(".site-header");
