@@ -84,8 +84,8 @@ countries/<country>/<region>/index.html
 
 目前全站只提供液態玻璃主題的兩種明暗狀態：
 
-1. `glass`：亮色液態玻璃，使用淡暖色背景。
-2. `glass-dark`：暗色液態玻璃，使用深暖色背景與低對比玻璃面板。
+1. `glass`：亮色液態玻璃，使用霧灰暖白、淡灰與低彩度香檳色。
+2. `glass-dark`：暗色液態玻璃，使用石墨灰、冷灰與低彩度金色。
 
 右上角控制項是單一亮／暗切換按鈕，不使用展開式主題選單；新增明暗狀態時，必須同時考慮背景、文字、次要文字、卡片表面、邊線、強調色，以及地圖上的資訊可讀性。
 
@@ -294,6 +294,11 @@ git diff --check
 - Google Maps 使用 `https://www.google.com/maps/search/?api=1&query=...` 通用連結；桌面版以新分頁開啟，手機版交由系統優先開啟 Google Maps App，未安裝時回到行動網頁。
 - 小樽、定山溪、札幌的景點 modal 可使用各自獨立的地點資料表；不可讓所有內容項目共用同一份地點資料。小樽、定山溪與札幌的資料可持續擴充，但新增資料必須維持各自條件分支或資料來源。
 - 目前互動集中在原生 Vanilla JavaScript：`main.js` 處理首頁，`region-showcase.js` 處理日本地區 showcase，`region-detail.js` 處理地區頁導覽、光暈、動態內容與 modal。
+- 全站目前有三種頁面模板：首頁（世界地圖、國家卡片、旅行時間軸）、國家頁（地區 showcase）、地區頁（Hero、分類導覽與五個內容章節）。新增同類型頁面時，應複製對應模板的 DOM 結構、相對 script 路徑與必要的頁面 class，不應另寫一套相似樣式。
+- 首頁同類型內容由 `.country-card`、`.timeline-entry` 與既有 `main.js` 初始化邏輯套用互動；新增國家卡片或時間軸項目必須保留既有 class、資料屬性、可及性標籤與正確相對連結。
+- 國家頁的 `.region-showcase-item` 由 `region-showcase.js` 統一處理背景切換、hover／focus、滑鼠追蹤光暈、局部按壓回彈、頁面轉場與 Font Awesome 導航 icon；新增項目會由 `MutationObserver` 自動綁定相同互動，必須提供 `data-image`、`href`、標題、描述與箭頭容器。
+- 地區頁內容項目由 `region-detail.js` 的共用建立器與事件代理處理；新增景點、美食、住宿或旅行筆記時，不要手動複製互動事件，應使用既有建立器或符合既有 selector，讓光暈、focus、modal、Google Maps 表格與關閉後 focus 還原自動套用。
+- 新增頁面或項目完成後，必須檢查滑鼠、鍵盤 focus、觸控按壓、`prefers-reduced-motion`、空資料與動態插入情境，確認不會只在初始 HTML seed 上運作。
 - 首頁手機版時間軸改為垂直排列；年份群組點擊後以自訂 `requestAnimationFrame` 平滑捲動定位，並保留減速銜接感。
 - 手機版時間軸的圓點點擊只控制該旅程資訊卡：第一次點擊展開，第二次點擊收回資訊卡、圓點高亮與卡片浮起狀態；年份群組本身不因第二次點擊而整段收折。
 - 手機版時間軸資訊卡收回時，必須保留第一次點擊前的原始佔位高度，避免後續圓點位置與垂直時間軸線被過度往上推移。

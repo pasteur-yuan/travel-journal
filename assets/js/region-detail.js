@@ -1,3 +1,9 @@
+document.body.classList.add('is-region-entering');
+window.requestAnimationFrame(() => {
+  document.body.classList.add('is-region-entered');
+  window.setTimeout(() => document.body.classList.remove('is-region-entering', 'is-region-entered'), 900);
+});
+
 const regionNav = document.querySelector('.region-section-nav');
 
 const regionHero = document.querySelector('.region-hero');
