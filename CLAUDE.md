@@ -41,7 +41,9 @@ git diff --check
 - 例：HTML 裡 `#stays` 章節寫的是「住宿與交通」＋`.region-facts-wide`；`region-detail.js` 會把標題改寫成 `STAY`／「住宿」，並把 facts 轉成 `.region-content-list`。
 - 例：地區頁 HTML 仍保留舊版 5 主題 `<details class="theme-menu">` 選單；`theme-switcher.js` 會在執行時把它 `replaceWith` 成單一亮暗切換按鈕。首頁與國家頁已直接寫成新按鈕。修改主題 UI 要同時考慮這兩種輸入。
 
-首頁時間軸同理：`main.js` 讀取 HTML 中 `.timeline-entry[data-date]`，`replaceChildren()` 清空 `.timeline-track` 後，依 `data-date` 推導年份範圍（最早年份 → 今年＋1）重建整個年份群組結構。HTML 裡的時間軸只是資料來源。
+首頁時間軸同理：`main.js` 讀取 HTML 中 `.timeline-entry[data-date]`，`replaceChildren()` 清空 `.timeline-track` 後，依 `data-date` 推導年份範圍（最早年份 → `max(今年+1, 最晚一筆)`）重建整個年份群組結構。HTML 裡的時間軸只是資料來源。
+
+時間軸項目同時是地圖右上「已探索」清單與右下「旅行足跡」數字的唯一資料來源：`data-country` 決定國家清單與國家數，`data-country` + `data-region` 的組合決定地區數，項目總數即旅行節點數。這三處都是 JS 產生的，不要在 HTML 裡寫死。
 
 ## region-detail.js 的資料流
 
@@ -61,7 +63,7 @@ git diff --check
 1. `regionalVenueData[regionKey][sectionName][place]` — 東京／名古屋／大阪／伊勢志摩／福岡的統一資料來源。
 2. 北海道景點專屬陣列：`otaruPlaces`、`jozankeiPlaces`、`sapporoPlaces`，以及 `{旭川, 美瑛, 函館}` 對應的 `asahikawaPlaces` / `bieiPlaces` / `hakodatePlaces`。
 3. `hokkaidoFoodPlaces[place]`（`#food`）、`hokkaidoStayPlaces[place]`（`#stays`）。
-4. Fallback：單列表格。**注意此 fallback 的 Google Maps query 硬編碼了「北海道」**，非北海道地區若走到 fallback 會產生錯誤連結——新增內容時應補進對應的資料 map，而不是依賴 fallback。
+4. Fallback：單列表格，查詢字串會補上 `regionSearchNames` 對應的地區名（例：`原宿 東京`）。`#notes` 章節不產生地圖連結，欄位顯示 `—`，因為筆記的標籤是年月而非地點。
 
 Google Maps 連結統一使用 `https://www.google.com/maps/search/?api=1&query=<encodeURIComponent(名稱)>`，`target="_blank" rel="noopener noreferrer"`。
 
@@ -89,7 +91,7 @@ Google Maps 連結統一使用 `https://www.google.com/maps/search/?api=1&query=
 
 amCharts 5 由 CDN 載入（`am5`、`am5map`、`worldTimeZonesHigh`、`worldTimeZoneAreasHigh` geodata），整段包在 `if (window.am5 && window.am5map)` 內——CDN 失效時地圖不出現，但頁面其他部分必須照常運作，修改時要維持這個防護。
 
-日本 marker 有兩套並存的實作：`MapPointSeries` bullet（隨投影同步）與 DOM 上的 `#japan-marker`（透過 `chart.convert()` 與 `boundschanged` 事件重新定位）。兩者共用同一份 tooltip 顯示／隱藏邏輯，修改其一時要同步另一邊。
+marker 由 `main.js` 頂端的 `travelDestinations` 陣列產生：每筆資料建立一個 `<button class="country-marker">`，位置以 `chart.convert()` 換算並在 `boundschanged` 時重新定位，tooltip、地圖多邊形高亮（以 `code`／`mapId` 比對）與點擊連結都來自同一筆資料。新增國家只需在陣列加一筆，不要另外在 HTML 寫死 marker。
 
 夜晚區域 `#night-zone` 由 `updateDayNight()` 依 UTC 時間計算經度後定位，每 60 秒更新一次。
 
