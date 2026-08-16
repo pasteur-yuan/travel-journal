@@ -21,37 +21,30 @@ document.addEventListener("pointerdown", (event) => {
 }, { passive: true });
 
 const timelineTrack = document.querySelector(".timeline-track");
-let timelineScrollFrame = 0;
 let timelineSwitchTimer = 0;
-const animatePageScrollTo = (target, duration = 1500) => {
-  if (timelineScrollFrame) window.cancelAnimationFrame(timelineScrollFrame);
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    window.scrollTo(0, target);
-    return;
-  }
-  const start = window.scrollY;
-  const distance = target - start;
-  const startedAt = performance.now();
-  const easeInOut = (progress) => progress < 0.5
-    ? 4 * progress * progress * progress
-    : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-  const frame = (now) => {
-    const progress = Math.min(1, (now - startedAt) / duration);
-    window.scrollTo(0, start + distance * easeInOut(progress));
-    if (progress < 1) timelineScrollFrame = window.requestAnimationFrame(frame);
-    else timelineScrollFrame = 0;
-  };
-  timelineScrollFrame = window.requestAnimationFrame(frame);
+const isMobileTimeline = () => window.matchMedia("(max-width: 700px)").matches;
+
+// 手機版切換年份或展開資訊卡會改變版面高度。以被點擊的元素為錨點量測前後位移並補回，
+// 讓它停在原本的視窗位置，整個頁面不會自己捲動或跳動。
+const keepAnchorInViewport = (anchor, update) => {
+  if (!anchor) { update(); return; }
+  const before = anchor.getBoundingClientRect().top;
+  update();
+  const delta = anchor.getBoundingClientRect().top - before;
+  if (Math.abs(delta) >= 1) window.scrollTo(0, window.scrollY + delta);
+};
+
+// 時間軸光點對齊目前年份標記的垂直中心。宣告在模組層級，
+// 讓年份切換與圓點展開兩段邏輯都能取用。
+const updateTimelineGlow = (group) => {
+  const marker = group?.querySelector(".timeline-year-marker");
+  if (!timelineTrack || !group || !marker) return;
+  const update = () => timelineTrack.style.setProperty("--timeline-glow-y", `${group.offsetTop + marker.offsetTop + marker.offsetHeight / 2}px`);
+  window.requestAnimationFrame(() => window.requestAnimationFrame(update));
 };
 
 if (timelineTrack && timelineEntries.length) {
   const entries = [...timelineEntries];
-  const updateTimelineGlow = (group) => {
-    const marker = group?.querySelector(".timeline-year-marker");
-    if (!group || !marker) return;
-    const update = () => timelineTrack.style.setProperty("--timeline-glow-y", `${group.offsetTop + marker.offsetTop + marker.offsetHeight / 2}px`);
-    window.requestAnimationFrame(() => window.requestAnimationFrame(update));
-  };
   entries.forEach((entry) => {
     entry.addEventListener("pointermove", (event) => {
       const card = entry.querySelector(".timeline-card");
@@ -93,46 +86,40 @@ if (timelineTrack && timelineEntries.length) {
       marker.setAttribute("aria-label", `${year}，尚未開始`);
     }
     group.append(marker, ...(entriesByYear.get(year) || []));
-    marker.addEventListener("pointerdown", (event) => {
-      if (event.pointerType !== "touch" || isFutureYear) return;
-      event.preventDefault();
-      marker.click();
-      marker.dataset.skipNextClick = "true";
-    });
+    // 只綁定 click：頁面已設定 width=device-width，行動裝置沒有點擊延遲需要繞過。
+    // 先前用 pointerdown 觸發 marker.click() 再以旗標略過原生 click 的做法，
+    // 會在切換年份造成版面位移、原生 click 因此未送達時留下殘留旗標，讓下一次要點兩下。
     marker.addEventListener("click", () => {
       if (isFutureYear) return;
-      if (marker.dataset.skipNextClick === "true") {
-        delete marker.dataset.skipNextClick;
-        return;
-      }
-      const mobileScroll = window.matchMedia("(max-width: 700px)").matches;
-      if (!mobileScroll) timelineTrack.classList.add("is-switching");
-      timelineTrack.querySelectorAll(".timeline-year-group").forEach((item) => {
-        const expanded = item === group;
-        item.classList.toggle("is-active", expanded);
-        item.querySelector(".timeline-year-marker").setAttribute("aria-expanded", String(expanded));
-      });
-      timelineEntries.forEach((entry) => entry.classList.remove("is-expanded", "is-dot-collapsed"));
-      if (document.activeElement?.closest?.(".timeline-entry")) document.activeElement.blur();
+      const mobile = isMobileTimeline();
+      if (!mobile) timelineTrack.classList.add("is-switching");
+      const switchYear = () => {
+        timelineTrack.querySelectorAll(".timeline-year-group").forEach((item) => {
+          const expanded = item === group;
+          item.classList.toggle("is-active", expanded);
+          item.querySelector(".timeline-year-marker").setAttribute("aria-expanded", String(expanded));
+        });
+        // 一併收折所有旅程資訊卡，包含原本展開年份裡由圓點展開的卡片。
+        timelineEntries.forEach((entry) => entry.classList.remove("is-expanded", "is-dot-collapsed"));
+        if (document.activeElement?.closest?.(".timeline-entry")) document.activeElement.blur();
+      };
+      if (mobile) keepAnchorInViewport(marker, switchYear);
+      else switchYear();
       updateTimelineGlow(group);
+      if (mobile) return;
       window.clearTimeout(timelineSwitchTimer);
       timelineSwitchTimer = window.setTimeout(() => {
-        if (!mobileScroll) timelineTrack.classList.remove("is-switching");
+        timelineTrack.classList.remove("is-switching");
         updateTimelineGlow(group);
-        if (mobileScroll) {
-          const target = Math.max(0, group.getBoundingClientRect().top + window.scrollY - 24);
-          animatePageScrollTo(target, 2100);
-        } else {
-          centerGroup(group);
-        }
-      }, mobileScroll ? 180 : 850);
+        centerGroup(group);
+      }, 850);
     });
     timelineTrack.append(group);
   });
   const initialGroup = timelineTrack.querySelector(`.timeline-year-group[data-year="${activeYear}"]`);
   if (initialGroup) window.requestAnimationFrame(() => {
     centerGroup(initialGroup, false);
-    if (window.matchMedia("(max-width: 700px)").matches) {
+    if (isMobileTimeline()) {
       updateTimelineGlow(initialGroup);
     }
   });
@@ -153,39 +140,49 @@ if (mapStats && timezoneLabel) {
 
 timelineEntries.forEach((entry) => {
   const dot = entry.querySelector(".timeline-dot");
-  const isMobile = () => window.matchMedia("(max-width: 700px)").matches;
   const activateEntryYear = () => {
     const yearGroup = entry.closest(".timeline-year-group");
     if (!yearGroup) return;
-    timelineEntries.forEach((item) => item.classList.remove("is-expanded", "is-dot-collapsed"));
-    timelineTrack.querySelectorAll(".timeline-year-group").forEach((item) => {
-      const active = item === yearGroup;
-      item.classList.toggle("is-active", active);
-      item.querySelector(".timeline-year-marker")?.setAttribute("aria-expanded", String(active));
+    keepAnchorInViewport(dot, () => {
+      timelineEntries.forEach((item) => item.classList.remove("is-expanded", "is-dot-collapsed"));
+      timelineTrack.querySelectorAll(".timeline-year-group").forEach((item) => {
+        const active = item === yearGroup;
+        item.classList.toggle("is-active", active);
+        item.querySelector(".timeline-year-marker")?.setAttribute("aria-expanded", String(active));
+      });
+      entry.classList.add("is-expanded");
     });
     updateTimelineGlow(yearGroup);
-    entry.classList.add("is-expanded");
+  };
+  // 第二次點擊同一個圓點只收回自己的資訊卡：年份群組維持展開，
+  // 卡片回到第一次點擊前的 3rem 佔位高度，圓點位置與時間軸線不會被往上推。
+  const collapseEntryCard = () => {
+    keepAnchorInViewport(dot, () => {
+      entry.classList.remove("is-expanded");
+      entry.classList.add("is-dot-collapsed");
+    });
   };
   entry.addEventListener("pointerenter", (event) => {
-    if (event.pointerType === "mouse" && !isMobile()) {
+    if (event.pointerType === "mouse" && !isMobileTimeline()) {
       timelineTrack.classList.remove("is-switching");
       entry.classList.add("is-expanded");
     }
   });
   entry.addEventListener("pointerleave", (event) => {
-    if (event.pointerType === "mouse" && !isMobile() && !entry.matches(":focus-within")) entry.classList.remove("is-expanded");
+    if (event.pointerType === "mouse" && !isMobileTimeline() && !entry.matches(":focus-within")) entry.classList.remove("is-expanded");
   });
   dot?.addEventListener("click", (event) => {
-    if (!isMobile()) { event.preventDefault(); return; }
+    if (!isMobileTimeline()) { event.preventDefault(); return; }
     event.preventDefault();
     event.stopPropagation();
-    activateEntryYear();
+    if (entry.classList.contains("is-expanded")) collapseEntryCard();
+    else activateEntryYear();
   });
   entry.addEventListener("click", (event) => {
     const clickedCard = event.target.closest(".timeline-card");
     const clickedDot = event.target.closest(".timeline-dot");
     if (clickedDot) { event.preventDefault(); return; }
-    if (isMobile() && (!clickedCard || !entry.classList.contains("is-expanded"))) event.preventDefault();
+    if (isMobileTimeline() && (!clickedCard || !entry.classList.contains("is-expanded"))) event.preventDefault();
   });
 });
 
