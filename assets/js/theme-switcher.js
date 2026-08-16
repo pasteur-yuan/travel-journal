@@ -1,17 +1,6 @@
 (function () {
   const savedTheme = localStorage.getItem("travel-journal-theme") === "glass-dark" ? "glass-dark" : "glass";
   const iconMarkup = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="theme-icon-sun"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"></path></g><path class="theme-icon-moon" d="M15.8 3.6a8.7 8.7 0 1 0 4.6 15.9A8.2 8.2 0 1 1 15.8 3.6Z"></path></svg>';
-  document.querySelectorAll(".theme-menu").forEach((menu) => {
-    const toggle = document.createElement("button");
-    toggle.className = "theme-toggle";
-    toggle.type = "button";
-    toggle.dataset.themeToggle = "";
-    toggle.setAttribute("aria-label", "切換為暗色液態玻璃");
-    toggle.title = "切換暗色主題";
-    toggle.setAttribute("aria-pressed", "false");
-    toggle.innerHTML = iconMarkup;
-    menu.replaceWith(toggle);
-  });
   const themeToggle = document.querySelector("[data-theme-toggle]");
   let iconSwapTimer;
 
