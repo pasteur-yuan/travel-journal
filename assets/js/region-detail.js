@@ -21,6 +21,19 @@ if (regionHero) {
   if (eyebrow && regionClass) eyebrow.textContent = regionNames[regionClass];
 }
 
+// fallback 的地圖查詢字串要用項目實際所在的地區。原本寫死「北海道」，
+// 讓其他五個地區只要沒有對應的 venue 資料，就會產生指向北海道的錯誤連結。
+const regionSearchNames = {
+  'region-hero-hokkaido': '北海道',
+  'region-hero-tokyo': '東京',
+  'region-hero-nagoya': '名古屋',
+  'region-hero-osaka': '大阪',
+  'region-hero-ise-shima': '伊勢志摩',
+  'region-hero-fukuoka': '福岡'
+};
+const currentRegionSearchName = regionHero
+  && regionSearchNames[[...regionHero.classList].find((name) => regionSearchNames[name])] || '';
+
 document.querySelectorAll('.region-facts-wide').forEach((facts) => {
   const section = facts.closest('.region-section');
   const heading = section?.querySelector('h2');
@@ -554,7 +567,13 @@ if (detailItems.length) {
       return;
     }
     const transport = sectionName === 'stays' ? '待補充住宿位置與移動方式' : sectionName === 'notes' ? '依旅程安排補充' : '待補充前往方式';
-    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place} 北海道`)}`;
+    // 旅行筆記的標籤是年月而不是地點，查地圖沒有意義，直接不給連結。
+    if (sectionName === 'notes') {
+      tableBody.innerHTML = `<tr><td>${place}</td><td>${info}</td><td>${transport}</td><td>—</td></tr>`;
+      return;
+    }
+    const query = `${place} ${currentRegionSearchName}`.trim();
+    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
     tableBody.innerHTML = `<tr><td>${place}</td><td>${info}</td><td>${transport}</td><td><a class="spot-modal-map-link" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="在 Google Maps 開啟${place}">開啟地圖</a></td></tr>`;
   };
   const closeButton = modal.querySelector('.spot-modal-close');
