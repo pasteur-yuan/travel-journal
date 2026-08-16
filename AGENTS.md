@@ -10,7 +10,8 @@ Travel Journal 是一個以 GitHub Pages 部署的純前端靜態旅遊網站，
 
 - 使用原生 HTML、CSS 與 Vanilla JavaScript。
 - 不引入 React、Vue、Angular 或其他前端框架。
-- 不新增需要建置流程的依賴，除非使用者明確要求。
+- 不新增需要建置流程的依賴，除非使用者明確要求。網站本身與測試都維持零依賴，
+  不需要 `package.json`，測試只用 Node 內建模組驅動 headless Chrome。
 - 優先沿用現有的 CSS custom properties、DOM 結構與互動邏輯。
 - 外部程式資源目前可使用 Font Awesome 與 amCharts；圖片應優先下載至 `assets/images/`，避免依賴圖片 CDN。
 - 所有相對路徑必須以實際頁面所在目錄為基準，避免本機可用但 GitHub Pages 失效。
@@ -20,15 +21,21 @@ Travel Journal 是一個以 GitHub Pages 部署的純前端靜態旅遊網站，
 ```text
 travel-journal/
 ├── index.html                    # 首頁：世界地圖、國家入口與旅行時間軸
-├── AGENTS.md                     # Codex 專案規範
+├── AGENTS.md                     # 專案規範（設計與內容）
+├── CLAUDE.md                     # 專案架構說明
 ├── assets/
 │   ├── images/                   # 全站本地圖片資產
 │   ├── css/style.css             # 全站共用樣式與主題樣式
 │   └── js/
 │       ├── main.js               # 首頁地圖、時間軸與卡片互動
-│       ├── region-showcase.js     # 國家頁地區背景與清單互動
+│       ├── region-showcase.js    # 國家頁地區背景與清單互動
+│       ├── region-detail.js      # 地區頁內容注入、導覽、光暈與彈窗
 │       ├── themes.js             # 主題名稱與主題狀態
-│       └── theme-switcher.js     # 隱藏式主題切換
+│       └── theme-switcher.js     # 亮暗主題切換
+├── tests/                        # 瀏覽器行為測試（零依賴，見 tests/README.md）
+│   ├── harness.mjs               # 靜態伺服器、Chrome 啟動與 CDP 封裝
+│   ├── run.mjs                   # 執行器
+│   └── suites/                   # 各區塊的測試群組
 └── countries/
     └── japan/
         ├── index.html            # 日本國家頁
@@ -121,6 +128,9 @@ countries/<country>/<region>/index.html
 地圖規則：
 
 - 地圖必須維持響應式尺寸，不能因視窗寬度改變而讓國家 marker 漂移。
+- marker 一律由 `main.js` 的 `travelDestinations` 陣列產生，不可在 HTML 寫死 marker，
+  也不可為單一國家另寫一套實作。每筆資料包含國旗、名稱、時區、經緯度、目的頁面，
+  以及用來比對時區地圖多邊形的 `code` 與 `mapId`；marker、tooltip、地圖高亮與連結都取自同一筆。
 - 日本 marker 以東京座標為定位基準。
 - 已加入的國家才可以在地圖上顯示 emoji marker。
 - 未 focus 時顯示小型國家 emoji。
@@ -191,8 +201,14 @@ countries/<country>/<region>/index.html
 規則：
 
 - 年份依旅行資料自動判斷，不要硬編碼固定年份。
+- 每筆旅程以 `.timeline-entry` 的 `data-date`、`data-country`、`data-region` 為唯一資料來源；
+  年份群組、地圖右上的「已探索」清單與右下的「旅行足跡」數字都由這三個屬性推導，
+  不可在 HTML 另外寫死國家清單或統計數字。
+- 年份軸涵蓋「最早一筆」到「今年＋1 與最晚一筆取較大者」，讓更遠的未來旅程也有對應群組。
 - 預設顯示目前年份，並預留下一年份。
-- 下一年份尚未開始時可以顯示，但不可點擊展開。
+- 尚未開始「且沒有任何旅程」的預留年份可以顯示，但不可點擊展開；
+  已排定行程的未來年份必須可以展開。
+- 單筆 `data-date` 無法解析時只略過該筆並於 console 提示，不可讓整條時間軸消失。
 - 同一時間只能展開一個年份。
 - 展開年份固定在主要視覺位置，其他年份向兩側平順移動。
 - 右側的下一年份應固定在時間軸最右側。
@@ -265,23 +281,34 @@ countries/<country>/<region>/index.html
 
 ```bash
 git diff --check
+node tests/run.mjs
 ```
 
-並確認：
+測試以真實 headless Chrome 驗證互動、呈現與動畫，零依賴、不需要 `npm install`，
+執行約 95 秒。細節與撰寫方式見 `tests/README.md`。規則：
 
-- 首頁可直接載入。
-- 國家頁與地區頁的相對路徑正確。
-- 主題切換仍可用。
-- 地圖初始化失敗時，不會讓頁面其他內容消失。
-- 時間軸、國家卡片與麵包屑沒有因 CSS 修改而互相影響。
+- 任何會動到互動、動畫或版面的修改，都必須讓整套測試維持全數通過。
+- 修正 bug 時同步補上會抓到該 bug 的測試，否則等於沒有防止它再次發生。
+- 測試全過不代表測試有效。新增測試後，刻意把對應的程式改壞一次，
+  確認測試真的會失敗，再把程式改回來。
+- 量測捲動位置前要先靜置；驗證事件代理要用真實滑鼠事件而非 `dispatchEvent` 模擬。
+  這兩個陷阱會讓測試「假通過」，`tests/README.md` 有說明。
+
+測試涵蓋不到、仍須人工確認的部分：
+
+- 首頁可直接載入，地圖初始化失敗時不會讓頁面其他內容消失。
 - GitHub Pages 使用的大小寫與路徑和本機完全一致。
+- 實機觸控手感、視覺呈現是否符合設計意圖。
+- 真實 iOS Safari 的殘留 `:hover`（測試以真實滑鼠移入重現，機制相同但不是同一個瀏覽器）。
 
 ## GitHub Pages 部署
 
 - 部署來源為 `main` branch。
 - 網站必須維持靜態檔案可直接部署。
 - 修改外部圖片或 CDN 時，確認 HTTPS 與 GitHub Pages 相容。
-- 不要將本機絕對路徑、測試檔案或敏感資訊提交到 repository。
+- 不要將本機絕對路徑或敏感資訊提交到 repository。
+- `tests/` 是專案的一部分，應該提交；它不影響部署（GitHub Pages 只服務靜態頁面，
+  不會執行 Node）。測試過程產生的暫存頁面使用 `_test-` 前綴並已列入 `.gitignore`。
 - 推送前檢查所有 HTML、CSS、JavaScript 的相對路徑。
 
 ## 目前實作基準（2026-08）
@@ -306,7 +333,10 @@ git diff --check
 - 國家頁的 `.region-showcase-item` 由 `region-showcase.js` 統一處理背景切換、hover／focus、滑鼠追蹤光暈、局部按壓回彈、頁面轉場與 Font Awesome 導航 icon；新增項目會由 `MutationObserver` 自動綁定相同互動，必須提供 `data-image`、`href`、標題、描述與箭頭容器。
 - 地區頁內容項目由 `region-detail.js` 的共用建立器與事件代理處理；新增景點、美食、住宿或旅行筆記時，不要手動複製互動事件，應使用既有建立器或符合既有 selector，讓光暈、focus、modal、Google Maps 表格與關閉後 focus 還原自動套用。
 - 新增頁面或項目完成後，必須檢查滑鼠、鍵盤 focus、觸控按壓、`prefers-reduced-motion`、空資料與動態插入情境，確認不會只在初始 HTML seed 上運作。
-- 首頁手機版時間軸改為垂直排列；年份群組點擊後以自訂 `requestAnimationFrame` 平滑捲動定位，並保留減速銜接感。
+- 首頁手機版時間軸改為垂直排列。點擊年份或圓點時**頁面完全不捲動**：捲動會讓標題與時間軸以外的內容整塊位移，比年份自己移動更突兀。
+- 手機版年份群組的位移由 `display` 切換造成，CSS transition 接不到，改以 FLIP 處理：量測切換前後的位置差，先用 `transform` 把群組移回原位，再沿慢速煞停的曲線滑到新位置。變動點以上的年份維持靜止，以下的年份平順滑動。
+- 手機版必須鎖定時間軸的最小高度（取所有年份配置中最高的一種）。年份收合會讓文件變短，使用者若停在頁面底部，瀏覽器會把捲動位置往上夾，看起來就像畫面自己滑動。
+- 手機版觸控後 `:hover` 會殘留，因此資訊卡與圓點的展開狀態只能由 `is-expanded` 或鍵盤 focus 決定；`:hover` 樣式必須限縮在 `(hover: hover)` 的裝置，不可讓殘留 hover 讓卡片脫離 JS 控制而收不回去。
 - 手機版時間軸的圓點點擊只控制該旅程資訊卡：第一次點擊展開，第二次點擊收回資訊卡、圓點高亮與卡片浮起狀態；年份群組本身不因第二次點擊而整段收折。
 - 手機版時間軸資訊卡收回時，必須保留第一次點擊前的原始佔位高度，避免後續圓點位置與垂直時間軸線被過度往上推移。
 - 滑鼠追蹤位置更新應使用 `requestAnimationFrame`；不可對光暈的 `left`／`top` 使用追趕式 transition。所有新增動畫仍須支援 `prefers-reduced-motion`。
@@ -339,6 +369,8 @@ git diff --check
 - 每個分類可以有任意數量的項目，不得以三個項目作為固定上限。新增資料應透過共用 `createRegionContentItem()` 建立，讓 DOM 結構、focus、hover、光暈與 modal 行為一致。
 - 動態內容資料應以地區與分類建立清楚的資料結構，例如 `regionContent`、`regionAdditionalContent` 或獨立的分類資料 map；不要把不同地區的內容混在單一共用陣列中。
 - 每個景點、美食或住宿項目開啟 modal 後，資料表至少包含「地名、資訊、交通方式、Google Map」四欄；資料表內容必須依目前項目的地區／分類切換，不可因共用模板而顯示其他項目的資料。
+- 旅行筆記的標籤是年月而不是地點，開啟 modal 時 Google Map 欄位顯示「—」，不提供連結。
+- 找不到對應地點資料時的 fallback，查詢字串必須帶入該項目**實際所在的地區**（由 `regionKey` 決定），絕不可寫死單一地區名；寫死會讓其他地區的項目全部連到錯誤位置。
 - Google Maps 使用 `https://www.google.com/maps/search/?api=1&query=...`；店家或景點名稱應使用 URL encode，桌面版開新分頁，手機版交由系統開啟 Google Maps App 或行動網頁。
 - 查詢結果若涉及價格、評價或「CP 值」，應以交通便利性、住宿／用餐實用性、官方推薦程度與行程彈性描述，不要把未驗證的即時價格寫入固定內容。
 - 在最終回覆中列出主要資料來源，並說明資料是「熱門／定番整理」還是完整清單；不要宣稱查詢結果涵蓋所有店家或所有景點。
