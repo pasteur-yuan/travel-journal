@@ -29,6 +29,41 @@ export const cards = suite("首頁 · 國家卡片", async (b, t) => {
     JSON.stringify(shape.linked));
   t.check("每張卡片都有可讀的名稱或 aria-label", shape.everyCardLabelled);
 
+  const edgeTreatment = await b.eval(`(async () => {
+    const strip = document.querySelector(".country-strip");
+    const cards = [...document.querySelectorAll(".country-card")];
+    const edgeBuffer = 64;
+    const settle = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const inspect = () => {
+      const bounds = strip.getBoundingClientRect();
+      return cards
+        .filter((card) => {
+          const rect = card.getBoundingClientRect();
+          const visible = rect.right > bounds.left && rect.left < bounds.right;
+          return visible && (rect.left < bounds.left + edgeBuffer || rect.right > bounds.right - edgeBuffer);
+        })
+        .map((card) => ({
+          name: card.querySelector(".country-name")?.textContent,
+          edgeMuted: card.classList.contains("is-edge-shadowless"),
+          shadow: getComputedStyle(card).boxShadow
+        }));
+    };
+    strip.style.scrollBehavior = "auto";
+    strip.scrollLeft = 0;
+    await settle();
+    const start = inspect();
+    strip.scrollLeft = strip.scrollWidth - strip.clientWidth;
+    await settle();
+    const end = inspect();
+    strip.style.scrollBehavior = "";
+    return { start, end };
+  })()`);
+  const edgeCards = [...edgeTreatment.start, ...edgeTreatment.end];
+  t.check("桌面兩端都有可見的邊界卡片", edgeCards.length >= 2, JSON.stringify(edgeTreatment));
+  t.check("桌面邊界卡片不保留截斷的陰影線",
+    edgeCards.length >= 2 && edgeCards.every((card) => card.edgeMuted && card.shadow === "none"),
+    JSON.stringify(edgeTreatment));
+
   // hover 應套用滑鼠追蹤光暈與 3D 傾斜
   await b.hover(".country-card-japan");
   const hovered = await b.eval(`(() => {
@@ -78,5 +113,7 @@ export const cardsMobile = suite("首頁 · 國家卡片（手機版）", async 
   t.check("手機版卡片列可水平滑動", res.stripScrollable);
   t.check("手機版頁面本身不水平捲動", !res.pageScrollsSideways);
   t.check("卡片列使用水平吸附", res.snap.includes("x"), res.snap);
+  t.check("手機版不套用桌面端點陰影處理", await b.eval(
+    `!document.querySelector(".country-card.is-edge-shadowless")`));
   t.check("手機版無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 });

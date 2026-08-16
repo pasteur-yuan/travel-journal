@@ -290,6 +290,24 @@ timelineEntries.forEach((entry) => {
 
 if (countryStrip) {
   let pointer = null;
+  let edgeShadowFrame = 0;
+  const syncEdgeCardShadows = () => {
+    edgeShadowFrame = 0;
+    if (!window.matchMedia("(min-width: 701px)").matches) {
+      countryCards.forEach((card) => card.classList.remove("is-edge-shadowless"));
+      return;
+    }
+    const stripRect = countryStrip.getBoundingClientRect();
+    const edgeBuffer = 64;
+    countryCards.forEach((card) => {
+      const rect = card.getBoundingClientRect();
+      card.classList.toggle("is-edge-shadowless",
+        rect.left < stripRect.left + edgeBuffer || rect.right > stripRect.right - edgeBuffer);
+    });
+  };
+  const scheduleEdgeCardShadowSync = () => {
+    if (!edgeShadowFrame) edgeShadowFrame = window.requestAnimationFrame(syncEdgeCardShadows);
+  };
   const syncPointerCard = () => {
     if (!pointer) return;
     const element = document.elementFromPoint(pointer.x, pointer.y);
@@ -310,6 +328,7 @@ if (countryStrip) {
       activeCard.style.setProperty("--card-tilt-x", `${((event.clientX - rect.left) / rect.width - .5) * 7}deg`);
       activeCard.style.setProperty("--card-tilt-y", `${((event.clientY - rect.top) / rect.height - .5) * -7}deg`);
     }
+    scheduleEdgeCardShadowSync();
     if (event.pointerType === "mouse" && document.activeElement?.classList.contains("country-card")) {
       document.activeElement.blur();
     }
@@ -322,10 +341,12 @@ if (countryStrip) {
         document.activeElement.blur();
       }
       countryCards.forEach((item) => item.classList.toggle("is-pointer-active", item === card));
+      scheduleEdgeCardShadowSync();
     });
   });
   countryStrip.addEventListener("scroll", () => {
     syncPointerCard();
+    scheduleEdgeCardShadowSync();
     if (document.activeElement?.classList.contains("country-card")) {
       document.activeElement.blur();
     }
@@ -333,7 +354,10 @@ if (countryStrip) {
   countryStrip.addEventListener("pointerleave", () => {
     pointer = null;
     countryCards.forEach((item) => item.classList.remove("is-pointer-active"));
+    scheduleEdgeCardShadowSync();
   });
+  window.addEventListener("resize", scheduleEdgeCardShadowSync, { passive: true });
+  scheduleEdgeCardShadowSync();
 }
 
 function updateDayNight(now = new Date()) {
