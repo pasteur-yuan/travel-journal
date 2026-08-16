@@ -26,6 +26,8 @@ async function tapAndWatch(b, selector) {
   return { before, after };
 }
 
+// 這個群組以 before === after 逐像素斷言「頁面沒有捲動」，多個 Chrome 互搶 CPU 時
+// 平滑捲動的收尾會漂個幾像素而誤判，因此標記為獨佔執行。
 export const mobile = suite("時間軸 · 手機版互動", async (b, t) => {
   await b.mobile();
   await b.goto("/index.html", { settle: 1400 });
@@ -76,8 +78,9 @@ export const mobile = suite("時間軸 · 手機版互動", async (b, t) => {
   t.check("切換年份時頁面不捲動", scroll.before === scroll.after, `${scroll.before} → ${scroll.after}`);
 
   t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
-});
+}, { serial: true });
 
+// 會在動畫中途取樣判斷是否正在滑動，對 CPU 競爭敏感。
 export const glide = suite("時間軸 · 手機版年份滑動（FLIP）", async (b, t) => {
   await b.mobile();
   await b.goto("/index.html", { settle: 1400 });
@@ -133,7 +136,7 @@ export const glide = suite("時間軸 · 手機版年份滑動（FLIP）", async
     new Set(heights).size === 1, JSON.stringify(heights));
 
   t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
-});
+}, { serial: true });
 
 export const stickyHover = suite("時間軸 · 觸控裝置的殘留 hover 防護", async (b, t) => {
   await b.mobile();

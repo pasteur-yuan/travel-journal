@@ -17,10 +17,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 open index.html                     # 直接以 file:// 開啟
 python3 -m http.server 8000         # 靜態伺服器，http://localhost:8000
 
-# 自動測試（需 Node 22+ 與 Google Chrome，全部跑約 2 分鐘）
-node tests/run.mjs                  # 全部：25 個群組、涵蓋 28 個地區頁
+# 自動測試（需 Node 22+ 與 Google Chrome）
+node tests/run.mjs                  # 全部：25 個群組、涵蓋 28 個地區頁，約 90 秒
 node tests/run.mjs timeline         # 只跑檔名或群組名稱含關鍵字的
 node tests/run.mjs 手機版            # 中文關鍵字也可以
+node tests/run.mjs --jobs=1         # 完全序列（約 240 秒），除錯時較好讀
 CHROME_PATH="/path/to/chrome" node tests/run.mjs
 
 git diff --check
@@ -29,6 +30,8 @@ git diff --check
 測試涵蓋 DOM 狀態、CSS 計算值、捲動位置、動畫中途取樣、鍵盤與 focus 行為、資源載入、連結有效性。**不涵蓋**實機觸控手感與視覺美感，這些仍要手動確認：首頁、日本國家頁，以及至少 hokkaido / tokyo / nagoya / osaka / ise-shima / fukuoka 六個內容最完整的地區頁。
 
 改動互動或動畫時，除了「測試通過」，還要確認**測試會因為這個改動而失敗**——把修正還原一次，看它有沒有紅。細節見 `tests/README.md`（含三個容易踩到的 CDP 陷阱）。
+
+測試群組會分散到多個 Chrome 平行執行，輸出順序仍與序列執行一致。新增**會斷言捲動位置或動畫中途狀態**的群組時，要標記 `{ serial: true }`，否則 CPU 競爭會讓它偶發性失敗。
 
 ## 三種頁面模板
 

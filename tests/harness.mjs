@@ -275,9 +275,13 @@ export class Browser {
   }
 }
 
-/** 定義一個測試群組。fn 會拿到 (browser, t)，t.check 記錄一條斷言。 */
-export function suite(name, fn) {
-  return { name, fn };
+/**
+ * 定義一個測試群組。fn 會拿到 (browser, t)，t.check 記錄一條斷言。
+ * options.serial = true 的群組不與其他群組同時執行，留給對時間敏感、
+ * 會在動畫中途取樣的測試，避免多個 Chrome 互搶 CPU 造成 flaky。
+ */
+export function suite(name, fn, options = {}) {
+  return { name, fn, serial: Boolean(options.serial) };
 }
 
 export function createRecorder() {

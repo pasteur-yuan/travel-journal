@@ -13,7 +13,7 @@ Travel Journal 是一個以 GitHub Pages 部署的純前端靜態旅遊網站，
 - 不新增需要建置流程的依賴，除非使用者明確要求。網站本身與測試都維持零依賴，
   不需要 `package.json`，測試只用 Node 內建模組驅動 headless Chrome。
 - 優先沿用現有的 CSS custom properties、DOM 結構與互動邏輯。
-- 外部程式資源目前可使用 Font Awesome 與 amCharts；圖片應優先下載至 `assets/images/`，避免依賴圖片 CDN。
+- 外部程式資源目前可使用 Font Awesome、amCharts 與 Google Fonts；旅遊照片應下載至 `assets/images/`，避免依賴圖片 CDN。從第三方取得且會提交的照片，必須在 `assets/images/ATTRIBUTIONS.md` 記錄地區、作者、授權與原始來源。現有時間軸卡片的一張 Unsplash 背景圖是已知例外（見 `TASKS.md` 2.2），不可再新增這類例外。
 - 所有相對路徑必須以實際頁面所在目錄為基準，避免本機可用但 GitHub Pages 失效。
 
 ## 專案結構
@@ -32,20 +32,20 @@ travel-journal/
 │       ├── region-detail.js      # 地區頁內容注入、導覽、光暈與彈窗
 │       ├── themes.js             # 主題名稱與主題狀態
 │       └── theme-switcher.js     # 亮暗主題切換
+├── TASKS.md                      # 待辦清單（需要提供什麼、會寫進哪裡）
 ├── tests/                        # 瀏覽器行為測試（零依賴，見 tests/README.md）
 │   ├── harness.mjs               # 靜態伺服器、Chrome 啟動與 CDP 封裝
-│   ├── run.mjs                   # 執行器
+│   ├── regions.mjs               # 地區頁清單的單一來源，各測試群組由此推導
+│   ├── run.mjs                   # 執行器（平行排程、順序化輸出）
 │   └── suites/                   # 各區塊的測試群組
 └── countries/
     └── japan/
         ├── index.html            # 日本國家頁
-        ├── hokkaido/index.html   # 北海道地區頁
-        ├── tokyo/index.html      # 東京地區頁
-        ├── nagoya/index.html     # 名古屋地區頁
-        ├── osaka/index.html      # 大阪地區頁
-        ├── ise-shima/index.html  # 伊勢志摩地區頁
-        └── fukuoka/index.html    # 福岡地區頁
+        └── <region>/index.html   # 28 個地區頁，slug 見 tests/regions.mjs
 ```
+
+地區頁的權威清單是 `tests/regions.mjs` 的 `REGION_NAMES`；新增地區頁必須同步更新那一份，
+測試群組的涵蓋範圍全部由它推導。
 
 未來新增國家時，請依照以下階層建立：
 
@@ -120,6 +120,7 @@ countries/<country>/<region>/index.html
 - 不要在右上角重複放置「回首頁」文字按鈕。
 - 主題切換維持在右上角，以圓形、低干擾的 `◐` 按鈕呈現。
 - 頁首使用 sticky header、半透明背景與 backdrop blur，但不能遮住主要內容。
+- 目前 30 個 HTML 模板都使用 `<title>出去玩</title>`、`<html lang="zh-Hant">` 與依頁面深度引用的本地 `assets/images/favicon.svg`。favicon 固定使用一般 emoji 的 `🧳`，不可換回 Font Awesome 或遠端 icon。
 
 ## 首頁世界地圖
 
@@ -186,6 +187,7 @@ countries/<country>/<region>/index.html
 - 每個地區項目使用原生 `<a>`，整列可點擊並可鍵盤 focus。
 - hover、focus 或目前項目可切換背景圖片、提高文字對比並顯示箭頭；不可造成其他項目水平跳動。
 - 背景圖片使用 `assets/images/` 的本地檔案，透過 `data-image` 與 `region-showcase.js` 切換。
+- 目前 28 個 showcase 項目與 28 個 `.region-hero-<slug>` 都使用同名的本地 JPG；22 張後補照片的作者與授權見 `assets/images/ATTRIBUTIONS.md`。舊 SVG 是歷史佔位檔，不可重新引用。
 - 桌面版採左右欄；手機版改為上下排列，但地區清單仍維持內部滾動。
 - `prefers-reduced-motion` 下停用背景與文字動畫。
 
@@ -224,11 +226,23 @@ countries/<country>/<region>/index.html
 
 ## 響應式設計
 
+## 多語系（i18n）
+
+目前尚未提供語言切換；所有靜態模板的繁中語言標記是 `zh-Hant`。實作 i18n 時維持純前端、零依賴架構，以繁中（`zh-Hant`）為預設、英文（`en`）為第一個新增語言；若未來確定要改用台灣地區碼 `zh-TW`，必須在同一次變更中更新全部模板、測試與翻譯 key，不可兩種預設混用。
+
+- 初期保留一份共用 HTML 結構，以翻譯字典與 `data-i18n` key 切換 UI 文案；不可為同一個元件複製兩套語言 DOM。
+- 頁首、麵包屑、導覽、分類標籤、按鈕、tooltip、modal、空狀態與 JavaScript 動態注入的文字，都必須由同一套翻譯來源取得；不可只翻初始 HTML，讓動態內容殘留舊語言。
+- 國家、地區、景點、店家與住宿的資料結構需把可翻譯的名稱與描述保留為各語系欄位；店名、日文專有名詞與地址可保留原文，必要時另外提供翻譯／讀音欄位，不可任意改寫官方名稱。
+- 語言選擇寫入 `localStorage`；第一次造訪才依 `navigator.language` 選擇支援語言，找不到對應時回退 `zh-Hant`。缺少翻譯 key 時同樣回退繁中並在開發時提示，不能顯示空白或 key 本身。
+- 切換時同步更新 `<html lang>`、`document.title`、頁面描述及語言控制項的可及性狀態（如 `aria-current`／`aria-pressed`）。控制項必須可鍵盤操作，並提供清楚的目前語言資訊。
+- 初期不建立 `/en/` 等獨立路徑；英文內容成熟、需要搜尋曝光時，再將每個語言拆成靜態 URL，補上 `hreflang`、canonical 與每語系可分享的 title／description。切換語言不可在這之前假裝已具 SEO 路徑語意。
+- 每次新增語言或可翻譯元件後，都要以繁中、英文、缺漏翻譯回退、鍵盤操作與動態插入情境驗證；不得破壞既有 `prefers-reduced-motion`、主題切換與頁內導覽。
+
 ## 地區詳細頁
 
 地區頁採用單頁章節式結構，分類內容直接攤平在同一頁，不建立額外的景點、美食或筆記子頁面。
 
-- 主視覺下方使用 Sticky 分類導覽列，分類可包含旅程摘要、景點、美食、住宿與交通、旅行筆記。
+- 主視覺下方使用 Sticky 分類導覽列，分類可包含旅程摘要、景點、美食、住宿、旅行筆記。除了旅程摘要（該章節標題是一句話而非標籤），導覽列文字必須與該章節執行後的標題完全一致。
 - 分類導覽使用頁內錨點，例如 `#spots`，不得因切換分類重新載入頁面。
 - 所有主要分類都應保留在 DOM 中，避免使用 Tabs 隱藏主要旅行內容。
 - 導覽列目前分類使用暖橘色文字與底線表示，並透過 `IntersectionObserver` 隨捲動位置更新。
@@ -284,8 +298,10 @@ git diff --check
 node tests/run.mjs
 ```
 
-測試以真實 headless Chrome 驗證互動、呈現與動畫，零依賴、不需要 `npm install`，
-執行約 95 秒。細節與撰寫方式見 `tests/README.md`。規則：
+測試以真實 headless Chrome 驗證互動、呈現與動畫，零依賴、不需要 `npm install`。
+群組會分散到多個獨立 Chrome 平行執行（預設為核心數的一半、上限 6），完整回歸約 90 秒；
+`--jobs=1` 可切回完全序列（約 240 秒），除錯時較好讀。輸出順序與序列執行一致。
+細節與撰寫方式見 `tests/README.md`。規則：
 
 - 任何會動到互動、動畫或版面的修改，都必須讓整套測試維持全數通過。
 - 修正 bug 時同步補上會抓到該 bug 的測試，否則等於沒有防止它再次發生。
@@ -293,6 +309,11 @@ node tests/run.mjs
   確認測試真的會失敗，再把程式改回來。
 - 量測捲動位置前要先靜置；驗證事件代理要用真實滑鼠事件而非 `dispatchEvent` 模擬。
   這兩個陷阱會讓測試「假通過」，`tests/README.md` 有說明。
+- 新增**以逐像素相等比較斷言捲動位置**或**在動畫中途取樣**的群組時，
+  定義時要加上 `{ serial: true }`，執行器會讓它獨佔機器。否則多個 Chrome 互搶 CPU 時，
+  平滑捲動的收尾會漂幾個像素而偶發性失敗。
+- 不要用固定 `sleep()` 等待有動畫的結果。動畫時長常隨內容量改變，
+  而 easing 收尾階段位置早已視覺靜止、收尾程式卻尚未執行；應等待實際結果或狀態變化。
 
 測試涵蓋不到、仍須人工確認的部分：
 
@@ -317,20 +338,21 @@ node tests/run.mjs
 
 - 首頁由世界時區地圖、國家入口卡片與旅行時間軸組成；國家入口目前包含日本，以及韓國、泰國、紐西蘭、瑞典、冰島、美國、越南、大溪地與馬爾地夫的 Coming soon 卡片。
 - 全站視覺統一使用液態玻璃系統；亮色狀態為淡暖色底，暗色狀態為深暖色底，右上角按鈕直接切換 `glass`／`glass-dark` 並記憶使用者選擇。
-- 日本國家頁使用全視窗地區 showcase，目前包含北海道、東京、名古屋、大阪、伊勢志摩與福岡；地區頁路徑統一為 `countries/japan/<region>/index.html`。
+- 全站目前有 30 個 HTML 模板（首頁、日本國家頁與 28 個地區頁）；`tests/suites/pages.mjs` 對每一頁檢查本地資源、JavaScript 例外、`zh-Hant`、本地 `🧳` favicon、隱藏頁面捲軸、Logo 路徑與麵包屑。這些共用 chrome 規則修改時要同步更新測試。
+- 日本國家頁使用全視窗地區 showcase，目前包含 28 個地區（清單見 `tests/regions.mjs`）；地區頁路徑統一為 `countries/japan/<region>/index.html`。內容深度差異很大，從北海道的 78 列到只有單一景點的 4 列都有，這是資料撰寫的差距而非程式差異。
 - 地區頁固定包含 `overview`、`spots`、`food`、`stays`、`notes` 五個章節；分類導覽使用頁內錨點與 `IntersectionObserver` 更新狀態。
-- 地區 Hero 上方英文小標由 `region-detail.js` 依地區 class 顯示，例如 `HOKKAIDO`、`TOKYO`、`NAGOYA`、`OSAKA`、`ISE-SHIMA`、`FUKUOKA`。
-- `stays` 顯示為 `STAY`／「住宿」；交通目前不作為獨立內容呈現。住宿項目會在載入時轉換為與其他內容相同的條列項目結構。
+- 地區 Hero 上方英文小標由 `region-detail.js` 的 `regionNames` 依地區 class 顯示，例如 `HOKKAIDO`、`TOKYO`、`KUMAMOTO`。新增地區頁必須補上對應 key，否則小標會維持 HTML 裡的佔位文字。
+- `stays` 顯示為 `STAY`／「住宿」；交通目前不作為獨立內容呈現。住宿項目會在載入時轉換為與其他內容相同的條列項目結構。導覽列文字也必須是「住宿」——它寫死在 HTML 而標題由 JS 改寫，兩邊很容易各自漂移，已有測試在擋。
 - 景點、美食、住宿與旅行筆記項目統一使用左側標籤或年月、右側標題與敘述的編輯式條列卡片；項目之間可使用淡色 separator，但不可形成項目外框。
 - 所有上述內容項目支援滑鼠追蹤 radial 光暈、hover／focus 浮起與柔和陰影；動態新增項目必須透過事件代理自動取得相同互動。
 - 內容項目可用滑鼠、Enter 或 Space 開啟共用 modal。modal 必須支援背景點擊、關閉按鈕、Escape 關閉，以及關閉後恢復原本 focus。
 - modal 內文字訊息下方使用可垂直滑動、隱藏 scrollbar 的資料表；欄位順序固定為「地名、資訊、交通方式、Google Map」。資料列之間不使用分隔線，標題列與資料列之間只保留一條 separator。
 - Google Maps 使用 `https://www.google.com/maps/search/?api=1&query=...` 通用連結；桌面版以新分頁開啟，手機版交由系統優先開啟 Google Maps App，未安裝時回到行動網頁。
-- 小樽、定山溪、札幌的景點 modal 可使用各自獨立的地點資料表；不可讓所有內容項目共用同一份地點資料。小樽、定山溪與札幌的資料可持續擴充，但新增資料必須維持各自條件分支或資料來源。
+- 所有地點資料集中在單一的 `regionalVenueData`，結構固定為「地區 → 分類 → 項目標籤 → 資料列」。**不可為個別地區另開條件分支或專屬陣列**——北海道原本就是那樣寫的，結果六個地區各走各的路徑，重構時才併回來。每個項目仍有自己的資料表，但來源必須是同一個結構。
 - 目前互動集中在原生 Vanilla JavaScript：`main.js` 處理首頁，`region-showcase.js` 處理日本地區 showcase，`region-detail.js` 處理地區頁導覽、光暈、動態內容與 modal。
 - 全站目前有三種頁面模板：首頁（世界地圖、國家卡片、旅行時間軸）、國家頁（地區 showcase）、地區頁（Hero、分類導覽與五個內容章節）。新增同類型頁面時，應複製對應模板的 DOM 結構、相對 script 路徑與必要的頁面 class，不應另寫一套相似樣式。
 - 首頁同類型內容由 `.country-card`、`.timeline-entry` 與既有 `main.js` 初始化邏輯套用互動；新增國家卡片或時間軸項目必須保留既有 class、資料屬性、可及性標籤與正確相對連結。
-- 國家頁的 `.region-showcase-item` 由 `region-showcase.js` 統一處理背景切換、hover／focus、滑鼠追蹤光暈、局部按壓回彈、頁面轉場與 Font Awesome 導航 icon；新增項目會由 `MutationObserver` 自動綁定相同互動，必須提供 `data-image`、`href`、標題、描述與箭頭容器。
+- 國家頁的 `.region-showcase-item` 由 `region-showcase.js` 統一處理背景切換、hover／focus、滑鼠追蹤光暈、局部按壓回彈與 Font Awesome 導航 icon；新增項目會由 `MutationObserver` 自動綁定相同互動，必須提供 `data-image`、`href`、標題、描述與箭頭容器。國家頁沒有離場轉場（曾有一版 `.page-transition-layer`，已移除）；進入地區頁的視覺銜接由地區頁自己的 Hero 展開動畫負責。
 - 地區頁內容項目由 `region-detail.js` 的共用建立器與事件代理處理；新增景點、美食、住宿或旅行筆記時，不要手動複製互動事件，應使用既有建立器或符合既有 selector，讓光暈、focus、modal、Google Maps 表格與關閉後 focus 還原自動套用。
 - 新增頁面或項目完成後，必須檢查滑鼠、鍵盤 focus、觸控按壓、`prefers-reduced-motion`、空資料與動態插入情境，確認不會只在初始 HTML seed 上運作。
 - 首頁手機版時間軸改為垂直排列。點擊年份或圓點時**頁面完全不捲動**：捲動會讓標題與時間軸以外的內容整塊位移，比年份自己移動更突兀。
@@ -369,7 +391,7 @@ node tests/run.mjs
 - 每個分類可以有任意數量的項目，不得以三個項目作為固定上限。新增資料應透過共用 `createRegionContentItem()` 建立，讓 DOM 結構、focus、hover、光暈與 modal 行為一致。
 - 動態內容資料應以地區與分類建立清楚的資料結構，例如 `regionContent`、`regionAdditionalContent` 或獨立的分類資料 map；不要把不同地區的內容混在單一共用陣列中。
 - 每個景點、美食或住宿項目開啟 modal 後，資料表至少包含「地名、資訊、交通方式、Google Map」四欄；資料表內容必須依目前項目的地區／分類切換，不可因共用模板而顯示其他項目的資料。
-- 旅行筆記的標籤是年月而不是地點，開啟 modal 時 Google Map 欄位顯示「—」，不提供連結。
+- 旅行筆記的標籤是年月而不是地點，四個欄位沒有一欄填得出真實內容，因此開啟 modal 時**整張資料表隱藏**，不要填「待補充」之類的佔位字串充數。
 - 找不到對應地點資料時的 fallback，查詢字串必須帶入該項目**實際所在的地區**（由 `regionKey` 決定），絕不可寫死單一地區名；寫死會讓其他地區的項目全部連到錯誤位置。
 - Google Maps 使用 `https://www.google.com/maps/search/?api=1&query=...`；店家或景點名稱應使用 URL encode，桌面版開新分頁，手機版交由系統開啟 Google Maps App 或行動網頁。
 - 查詢結果若涉及價格、評價或「CP 值」，應以交通便利性、住宿／用餐實用性、官方推薦程度與行程彈性描述，不要把未驗證的即時價格寫入固定內容。

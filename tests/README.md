@@ -10,6 +10,7 @@ HTTP 伺服器與 WebSocket，直接透過 Chrome DevTools Protocol 驅動 headl
 node tests/run.mjs              # 全部
 node tests/run.mjs timeline     # 只跑檔名或群組名稱含關鍵字的
 node tests/run.mjs 手機版        # 中文關鍵字也可以
+node tests/run.mjs --jobs=1     # 完全序列，除錯時較好讀
 ```
 
 需求：Node 22 以上（要有內建的 `WebSocket`）與 Google Chrome。
@@ -19,6 +20,42 @@ Chrome 不在預設路徑時，用環境變數指定：
 CHROME_PATH="/path/to/chrome" node tests/run.mjs
 ```
 
+## 平行執行
+
+群組會分散到多個獨立的 Chrome 上同時執行，靜態伺服器共用一個。
+數量預設是核心數的一半（上限 6），可用 `--jobs=N` 或 `TEST_JOBS` 覆寫。
+
+12 核機器上的實測：
+
+| jobs | 1 | 2 | 4 | 6 | 8 |
+|---|---|---|---|---|---|
+| 總時間 | 244s | 124s | 99s | **86s** | 98s |
+
+每個 job 是一個完整的 Chrome，吃掉的是整顆核心而不是一個執行緒，
+所以超過半數核心之後會開始互搶而變慢。
+
+**輸出順序與序列執行完全一致**：結果先寫進以原始順序排列的陣列，
+某個群組完成後，只要它之前的都完成了就立刻印出。因此順序穩定，
+又不必等全部跑完才看得到進度。
+
+### 對時間敏感的群組
+
+有些群組以逐像素的相等比較斷言「頁面沒有捲動」，或在動畫中途取樣判斷是否正在滑動。
+多個 Chrome 互搶 CPU 時，平滑捲動的收尾會漂幾個像素而誤判——`jobs=8` 實測就出現過
+`切換年份時頁面不捲動 → 1595 → 1592`。
+
+這類群組在定義時標記 `{ serial: true }`，執行器會把它們留到平行階段之後獨佔執行：
+
+```js
+export const mobile = suite("時間軸 · 手機版互動", async (b, t) => {
+  // ...
+}, { serial: true });
+```
+
+目前有三個：`時間軸 · 手機版互動`、`時間軸 · 手機版年份滑動（FLIP）`、
+`首頁 · 國家卡片（手機版）`。獨佔階段約佔 19 秒，是為了穩定付的代價。
+新增會斷言捲動位置或動畫中途狀態的測試時，一併加上這個標記。
+
 離線環境下 amCharts、Font Awesome、Google Fonts 無法載入，
 地圖 marker 相關檢查會標記為「略過」而非失敗，其餘測試照常執行。
 
@@ -27,7 +64,8 @@ CHROME_PATH="/path/to/chrome" node tests/run.mjs
 ```text
 tests/
 ├── harness.mjs        # 靜態伺服器、Chrome 啟動、CDP 封裝、斷言記錄
-├── run.mjs            # 執行器
+├── regions.mjs        # 地區頁清單的單一來源，各群組由此推導
+├── run.mjs            # 執行器（平行排程、順序化輸出）
 └── suites/
     ├── pages.mjs            # 全站載入、資源路徑、內部連結、可及性
     ├── home-map.mjs         # 世界地圖 marker、時區 tooltip、已探索與旅行足跡

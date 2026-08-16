@@ -305,4 +305,4 @@ export const cardsMobile = suite("首頁 · 國家卡片（手機版）", async 
     comingSoonTap.path === "/index.html" && comingSoonTap.focused && comingSoonTap.centered,
     JSON.stringify(comingSoonTap));
   t.check("手機版無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
-});
+}, { serial: true });

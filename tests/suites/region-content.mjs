@@ -113,6 +113,20 @@ export const nav = suite("地區頁 · 分類導覽", async (b, t) => {
   t.check("導覽列具備光暈指示器",
     await b.eval(`!!document.querySelector(".region-nav-glass-indicator")`));
 
+  // 導覽列文字寫死在 HTML，章節標題卻由 JS 改寫（#stays 會被改成「住宿」），
+  // 兩者很容易各自漂移。#overview 例外：它的標題是一句話而不是標籤。
+  const mismatched = await b.eval(`(() => {
+    return [...document.querySelectorAll(".region-section-nav a")]
+      .map((link) => {
+        const id = link.getAttribute("href").slice(1);
+        const heading = document.querySelector("#" + id + " h2")?.textContent?.trim();
+        return { id, nav: link.textContent.trim(), heading };
+      })
+      .filter((x) => x.id !== "overview" && x.nav !== x.heading);
+  })()`);
+  t.check("導覽列文字與章節標題一致", mismatched.length === 0,
+    mismatched.map((x) => `${x.id}: 導覽「${x.nav}」vs 標題「${x.heading}」`).join("；") || "全部一致");
+
   const before = await b.eval("Math.round(window.scrollY)");
   await b.click('.region-section-nav a[href="#food"]');
   // 捲動時長依距離而定（最長 3.2 秒），內容變多時固定 sleep 會提早判斷。
