@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 專案性質
 
-純前端靜態旅遊網站，部署於 GitHub Pages（`main` branch 根目錄）。**沒有建置流程、沒有套件管理、沒有測試框架、沒有後端。** 原生 HTML + CSS + Vanilla JS，所有頁面必須能以 `file://` 直接開啟。
+純前端靜態旅遊網站，部署於 GitHub Pages（`main` branch 根目錄）。**沒有建置流程、沒有套件管理、沒有後端。** 原生 HTML + CSS + Vanilla JS，所有頁面必須能以 `file://` 直接開啟。
+
+唯一的例外是 `tests/`：一套零依賴的瀏覽器行為測試（Node 內建 HTTP server + WebSocket 直接驅動 Chrome DevTools Protocol）。它只在本機執行，不影響部署，也不引入 `package.json`。
 
 `AGENTS.md` 是本專案的設計規範（視覺風格、互動細節、資料撰寫規則），內容遠比本檔詳細；修改視覺或互動前先讀它。本檔只描述**架構與程式運作方式**。
 
@@ -15,11 +17,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 open index.html                     # 直接以 file:// 開啟
 python3 -m http.server 8000         # 靜態伺服器，http://localhost:8000
 
-# 修改後檢查（沒有 lint / test，這是唯一的自動檢查）
+# 自動測試（需 Node 22+ 與 Google Chrome，全部跑約 2 分鐘）
+node tests/run.mjs                  # 全部：25 個群組
+node tests/run.mjs timeline         # 只跑檔名或群組名稱含關鍵字的
+node tests/run.mjs 手機版            # 中文關鍵字也可以
+CHROME_PATH="/path/to/chrome" node tests/run.mjs
+
 git diff --check
 ```
 
-驗證只能靠瀏覽器手動確認。至少檢查：首頁、日本國家頁，以及 hokkaido / tokyo / nagoya / osaka / ise-shima / fukuoka 六個地區頁。
+測試涵蓋 DOM 狀態、CSS 計算值、捲動位置、動畫中途取樣、鍵盤與 focus 行為、資源載入、連結有效性。**不涵蓋**實機觸控手感與視覺美感，這些仍要手動確認：首頁、日本國家頁，以及 hokkaido / tokyo / nagoya / osaka / ise-shima / fukuoka 六個地區頁。
+
+改動互動或動畫時，除了「測試通過」，還要確認**測試會因為這個改動而失敗**——把修正還原一次，看它有沒有紅。細節見 `tests/README.md`（含三個容易踩到的 CDP 陷阱）。
 
 ## 三種頁面模板
 
@@ -33,39 +42,41 @@ git diff --check
 
 **script 順序是硬性需求**：`themes.js` 宣告全域 `const themes`，`theme-switcher.js` 直接依賴它。所有 script 放在 `</body>` 前、無 `defer`、無 `DOMContentLoaded` 包裝，頂層程式碼即時執行。
 
+所有頁面的 `<title>` 統一是「出去玩」，並掛同一個 `assets/images/favicon.svg`（依深度調整相對路徑）。頁面身分靠 breadcrumb 呈現，不靠 title。
+
 ## 核心架構：HTML 是 seed，內容由 JS 注入
 
-這是本專案最容易誤判的一點。**地區頁 HTML 只保留最小化的佔位結構，實際內容由 `region-detail.js` 在載入時依地區注入或覆寫。**
+這是本專案最容易誤判的一點。**HTML 只保留最小化的佔位結構，實際內容由 JS 在載入時注入或覆寫。判斷 HTML 是否「已完成」時必須看瀏覽器執行後的 DOM，不能只看原始碼。**
 
-- 判斷 HTML 是否「已完成」時，必須看瀏覽器執行後的 DOM，不能只看 HTML 原始碼。
-- 例：HTML 裡 `#stays` 章節寫的是「住宿與交通」＋`.region-facts-wide`；`region-detail.js` 會把標題改寫成 `STAY`／「住宿」，並把 facts 轉成 `.region-content-list`。
-- 例：地區頁 HTML 仍保留舊版 5 主題 `<details class="theme-menu">` 選單；`theme-switcher.js` 會在執行時把它 `replaceWith` 成單一亮暗切換按鈕。首頁與國家頁已直接寫成新按鈕。修改主題 UI 要同時考慮這兩種輸入。
+**地區頁**：`region-detail.js` 依地區注入內容。例：HTML 裡 `#stays` 章節寫的是「住宿與交通」＋`.region-facts-wide`，執行後標題被改寫成 `STAY`／「住宿」，facts 轉成 `.region-content-list`。
 
-首頁時間軸同理：`main.js` 讀取 HTML 中 `.timeline-entry[data-date]`，`replaceChildren()` 清空 `.timeline-track` 後，依 `data-date` 推導年份範圍（最早年份 → `max(今年+1, 最晚一筆)`）重建整個年份群組結構。HTML 裡的時間軸只是資料來源。
+**首頁時間軸**：`main.js` 讀取 HTML 中 `.timeline-entry[data-date]`，`replaceChildren()` 清空 `.timeline-track` 後，依 `data-date` 推導年份範圍（最早年份 → `max(今年+1, 最晚一筆)`）重建整個年份群組結構。HTML 裡的時間軸只是資料來源。
 
 時間軸項目同時是地圖右上「已探索」清單與右下「旅行足跡」數字的唯一資料來源：`data-country` 決定國家清單與國家數，`data-country` + `data-region` 的組合決定地區數，項目總數即旅行節點數。這三處都是 JS 產生的，不要在 HTML 裡寫死。
 
+**首頁國家卡片**：`main.js` 會為每張 `<a class="country-card">` 補上 `.country-meta-action` 與 `.country-card-more`（「查看更多」）。HTML 已經有就沿用，沒有就建立——新增國家卡片時不必自己寫這段。`<div>` 形式的 coming soon 卡片不會被加。
+
 ## region-detail.js 的資料流
 
-地區身分由 `.region-hero` 上的 `region-hero-<region>` class 決定，解析成 `regionKey`（如 `tokyo`、`ise-shima`）。所有資料 map 都以此為 key：
+地區身分由 `.region-hero` 上的 `region-hero-<region>` class 決定，解析成 `regionKey`（如 `tokyo`、`ise-shima`）。**六個地區走完全相同的程式路徑**，沒有任何地區有專屬分支。所有資料 map 都以 `regionKey` 為 key：
 
 1. `regionContent[regionKey]` — 覆寫前 N 筆 spots / food，以及 stay、note 文字。
-2. `regionAdditionalContent[regionKey]` — 額外 append 的 spots / food / stays / notes。
-3. `stayBaseContent[regionKey]` — `#stays` 第一筆項目的內容。
-4. 北海道**不在** `regionContent` 中，改由檔案上方一段獨立的 `if (document.querySelector('.region-hero-hokkaido'))` 分支處理（含 `spotContent`、`foodContent` 陣列）。新增北海道內容要改那段，不是改 `regionContent`。
+2. `stayBaseContent[regionKey]` — `#stays` 第一筆項目的內容。
+3. `regionAdditionalContent[regionKey]` — 額外 append 的 spots / food / stays / notes。
+4. `regionSearchNames[regionKey]` — 查地圖時補在關鍵字後面的地區名。
 
 所有動態項目一律透過 `createRegionContentItem(type)`（`'card'` 給 `.region-card-grid`，`'list'` 給 `.region-content-list`）建立，確保 DOM 結構一致。
 
 ### Modal 資料表的查表順序
 
-點擊任一內容項目會開啟共用 modal，`renderItemTable(item)` 以「項目 `<span>` 的文字」＋「所屬 section id」決定表格內容，依序嘗試：
+點擊任一內容項目會開啟共用 modal，`renderItemTable(item)` 以「項目 `<span>` 的文字」＋「所屬 section id」查表，只有兩層：
 
-1. `regionalVenueData[regionKey][sectionName][place]` — 東京／名古屋／大阪／伊勢志摩／福岡的統一資料來源。
-2. 北海道景點專屬陣列：`otaruPlaces`、`jozankeiPlaces`、`sapporoPlaces`，以及 `{旭川, 美瑛, 函館}` 對應的 `asahikawaPlaces` / `bieiPlaces` / `hakodatePlaces`。
-3. `hokkaidoFoodPlaces[place]`（`#food`）、`hokkaidoStayPlaces[place]`（`#stays`）。
-4. Fallback：單列表格，查詢字串會補上 `regionSearchNames` 對應的地區名（例：`原宿 東京`）。`#notes` 章節不產生地圖連結，欄位顯示 `—`，因為筆記的標籤是年月而非地點。
+1. `regionalVenueData[regionKey][sectionName][place]` — 六個地區統一的資料來源，結構固定是「地區 → 分類 → 項目標籤 → 資料列陣列」。每筆資料列是 `[名稱, 說明, 交通, 地圖網址?]`，第四欄省略時自動以名稱產生 Google Maps 查詢。
+2. Fallback：單列表格，查詢字串補上 `regionSearchNames[regionKey]`（例：`原宿 東京`）。`#notes` 章節不產生地圖連結，欄位顯示 `—`，因為筆記的標籤是年月而非地點。
 
-Google Maps 連結統一使用 `https://www.google.com/maps/search/?api=1&query=<encodeURIComponent(名稱)>`，`target="_blank" rel="noopener noreferrer"`。
+Google Maps 連結統一由 `mapSearchUrl()` 產生（`https://www.google.com/maps/search/?api=1&query=<encodeURIComponent(名稱)>`），儲存格統一由 `mapCell()` 產生（`target="_blank" rel="noopener noreferrer"`）。渲染統一走 `renderRows()`——不要為單一地區另寫渲染函式。
+
+**內容深度落差**：北海道在 `regionalVenueData` 裡有約 60 列資料，其他五個地區各 13～19 列，因此其他地區較常落到 fallback。這是**資料撰寫**的差距，不是程式差異；補內容就是往 `regionalVenueData` 加項目。
 
 ## 互動實作慣例
 
@@ -73,19 +84,20 @@ Google Maps 連結統一使用 `https://www.google.com/maps/search/?api=1&query=
 
 - **滑鼠追蹤光暈**：在 `requestAnimationFrame` 中把游標相對座標寫進 `--pointer-x` / `--pointer-y` CSS custom property，由 CSS 的 radial-gradient 使用。絕不對 `left`/`top` 加 transition。同樣模式也用在 `--card-pointer-x`、`--press-x`、`--timeline-pointer-x`、`--map-pointer-x`。
 - **事件代理**：`region-detail.js` 底部在 `document` 上代理 `pointermove` / `pointerout` / `focusin` / `focusout`（selector 為 `glowSelector`），所以動態新增的項目自動取得光暈。新增內容時**不要**手動綁事件。
-- **MutationObserver**：`region-showcase.js` 監看 `.region-showcase-list`，新加入的 `.region-showcase-item` 會自動綁定背景切換、按壓回彈與頁面轉場。項目必須提供 `data-image` 與 `href`。
-- **狀態 class**：`is-active`、`is-expanded`、`is-pointer-active`、`is-pressed`、`is-switching`、`is-page-leaving`、`is-region-entering/entered`、`modal-is-open`。
-- **桌機／手機分流**：斷點統一為 `window.matchMedia("(max-width: 700px)")`，時間軸與地圖有完全不同的互動邏輯分支。
-- **reduced motion**：`prefers-reduced-motion` 下自訂平滑捲動改為瞬間跳轉、動畫停用。新增動畫必須一併處理。
-- **自訂平滑捲動**：不使用 `scroll-behavior`，一律用 `requestAnimationFrame` + 自訂 easing（`main.js` 的 `animatePageScrollTo`、`region-detail.js` 導覽列的 `ease`），並扣除 header + sticky nav 高度。
+- **MutationObserver**：`region-showcase.js` 監看 `.region-showcase-list`，新加入的 `.region-showcase-item` 會自動綁定背景切換、按壓回彈與 IntersectionObserver。項目必須提供 `data-image` 與 `href`。
+- **狀態 class**：`is-active`、`is-expanded`、`is-pointer-active`、`is-pressed`、`is-releasing`、`is-switching`、`is-gliding`、`is-hidden`、`is-edge-shadowless`、`is-mobile-focused`、`is-mobile-activated`、`is-region-entering/entered`、`modal-is-open`。
+- **桌機／手機分流**：斷點統一為 `window.matchMedia("(max-width: 700px)")`，時間軸、地圖與國家卡片列有完全不同的互動邏輯分支。
+- **reduced motion**：`prefers-reduced-motion` 下捲動改為瞬間跳轉、動畫停用。新增動畫必須一併處理，且要有對應測試。
+- **捲動**：容器內的捲動（時間軸橫向、國家卡片列）用原生 `scrollTo({ behavior: "smooth" })`；整頁捲動只有地區頁導覽列在用，是 `requestAnimationFrame` + 自訂 easing（`region-detail.js` 的 `ease`），並扣除 header + sticky nav 高度。**手機版時間軸點年份或點節點時，頁面完全不捲動**——這是刻意的，捲動會讓時間軸以外的內容整塊位移。
+- **FLIP**：`display` 切換造成的位移 CSS transition 接不到，改用 FLIP（`main.js` 的 `glideYearGroups`）：記錄前後位置差 → 用 transform 移回原位 → 下一幀放手滑到新位置。
+
+進入地區頁時 `region-detail.js` 會加上 `is-region-entering` / `is-region-entered`，Hero 以 clip-path 由中央展開。國家頁**沒有**離場轉場（曾經有一版 `.page-transition-layer`，已移除）。
 
 ## 主題系統
 
-`themes.js` 只定義兩個主題：`glass`（`theme-glass`）與 `glass-dark`（`theme-glass-dark`）。`theme-switcher.js` 以 `document.body.className` 的 `theme-*` 前綴切換，狀態存在 `localStorage` 的 `travel-journal-theme`。
+`themes.js` 只定義兩個主題：`glass`（`theme-glass`）與 `glass-dark`（`theme-glass-dark`）。`theme-switcher.js` 以 `document.body.className` 的 `theme-*` 前綴切換，狀態存在 `localStorage` 的 `travel-journal-theme`。所有頁面的切換按鈕都是同一個 `.theme-toggle`，HTML 裡直接寫好，JS 只負責換 icon 與 aria 狀態。
 
-`style.css` 仍留有 `theme-ocean` / `theme-phototravel` / `theme-retro` / `theme-city` 的舊變數與規則，**已無程式路徑可觸發**，屬遺留樣式，不要以它們為基準修改配色。
-
-配色透過 `:root` 的 CSS 變數（`--ink`、`--muted`、`--paper`、`--surface`、`--accent`、`--line`）由 body theme class 覆寫；新增樣式一律使用這些變數。
+配色透過 `:root` 的 CSS 變數（`--ink`、`--muted`、`--paper`、`--surface`、`--accent`、`--line`）由 body theme class 覆寫；新增樣式一律使用這些變數，不要寫死顏色。
 
 ## 首頁世界地圖
 
@@ -93,11 +105,27 @@ amCharts 5 由 CDN 載入（`am5`、`am5map`、`worldTimeZonesHigh`、`worldTime
 
 marker 由 `main.js` 頂端的 `travelDestinations` 陣列產生：每筆資料建立一個 `<button class="country-marker">`，位置以 `chart.convert()` 換算並在 `boundschanged` 時重新定位，tooltip、地圖多邊形高亮（以 `code`／`mapId` 比對）與點擊連結都來自同一筆資料。新增國家只需在陣列加一筆，不要另外在 HTML 寫死 marker。
 
-夜晚區域 `#night-zone` 由 `updateDayNight()` 依 UTC 時間計算經度後定位，每 60 秒更新一次。
+**夜晚區域是三份**：`.night-zone-viewport`（`overflow: hidden`）裡有三個 `.night-zone`，`data-night-zone-offset` 為 `0` / `-1` / `1`。`updateDayNight()` 依 UTC 時間算出經度後，把三份各偏移一個地圖寬度定位——遮罩跨過日期變更線時由另一側補位，既不留空白也不滲出地圖圓角外。每 60 秒與 resize 時更新。修改時三份要一起處理（例：`data-map-action="night"` 的切換是 `forEach` 全部 toggle）。
+
+## 首頁國家卡片列
+
+`.country-strip` 桌機與手機是兩套互動：
+
+- **桌機**：hover／`is-pointer-active` 觸發 3D 傾斜與鄰居推擠（`--card-push`）。`is-edge-shadowless` 由 `syncEdgeCardShadows()` 在 rAF 中計算，讓貼近容器左右 64px 內的卡片去掉陰影，避免陰影溢出邊界；只在 `min-width: 701px` 生效。
+- **手機**：橫向 scroll-snap。點卡片**不會直接導航**——第一下把卡片置中並標記 `is-mobile-focused` / `is-mobile-activated`（展開「查看更多」），第二下才前往。捲動時 `syncMobileFocusedCard()` 以「最接近容器中心」重算焦點，點卡片列以外的地方會清除焦點。
+
+新增國家卡片只要照既有 `.country-card` 結構寫，兩套互動與「查看更多」都會自動套用。
+
+## 已知的遺留物
+
+- `style.css` 仍有 `hero-cover`、`region-card-action`、`region-card-featured` 三個沒有對應 HTML 的 class，因為它們夾在共用 selector 裡，單獨拔除的風險大於收益。
+- `@media (max-width: 700px)` 有 12 個區塊、`prefers-reduced-motion` 有 11 個，且有少數重複宣告（例：`.region-showcase-item` 的 `grid-template-columns` 在手機版被宣告兩次，後者勝出）。合併會改變宣告順序，要做的話得逐塊合併並每次跑測試 + 截圖比對。
+- `style.css` 的 `.timeline-entry-japan .timeline-card` 背景圖仍指向 Unsplash CDN（全站唯一一處），與 AGENTS.md 的「圖片優先下載至 `assets/images/`」不一致。
 
 ## 新增內容的檢查點
 
-- 新增國家：`countries/<country>/index.html` + `countries/<country>/<region>/index.html`，並在首頁加 `.country-card`（尚未建頁時用非連結的 `<div>`，不可留失效連結）。
-- 新增地區頁：需要 `region-hero-<region>` class、五個章節 id（`overview` / `spots` / `food` / `stays` / `notes`），並在 `region-detail.js` 的 `regionNames`、`regionContent`、`stayBaseContent`、`regionalVenueData` 補上對應 key。
+- 新增國家：`countries/<country>/index.html` + `countries/<country>/<region>/index.html`，在 `main.js` 的 `travelDestinations` 加一筆，並在首頁加 `.country-card`（尚未建頁時用非連結的 `<div>`，不可留失效連結）。
+- 新增地區頁：需要 `region-hero-<region>` class、五個章節 id（`overview` / `spots` / `food` / `stays` / `notes`），並在 `region-detail.js` 的 `regionNames`、`regionSearchNames`、`regionContent`、`stayBaseContent`、`regionalVenueData` 補上對應 key。
+- 新增時間軸項目：`.timeline-entry` 必須有 `data-date`、`data-country`、`data-region`，缺 `data-date` 會被跳過並在 console 警告。
 - 圖片放 `assets/images/`，不依賴圖片 CDN。
 - GitHub Pages 大小寫敏感，路徑大小寫必須與檔案系統完全一致。
