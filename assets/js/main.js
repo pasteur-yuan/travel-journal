@@ -207,9 +207,10 @@ if (worldMap && timezoneLabel) {
   if (window.am5 && window.am5map) {
     am5.ready(() => {
       const root = am5.Root.new("timezone-chart");
+      root._logo?.dispose();
       root.setThemes([]);
       const chart = root.container.children.push(am5map.MapChart.new(root, {
-        panX: "translateX", panY: "translateY", projection: am5map.geoMercator(), wheelY: "none"
+        panX: "none", panY: "none", pinchZoom: false, projection: am5map.geoMercator(), wheelY: "none"
       }));
       const zones = chart.series.push(am5map.MapPolygonSeries.new(root, { geoJSON: am5geodata_worldTimeZonesHigh }));
       zones.mapPolygons.template.setAll({ fill: am5.color(0x76b9b4), fillOpacity: 0.16, stroke: am5.color(0x709997), strokeOpacity: 0.34, strokeWidth: 0.6, interactive: true });
@@ -253,8 +254,13 @@ if (worldMap && timezoneLabel) {
         latitude: 35.6762,
         longitude: 139.6503
       });
-      chart.set("zoomLevel", 1.42);
-      chart.set("centerGeoPoint", { longitude: 0, latitude: 3 });
+      const isMobileMap = () => window.matchMedia("(max-width: 700px)").matches;
+      const setMapView = () => {
+        chart.set("zoomLevel", isMobileMap() ? 1 : 1.42);
+        chart.set("centerGeoPoint", { longitude: 0, latitude: isMobileMap() ? 8 : 3 });
+      };
+      setMapView();
+      window.addEventListener("resize", setMapView, { passive: true });
       if (japanMarker) {
         const positionJapanMarker = () => {
           const point = chart.convert({ longitude: 139.6503, latitude: 35.6762 });
@@ -279,6 +285,7 @@ if (worldMap && timezoneLabel) {
         chart.events.on("boundschanged", positionJapanMarker);
         japanMarker.addEventListener("pointerenter", showJapanTooltip);
         japanMarker.addEventListener("pointerleave", hideJapanTooltip);
+        japanMarker.addEventListener("pointerdown", showJapanTooltip);
         japanMarker.addEventListener("focus", showJapanTooltip);
         japanMarker.addEventListener("blur", hideJapanTooltip);
         japanMarker.addEventListener("click", () => { window.location.href = "countries/japan/index.html"; });
@@ -287,8 +294,7 @@ if (worldMap && timezoneLabel) {
         button.addEventListener("click", () => {
           const action = button.dataset.mapAction;
           if (action === "reset") {
-            chart.set("zoomLevel", 1.42);
-            chart.set("centerGeoPoint", { longitude: 0, latitude: 3 });
+            setMapView();
           }
           if (action === "night" && nightZone) nightZone.classList.toggle("is-hidden");
         });
