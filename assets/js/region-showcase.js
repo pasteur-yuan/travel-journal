@@ -58,13 +58,12 @@ if (regionShowcase) {
       }, releaseDelay);
       window.setTimeout(() => {
         item.classList.remove("is-releasing");
+        // 轉場層是滿版的 position: fixed，只把 clip-path 的起點設成被點項目的位置，
+        // 讓可見範圍從那裡擴張到整個畫面；照片的取景全程不變。
         const itemRect = item.getBoundingClientRect();
-        const layerRect = transitionLayer.getBoundingClientRect();
-        transitionLayer.style.left = `${itemRect.left - layerRect.left}px`;
-        transitionLayer.style.top = `${itemRect.top - layerRect.top}px`;
-        transitionLayer.style.width = `${itemRect.width}px`;
-        transitionLayer.style.height = `${itemRect.height}px`;
-        transitionLayer.style.setProperty("--transition-scale", `${Math.max(window.innerWidth / itemRect.width, window.innerHeight / itemRect.height) * 1.08}`);
+        transitionLayer.style.setProperty("--transition-clip",
+          `inset(${itemRect.top}px ${window.innerWidth - itemRect.right}px` +
+          ` ${window.innerHeight - itemRect.bottom}px ${itemRect.left}px round 1rem)`);
         transitionLayer.style.backgroundImage = `url("${item.dataset.image}")`;
         void transitionLayer.offsetWidth;
         document.body.classList.add("is-page-leaving");

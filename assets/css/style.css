@@ -304,10 +304,16 @@ body.is-region-entered .region-hero-content { opacity: 1; transform: translateY(
 .region-showcase-item:active, .region-showcase-item.is-pressed, .region-showcase-item.is-pressed:hover, .region-showcase-item.is-pressed:focus-visible { background: transparent; box-shadow: none; filter: none; transform: none !important; }
 .region-showcase-item:active::after, .region-showcase-item.is-pressed::after { opacity: .9; transform: translate(-50%, -50%) rotate(var(--press-rotate, -4deg)) skewX(var(--press-skew, 0deg)) scale(var(--press-scale-x, 1), .72); }
 .region-showcase-item.is-releasing::after { opacity: .38; transform: translate(-50%, -50%) rotate(var(--press-rotate, -4deg)) skewX(var(--press-skew, 0deg)) scale(1.12, .88); }
-.page-transition-layer { display: none; }
-body.is-page-leaving .page-transition-layer { transform: scale(var(--transition-scale, 1)); border-radius: 0; }
+/* 進入地區頁的轉場：被點的地區照片擴張填滿畫面，接續到地區頁同一張照片的 Hero，
+   讓兩個頁面之間有連續的視覺線索。
+   轉場層固定為滿版，照片一開始就以最終的滿版取景呈現，只有可見範圍由 clip-path
+   從項目位置擴張開來；起點由 region-showcase.js 依項目實際位置寫入 --transition-clip。
+   若改用 transform: scale 放大，寬扁的項目要蓋滿畫面得放大近 9 倍，
+   照片會被裁到只剩一小塊，落地時反而更跳。 */
+.page-transition-layer { position: fixed; inset: 0; z-index: 60; background-position: center; background-size: cover; opacity: 0; pointer-events: none; will-change: clip-path, opacity; clip-path: var(--transition-clip, inset(50% round 1rem)); }
+body.is-page-leaving .page-transition-layer { opacity: 1; clip-path: inset(0px 0px 0px 0px round 0px); transition: clip-path .5s cubic-bezier(.32, 0, .24, 1), opacity .16s ease; }
 body.is-page-leaving .region-showcase { opacity: 0; transform: scale(.985); filter: blur(5px); transition: opacity .72s ease, transform .72s cubic-bezier(.12,.72,.18,1), filter .72s ease; }
-@media (prefers-reduced-motion: reduce) { .page-transition-layer, body.is-page-leaving .region-showcase { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .page-transition-layer, body.is-page-leaving .page-transition-layer { display: none; } body.is-page-leaving .region-showcase { transition: none; } }
 .region-showcase-item:hover::before, .region-showcase-item:focus-visible::before { opacity: 1; }
 .region-showcase-item:hover h3, .region-showcase-item:focus-visible h3, .region-showcase-item.is-active h3 { color: #fff; }
 .region-showcase-item:hover p, .region-showcase-item:focus-visible p, .region-showcase-item.is-active p { color: #f0e8d8; opacity: 1; transform: translateY(0); }

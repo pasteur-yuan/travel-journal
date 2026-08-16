@@ -68,6 +68,11 @@ export const example = suite("群組名稱", async (b, t) => {
 若用 `document.dispatchEvent()` 模擬，`target` 會是 `document` 而測不出真實行為。
 改用 `b.hover()` 送出真的 `Input.dispatchMouseEvent`。
 
+**逐幀取樣動畫時，互動要在掛上取樣器之前完成。** 長時間執行的
+`Runtime.evaluate`（例如以 rAF 迴圈取樣到 600ms）會延後之後才送出的 Input 事件，
+互動因此被推到取樣結束之後，取樣結果會是一片靜止。正確順序是：
+先 hover 並靜置 → 掛上取樣器 → 短暫 sleep → 送出點擊。
+
 ## 這套測試涵蓋與不涵蓋的
 
 涵蓋：DOM 狀態、CSS 計算值、捲動位置、動畫中途取樣（位移是否遞減）、
