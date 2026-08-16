@@ -1,0 +1,98 @@
+// 時間軸的樣板行為：新增一筆旅程資料時，年份群組、互動與統計是否自動涵蓋。
+// 需要在載入前就改動 HTML，因此把變體寫成 repo 根目錄的暫存檔（相對路徑才會正確），
+// 檔名前綴 _test- 已列入 .gitignore，每個案例結束後刪除。
+import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import { suite } from "../harness.mjs";
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const baseHtml = readFileSync(join(repoRoot, "index.html"), "utf8");
+const ANCHOR = '<span class="timeline-year-marker">2026</span>';
+const YEAR = new Date().getFullYear();
+
+const entryHtml = ({ date, country = "🇹🇹 測試國", region = "測試地區" }) =>
+  `<a class="timeline-entry timeline-entry-japan"${date ? ` data-date="${date}"` : ""}` +
+  ` data-country="${country}" data-region="${region}" href="countries/japan/index.html"` +
+  ` aria-label="測試項目"><span class="timeline-dot" aria-hidden="true"></span>` +
+  `<span class="timeline-card"><span class="timeline-code">測試</span><strong>${region}</strong>` +
+  `<span>測試</span></span></a>`;
+
+async function withVariant(b, injected, fn) {
+  const name = `_test-timeline-${Math.random().toString(36).slice(2, 8)}.html`;
+  const file = join(repoRoot, name);
+  writeFileSync(file, baseHtml.replace(ANCHOR, injected + ANCHOR));
+  try {
+    await b.goto(`/${name}`, { settle: 1200 });
+    return await fn();
+  } finally {
+    try { unlinkSync(file); } catch { /* 已刪除 */ }
+  }
+}
+
+const layout = (b) => b.eval(`(() => {
+  const groups = [...document.querySelectorAll(".timeline-year-group")];
+  return {
+    years: groups.map(g => g.dataset.year),
+    perYear: Object.fromEntries(groups.map(g => [g.dataset.year, g.querySelectorAll(".timeline-entry").length])),
+    inTrack: document.querySelectorAll(".timeline-track .timeline-entry").length,
+    inDocument: document.querySelectorAll(".timeline-entry").length,
+    stats: [...document.querySelectorAll(".map-stats > span:not(.map-stats-label)")].map(s => s.textContent.trim())
+  };
+})()`);
+
+export const template = suite("時間軸 · 新增資料的樣板行為", async (b, t) => {
+  await b.desktop();
+
+  // 既有年份範圍內新增
+  await withVariant(b, entryHtml({ date: `${YEAR - 1}-03-02` }), async () => {
+    const info = await layout(b);
+    t.check("既有年份新增一筆會出現在該年份群組",
+      info.perYear[String(YEAR - 1)] >= 1 && info.inTrack === info.inDocument,
+      JSON.stringify(info.perYear));
+  });
+
+  // 早於現有最早年份
+  await withVariant(b, entryHtml({ date: `${YEAR - 4}-08-01` }), async () => {
+    const info = await layout(b);
+    t.check("更早的年份會自動延伸年份軸",
+      info.years.includes(String(YEAR - 4)), info.years.join(", "));
+    t.check("中間沒有旅程的年份仍會建立（時間軸連續）",
+      info.years.includes(String(YEAR - 3)), info.years.join(", "));
+  });
+
+  // 超過 currentYear + 1 的未來年份：先前會被靜默丟棄
+  await withVariant(b, entryHtml({ date: `${YEAR + 2}-05-05` }), async () => {
+    const info = await layout(b);
+    t.check("超過預留年份的未來旅程不會被丟棄",
+      info.years.includes(String(YEAR + 2)) && info.inTrack === info.inDocument,
+      `年份 ${info.years.join(", ")}；track ${info.inTrack} / document ${info.inDocument}`);
+    const clickable = await b.eval(
+      `!document.querySelector('.timeline-year-group[data-year="${YEAR + 2}"] .timeline-year-marker').disabled`);
+    t.check("已排定行程的未來年份可以點開", clickable);
+  });
+
+  // 缺少 data-date：先前會讓整條時間軸消失
+  await withVariant(b, entryHtml({ date: null }), async () => {
+    const info = await layout(b);
+    t.check("單筆日期無法解析時，其餘項目照常顯示",
+      info.years.length > 0 && info.inTrack > 0,
+      `${info.years.length} 個年份群組、${info.inTrack} 個項目`);
+    t.check("無效項目不會被算進時間軸",
+      info.inTrack < info.inDocument || info.inDocument === info.inTrack,
+      `track ${info.inTrack} / document ${info.inDocument}`);
+  });
+
+  // 統計數字要跟著新資料更新
+  await withVariant(b, entryHtml({ date: `${YEAR - 1}-04-04`, country: "🇹🇹 測試國", region: "測試地區" }), async () => {
+    const info = await layout(b);
+    t.check("新增旅程後國家數自動更新",
+      info.stats[0] !== "01 國家" && /^\d{2} 國家$/.test(info.stats[0]), info.stats[0]);
+    const legend = await b.eval(
+      `[...document.querySelectorAll(".map-legend > span:not(.map-legend-label)")].map(s => s.textContent)`);
+    t.check("新增旅程後已探索清單自動包含新國家",
+      legend.includes("🇹🇹 測試國"), JSON.stringify(legend));
+  });
+
+  t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
+});

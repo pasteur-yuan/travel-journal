@@ -4,3 +4,6 @@ Thumbs.db
 .idea/
 node_modules/
 dist/
+
+# 測試產生的暫存頁面
+_test-*.html
