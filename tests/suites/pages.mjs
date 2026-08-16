@@ -20,27 +20,42 @@ export const health = suite("全站 · 頁面載入與資源路徑", async (b, t
     await b.goto(path, { settle: 900 });
 
     // 只看本機資源；CDN（amCharts / Font Awesome / Google Fonts）失效不算頁面問題
-    const localFailures = b.failedRequests.filter((r) => r.includes("127.0.0.1"));
+    // 未宣告 favicon 時 Chrome 會自行探測 /favicon.ico；這不是頁面引用的本機資源。
+    const localFailures = b.failedRequests.filter((r) => r.includes("127.0.0.1") && !r.endsWith("/favicon.ico"));
     t.check(`${name}：本機資源全部載入成功`,
       localFailures.length === 0, localFailures.slice(0, 2).join("；") || "none");
     t.check(`${name}：無 JS 例外`, b.errors.length === 0, b.errors.join(" | ") || "none");
 
-    const shape = await b.eval(`(() => {
+    const shape = await b.eval(`(async () => {
       const brand = document.querySelector(".brand");
+      const favicon = document.querySelector('link[rel~="icon"]');
       const styles = [...document.styleSheets].filter(s => s.href && s.href.includes("127.0.0.1"));
+      const faviconIsSuitcase = favicon
+        ? await fetch(favicon.href).then((res) => res.text()).then((svg) => svg.includes(">🧳</text>")).catch(() => false)
+        : false;
       return {
         title: document.title,
         lang: document.documentElement.lang,
+        faviconHref: favicon?.href,
+        faviconIsSuitcase,
         brandHref: brand?.getAttribute("href"),
         localStylesLoaded: styles.every(s => { try { return s.cssRules.length > 0; } catch { return false; } }),
+        rootScrollbar: getComputedStyle(document.documentElement).scrollbarWidth,
+        bodyScrollbar: getComputedStyle(document.body).scrollbarWidth,
         current: document.querySelectorAll('[aria-current="page"]').length,
         footer: document.querySelector(".site-footer")?.textContent?.trim(),
         images: [...document.images].filter(i => !i.complete || i.naturalWidth === 0).map(i => i.src)
       };
     })()`);
 
-    t.check(`${name}：有標題與語言標記`,
-      shape.title.length > 0 && shape.lang === "zh-Hant", `${shape.title} / ${shape.lang}`);
+    t.check(`${name}：分頁標題為出去玩且有語言標記`,
+      shape.title === "出去玩" && shape.lang === "zh-Hant", `${shape.title} / ${shape.lang}`);
+    t.check(`${name}：使用本地行李箱 emoji favicon`,
+      (shape.faviconHref || "").endsWith("/assets/images/favicon.svg") && shape.faviconIsSuitcase,
+      `${shape.faviconHref} / suitcase=${shape.faviconIsSuitcase}`);
+    t.check(`${name}：頁面垂直捲動條維持隱藏`,
+      shape.rootScrollbar === "none" && shape.bodyScrollbar === "none",
+      `html=${shape.rootScrollbar}, body=${shape.bodyScrollbar}`);
     t.check(`${name}：本機樣式表確實套用`, shape.localStylesLoaded);
     t.check(`${name}：Logo 可回首頁`,
       (shape.brandHref || "").endsWith("index.html"), shape.brandHref);

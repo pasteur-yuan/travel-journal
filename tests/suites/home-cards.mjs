@@ -64,19 +64,42 @@ export const cards = suite("首頁 · 國家卡片", async (b, t) => {
     edgeCards.length >= 2 && edgeCards.every((card) => card.edgeMuted && card.shadow === "none"),
     JSON.stringify(edgeTreatment));
 
-  // hover 應套用滑鼠追蹤光暈與 3D 傾斜
+  const desktopMoreBefore = await b.eval(`(() => {
+    const card = document.querySelector(".country-card-japan");
+    const more = card.querySelector(".country-card-more");
+    const arrow = card.querySelector(".country-meta-arrow");
+    return {
+      moreOpacity: Number(getComputedStyle(more).opacity),
+      moreWidth: more.getBoundingClientRect().width,
+      arrowLeft: arrow.getBoundingClientRect().left
+    };
+  })()`);
+
+  // hover 應套用滑鼠追蹤光暈、3D 傾斜與子頁提示
   await b.hover(".country-card-japan");
+  await sleep(450);
   const hovered = await b.eval(`(() => {
     const c = document.querySelector(".country-card-japan");
     const read = (n) => c.style.getPropertyValue(n);
+    const more = c.querySelector(".country-card-more");
+    const arrow = c.querySelector(".country-meta-arrow");
     return { active: c.classList.contains("is-pointer-active"),
              glowX: read("--card-pointer-x"), tiltX: read("--card-tilt-x"),
-             shadowX: read("--card-shadow-x") };
+             shadowX: read("--card-shadow-x"),
+             moreOpacity: Number(getComputedStyle(more).opacity),
+             moreWidth: more.getBoundingClientRect().width,
+             moreClip: getComputedStyle(more).clipPath,
+             arrowLeft: arrow.getBoundingClientRect().left };
   })()`);
   t.check("hover 卡片會標記 is-pointer-active", hovered.active);
   t.check("hover 會設定滑鼠追蹤光暈座標", hovered.glowX !== "", hovered.glowX);
   t.check("hover 會設定 3D 傾斜角度", hovered.tiltX !== "", hovered.tiltX);
   t.check("hover 會設定陰影位移", hovered.shadowX !== "", hovered.shadowX);
+  t.check("桌面已建立國家頁的卡片 hover 時會由左向右露出查看更多並推動箭頭",
+    desktopMoreBefore.moreOpacity === 0 && desktopMoreBefore.moreWidth < 1 &&
+    hovered.moreOpacity > .9 && hovered.moreWidth > 40 && !hovered.moreClip.includes("100%") &&
+    hovered.arrowLeft > desktopMoreBefore.arrowLeft + 40,
+    JSON.stringify({ desktopMoreBefore, hovered }));
 
   // 移到另一張卡，前一張必須立即恢復
   await b.hover(".country-card-korea");
@@ -86,6 +109,21 @@ export const cards = suite("首頁 · 國家卡片", async (b, t) => {
   }))()`);
   t.check("移到相鄰卡片時前一張立即恢復", !switched.japan && switched.korea,
     `japan=${switched.japan} korea=${switched.korea}`);
+
+  await b.focus(".country-card-japan");
+  await sleep(450);
+  const keyboardMore = await b.eval(`(() => {
+    const card = document.querySelector(".country-card-japan");
+    const more = card.querySelector(".country-card-more");
+    return {
+      focused: document.activeElement === card,
+      moreOpacity: Number(getComputedStyle(more).opacity),
+      moreWidth: more.getBoundingClientRect().width
+    };
+  })()`);
+  t.check("桌面鍵盤 focus 同樣會露出查看更多", keyboardMore.focused && keyboardMore.moreOpacity > .9 && keyboardMore.moreWidth > 40,
+    JSON.stringify(keyboardMore));
+  await b.eval(`document.activeElement?.blur()`);
 
   // 離開卡片列，所有卡片恢復
   await b.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 5, y: 5, button: "none" });
@@ -153,7 +191,15 @@ export const cardsMobile = suite("首頁 · 國家卡片（手機版）", async 
     for (let y = top; y <= bottom; y += 12) {
       for (let x = left; x <= right; x += 4) {
         if (document.elementFromPoint(x, y)?.closest(".country-card") === target) {
-          return { point: { x, y }, strip: { left: strip.left, right: strip.right }, card: { left: card.left, right: card.right } };
+          const outgoing = document.querySelectorAll(".country-card")[4].getBoundingClientRect();
+          return {
+            point: { x, y },
+            scrollLeft: document.querySelector(".country-strip").scrollLeft,
+            incomingCenter: (card.left + card.right) / 2,
+            outgoingCenter: (outgoing.left + outgoing.right) / 2,
+            strip: { left: strip.left, right: strip.right },
+            card: { left: card.left, right: card.right }
+          };
         }
       }
     }
@@ -165,23 +211,32 @@ export const cardsMobile = suite("首頁 · 國家卡片（手機版）", async 
   if (neighborPoint) {
     await b.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [neighborPoint] });
     await b.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    await sleep(80);
+    await sleep(120);
     const handoffStart = await b.eval(`(() => ({
-      centering: document.querySelector(".country-strip").classList.contains("is-mobile-centering"),
-      focusedIndex: [...document.querySelectorAll(".country-card")].findIndex((card) => card.classList.contains("is-mobile-focused"))
+      focusedIndex: [...document.querySelectorAll(".country-card")].findIndex((card) => card.classList.contains("is-mobile-focused")),
+      scrollProgress: document.querySelector(".country-strip").scrollLeft - ${neighborProbe.scrollLeft},
+      incomingProgress: ${neighborProbe.incomingCenter} - (() => {
+        const card = document.querySelectorAll(".country-card")[5].getBoundingClientRect();
+        return (card.left + card.right) / 2;
+      })(),
+      outgoingProgress: ${neighborProbe.outgoingCenter} - (() => {
+        const card = document.querySelectorAll(".country-card")[4].getBoundingClientRect();
+        return (card.left + card.right) / 2;
+      })()
     }))()`);
     await sleep(1000);
     const handoffEnd = await b.eval(`(() => {
       const strip = document.querySelector(".country-strip").getBoundingClientRect();
       const card = document.querySelectorAll(".country-card")[5].getBoundingClientRect();
       return {
-        centering: document.querySelector(".country-strip").classList.contains("is-mobile-centering"),
         focusedIndex: [...document.querySelectorAll(".country-card")].findIndex((item) => item.classList.contains("is-mobile-focused")),
         centered: Math.abs((card.left + card.right) / 2 - (strip.left + strip.right) / 2) < 8
       };
     })()`);
-    t.check("切換鄰居焦點時先收束、再平順置中",
-      handoffStart.centering && handoffStart.focusedIndex === 5 && !handoffEnd.centering && handoffEnd.focusedIndex === 5 && handoffEnd.centered,
+    t.check("切換鄰居焦點時被點擊卡片立即接手並同步帶動兩張卡片",
+      handoffStart.focusedIndex === 5 && handoffStart.scrollProgress > 4 &&
+      handoffStart.incomingProgress > 4 && handoffStart.outgoingProgress > 4 &&
+      handoffEnd.focusedIndex === 5 && handoffEnd.centered,
       JSON.stringify({ handoffStart, handoffEnd }));
   }
 

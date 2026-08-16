@@ -295,8 +295,6 @@ if (countryStrip) {
   let mobileActivatedCard = null;
   let mobileCenteringCard = null;
   let mobileCenterTarget = 0;
-  let mobileCenterTimer = 0;
-  let mobileFocusBeforePress = null;
   const isMobileCountryStrip = () => window.matchMedia("(max-width: 700px)").matches;
   countryCards.filter((card) => card.tagName === "A").forEach((card) => {
     const meta = card.querySelector(".country-meta");
@@ -347,13 +345,9 @@ if (countryStrip) {
   };
   const clearMobileCardFocus = () => {
     if (mobileFocusFrame) window.cancelAnimationFrame(mobileFocusFrame);
-    if (mobileCenterTimer) window.clearTimeout(mobileCenterTimer);
     mobileFocusFrame = 0;
-    mobileCenterTimer = 0;
     mobileActivatedCard = null;
     mobileCenteringCard = null;
-    mobileFocusBeforePress = null;
-    countryStrip.classList.remove("is-mobile-centering");
     countryCards.forEach((card) => card.classList.remove("is-mobile-focused", "is-mobile-activated"));
   };
   const centerMobileCard = (card) => {
@@ -372,11 +366,8 @@ if (countryStrip) {
   const syncMobileFocusedCard = () => {
     mobileFocusFrame = 0;
     if (!isMobileCountryStrip()) {
-      if (mobileCenterTimer) window.clearTimeout(mobileCenterTimer);
-      mobileCenterTimer = 0;
       mobileActivatedCard = null;
       mobileCenteringCard = null;
-      countryStrip.classList.remove("is-mobile-centering");
       countryCards.forEach((card) => card.classList.remove("is-mobile-focused", "is-mobile-activated"));
       return;
     }
@@ -391,9 +382,8 @@ if (countryStrip) {
       mobileActivatedCard = null;
     }
     setMobileFocusedCard(selectedCard);
-    if (mobileCenteringCard && !mobileCenterTimer && Math.abs(countryStrip.scrollLeft - mobileCenterTarget) < 2) {
+    if (mobileCenteringCard && Math.abs(countryStrip.scrollLeft - mobileCenterTarget) < 2) {
       mobileCenteringCard = null;
-      countryStrip.classList.remove("is-mobile-centering");
     }
   };
   const scheduleMobileFocusSync = () => {
@@ -446,29 +436,11 @@ if (countryStrip) {
     const canNavigate = card.tagName === "A";
     if (canNavigate && card === mobileActivatedCard && card.classList.contains("is-mobile-activated")) return;
     event.preventDefault();
-    const previousFocusedCard = mobileFocusBeforePress || countryCards.find((item) => item.classList.contains("is-mobile-focused"));
-    mobileFocusBeforePress = null;
     mobileActivatedCard = canNavigate ? card : null;
     setMobileFocusedCard(card);
-    const stagedHandoff = previousFocusedCard && previousFocusedCard !== card &&
-      !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (stagedHandoff) {
-      countryStrip.classList.add("is-mobile-centering");
-      mobileCenteringCard = card;
-      if (mobileCenterTimer) window.clearTimeout(mobileCenterTimer);
-      mobileCenterTimer = window.setTimeout(() => {
-        mobileCenterTimer = 0;
-        centerMobileCard(card);
-      }, 260);
-    } else {
-      centerMobileCard(card);
-    }
+    // 置中與焦點樣式同時開始，讓被點擊的鄰居接手時同步推開原本的焦點卡片。
+    centerMobileCard(card);
   });
-  countryStrip.addEventListener("pointerdown", (event) => {
-    if (!isMobileCountryStrip()) return;
-    const card = event.target.closest?.(".country-card");
-    mobileFocusBeforePress = card ? countryCards.find((item) => item.classList.contains("is-mobile-focused")) || null : null;
-  }, { passive: true });
   document.addEventListener("pointerdown", (event) => {
     if (!isMobileCountryStrip()) return;
     const card = event.target.closest?.(".country-card");
