@@ -60,8 +60,16 @@ const updateTimelineGlow = (group) => {
   window.requestAnimationFrame(() => window.requestAnimationFrame(update));
 };
 
-if (timelineTrack && timelineEntries.length) {
-  const entries = [...timelineEntries];
+// 單一筆 data-date 缺失或無法解析，會讓年份計算變成 NaN、years 變成空陣列，
+// 整條時間軸就會消失。先濾掉並在 console 指出是哪一筆，其餘項目照常顯示。
+const datedTimelineEntries = [...timelineEntries].filter((entry) => {
+  if (Number.isFinite(new Date(entry.dataset.date).getFullYear())) return true;
+  console.warn("時間軸項目的 data-date 缺少或無法解析，已略過：", entry);
+  return false;
+});
+
+if (timelineTrack && datedTimelineEntries.length) {
+  const entries = datedTimelineEntries;
   entries.forEach((entry) => {
     entry.addEventListener("pointermove", (event) => {
       const card = entry.querySelector(".timeline-card");
@@ -74,7 +82,10 @@ if (timelineTrack && timelineEntries.length) {
   const entryYears = entries.map((entry) => new Date(entry.dataset.date).getFullYear());
   const firstYear = Math.min(...entryYears);
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: Math.max(1, currentYear - firstYear + 2) }, (_, index) => firstYear + index);
+  // 年份軸必須涵蓋所有資料，並固定預留下一年。只算到今年的話，
+  // 更晚的旅程不會有對應群組，會在 replaceChildren() 後被靜默丟棄。
+  const lastYear = Math.max(currentYear + 1, ...entryYears);
+  const years = Array.from({ length: lastYear - firstYear + 1 }, (_, index) => firstYear + index);
   const entriesByYear = new Map(years.map((year) => [year, []]));
   entries.forEach((entry) => {
     const year = new Date(entry.dataset.date).getFullYear();
@@ -95,7 +106,9 @@ if (timelineTrack && timelineEntries.length) {
     marker.className = "timeline-year-marker";
     marker.type = "button";
     marker.textContent = year;
-    const isFutureYear = year > currentYear;
+    // 只有「尚未開始且沒有任何旅程」的預留年份不可點擊；
+    // 已經排定行程的未來年份仍要能展開，否則項目會被鎖在收合狀態裡看不到。
+    const isFutureYear = year > currentYear && !(entriesByYear.get(year) || []).length;
     marker.setAttribute("aria-expanded", String(year === activeYear));
     marker.disabled = isFutureYear;
     if (isFutureYear) {
