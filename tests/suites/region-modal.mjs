@@ -159,7 +159,7 @@ export const mapLinks = suite("地區頁 · Google Maps 連結", async (b, t) =>
 // 重構查表結構時，資料很容易在合併過程中靜默消失——連結仍然正確，只是列數變少。
 // 這裡把每個地區的資料深度釘住，數字下降就會失敗。
 const EXPECTED_ROWS = {
-  hokkaido: 60, tokyo: 19, nagoya: 14, osaka: 13, "ise-shima": 13, fukuoka: 13
+  hokkaido: 60, tokyo: 19, nagoya: 30, osaka: 13, "ise-shima": 14, fukuoka: 13
 };
 
 export const dataDepth = suite("地區頁 · 彈窗地點資料深度", async (b, t) => {
