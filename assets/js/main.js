@@ -291,6 +291,35 @@ timelineEntries.forEach((entry) => {
 if (countryStrip) {
   let pointer = null;
   let edgeShadowFrame = 0;
+  let mobileFocusFrame = 0;
+  let mobileActivatedCard = null;
+  let mobileCenteringCard = null;
+  let mobileCenterTarget = 0;
+  const isMobileCountryStrip = () => window.matchMedia("(max-width: 700px)").matches;
+  countryCards.filter((card) => card.tagName === "A").forEach((card) => {
+    const meta = card.querySelector(".country-meta");
+    if (!meta) return;
+    let action = meta.querySelector(".country-meta-action");
+    let arrow = meta.querySelector(".country-meta-arrow");
+    if (!action) {
+      action = document.createElement("span");
+      action.className = "country-meta-action";
+      action.setAttribute("aria-hidden", "true");
+      if (!arrow) {
+        arrow = document.createElement("span");
+        arrow.className = "country-meta-arrow";
+        arrow.textContent = "→";
+      }
+      action.append(arrow);
+      meta.append(action);
+    }
+    if (!action.querySelector(".country-card-more")) {
+      const more = document.createElement("span");
+      more.className = "country-card-more";
+      more.textContent = "查看更多";
+      action.prepend(more);
+    }
+  });
   const syncEdgeCardShadows = () => {
     edgeShadowFrame = 0;
     if (!window.matchMedia("(min-width: 701px)").matches) {
@@ -307,6 +336,58 @@ if (countryStrip) {
   };
   const scheduleEdgeCardShadowSync = () => {
     if (!edgeShadowFrame) edgeShadowFrame = window.requestAnimationFrame(syncEdgeCardShadows);
+  };
+  const setMobileFocusedCard = (card) => {
+    countryCards.forEach((item) => {
+      item.classList.toggle("is-mobile-focused", item === card);
+      item.classList.toggle("is-mobile-activated", item === mobileActivatedCard && item === card);
+    });
+  };
+  const clearMobileCardFocus = () => {
+    if (mobileFocusFrame) window.cancelAnimationFrame(mobileFocusFrame);
+    mobileFocusFrame = 0;
+    mobileActivatedCard = null;
+    mobileCenteringCard = null;
+    countryCards.forEach((card) => card.classList.remove("is-mobile-focused", "is-mobile-activated"));
+  };
+  const centerMobileCard = (card) => {
+    const target = Math.max(0, Math.min(
+      card.offsetLeft + card.offsetWidth / 2 - countryStrip.clientWidth / 2,
+      countryStrip.scrollWidth - countryStrip.clientWidth
+    ));
+    mobileCenteringCard = card;
+    mobileCenterTarget = target;
+    countryStrip.scrollTo({
+      left: target,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+    });
+    scheduleMobileFocusSync();
+  };
+  const syncMobileFocusedCard = () => {
+    mobileFocusFrame = 0;
+    if (!isMobileCountryStrip()) {
+      mobileActivatedCard = null;
+      mobileCenteringCard = null;
+      countryCards.forEach((card) => card.classList.remove("is-mobile-focused", "is-mobile-activated"));
+      return;
+    }
+    const focusX = countryStrip.scrollLeft + countryStrip.clientWidth / 2;
+    const focusedCard = countryCards.reduce((closest, card) => {
+      const center = card.offsetLeft + card.offsetWidth / 2;
+      const closestCenter = closest.offsetLeft + closest.offsetWidth / 2;
+      return Math.abs(center - focusX) < Math.abs(closestCenter - focusX) ? card : closest;
+    }, countryCards[0]);
+    const selectedCard = mobileCenteringCard || focusedCard;
+    if (!mobileCenteringCard && mobileActivatedCard && mobileActivatedCard !== focusedCard) {
+      mobileActivatedCard = null;
+    }
+    setMobileFocusedCard(selectedCard);
+    if (mobileCenteringCard && Math.abs(countryStrip.scrollLeft - mobileCenterTarget) < 2) {
+      mobileCenteringCard = null;
+    }
+  };
+  const scheduleMobileFocusSync = () => {
+    if (!mobileFocusFrame) mobileFocusFrame = window.requestAnimationFrame(syncMobileFocusedCard);
   };
   const syncPointerCard = () => {
     if (!pointer) return;
@@ -343,10 +424,32 @@ if (countryStrip) {
       countryCards.forEach((item) => item.classList.toggle("is-pointer-active", item === card));
       scheduleEdgeCardShadowSync();
     });
+    card.addEventListener("focus", () => {
+      if (!isMobileCountryStrip()) return;
+      setMobileFocusedCard(card);
+    });
   });
+  countryStrip.addEventListener("click", (event) => {
+    if (!isMobileCountryStrip()) return;
+    const card = event.target.closest?.(".country-card");
+    if (!card || !countryStrip.contains(card)) return;
+    const canNavigate = card.tagName === "A";
+    if (canNavigate && card === mobileActivatedCard && card.classList.contains("is-mobile-activated")) return;
+    event.preventDefault();
+    mobileActivatedCard = canNavigate ? card : null;
+    setMobileFocusedCard(card);
+    centerMobileCard(card);
+  });
+  document.addEventListener("pointerdown", (event) => {
+    if (!isMobileCountryStrip()) return;
+    const card = event.target.closest?.(".country-card");
+    if (card && countryStrip.contains(card)) return;
+    clearMobileCardFocus();
+  }, { passive: true });
   countryStrip.addEventListener("scroll", () => {
     syncPointerCard();
     scheduleEdgeCardShadowSync();
+    scheduleMobileFocusSync();
     if (document.activeElement?.classList.contains("country-card")) {
       document.activeElement.blur();
     }
@@ -357,6 +460,7 @@ if (countryStrip) {
     scheduleEdgeCardShadowSync();
   });
   window.addEventListener("resize", scheduleEdgeCardShadowSync, { passive: true });
+  window.addEventListener("resize", scheduleMobileFocusSync, { passive: true });
   scheduleEdgeCardShadowSync();
 }
 
