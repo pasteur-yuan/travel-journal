@@ -112,23 +112,26 @@ export const mapLinks = suite("地區頁 · Google Maps 連結", async (b, t) =>
   const wrongRegion = [];
   const missingLink = [];
   let noteCells = 0;
+  let noteTotalSeen = 0;
 
   for (const region of REGIONS) {
     await b.goto(page(region), { settle: 1000 });
     const result = await b.eval(`(() => {
       const items = [...document.querySelectorAll(${JSON.stringify(ITEM_SELECTOR)})];
       const wrong = [], missing = [];
-      let notes = 0;
+      let notes = 0, noteTotal = 0;
       items.forEach((item) => {
         item.click();
         const section = item.closest(".region-section")?.id;
         const label = item.querySelector("span")?.textContent?.trim();
         const links = [...document.querySelectorAll(".spot-modal-table .spot-modal-map-link")]
           .map(a => decodeURIComponent(a.getAttribute("href") || ""));
-        const mapCells = [...document.querySelectorAll(".spot-modal-table tbody tr td:nth-child(4)")]
-          .map(td => td.textContent.trim());
         if (section === "notes") {
-          if (mapCells.every(c => c === "—")) notes++;
+          // 筆記的標籤是年月，四個欄位填不出真實內容，因此整張資料表都不該出現。
+          noteTotal++;
+          const wrap = document.querySelector(".spot-modal-table-wrap");
+          const rows = document.querySelectorAll(".spot-modal-table tbody tr").length;
+          if (wrap.hidden && rows === 0) notes++;
         } else {
           if (!links.length) missing.push(section + " / " + label);
           links.forEach((link) => {
@@ -139,10 +142,11 @@ export const mapLinks = suite("地區頁 · Google Maps 連結", async (b, t) =>
         }
         document.querySelector(".spot-modal-close")?.click();
       });
-      return { count: items.length, wrong, missing, notes };
+      return { count: items.length, wrong, missing, notes, noteTotal };
     })()`);
     totalItems += result.count;
     noteCells += result.notes;
+    noteTotalSeen += result.noteTotal;
     wrongRegion.push(...result.wrong.map((w) => `${region}: ${w}`));
     missingLink.push(...result.missing.map((m) => `${region}: ${m}`));
   }
@@ -152,7 +156,9 @@ export const mapLinks = suite("地區頁 · Google Maps 連結", async (b, t) =>
   t.check("地圖連結不會指向其他地區",
     wrongRegion.length === 0,
     wrongRegion.length ? `${wrongRegion.length} 筆，例如 ${wrongRegion[0]}` : `已檢查 ${totalItems} 個項目`);
-  t.check("旅行筆記不提供地圖連結", noteCells >= REGIONS.length, `${noteCells} 筆顯示「—」`);
+  t.check("旅行筆記不顯示編造的資料表",
+    noteTotalSeen > 0 && noteCells === noteTotalSeen,
+    `${noteCells}/${noteTotalSeen} 筆的資料表已隱藏且無資料列`);
   t.check("所有地區頁皆無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 });
 

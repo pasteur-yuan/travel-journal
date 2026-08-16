@@ -268,12 +268,13 @@ if (detailItems.length) {
   const modal = document.createElement('div');
   modal.className = 'spot-modal';
   modal.setAttribute('aria-hidden', 'true');
-  modal.innerHTML = '<div class="spot-modal-backdrop" data-spot-modal-close></div><section class="spot-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="spot-modal-title"><button class="spot-modal-close" type="button" aria-label="關閉旅行內容視窗" data-spot-modal-close>×</button><span class="spot-modal-label" id="spot-modal-label"></span><h2 id="spot-modal-title"></h2><p class="spot-modal-placeholder">小樽的山景、運河與地方酒造，先從這三個地點開始整理。</p><div class="spot-modal-table-wrap"><table class="spot-modal-table"><thead><tr><th scope="col">地名</th><th scope="col">資訊</th><th scope="col">交通方式</th><th scope="col">Google Map</th></tr></thead><tbody></tbody></table></div></section>';
+  modal.innerHTML = '<div class="spot-modal-backdrop" data-spot-modal-close></div><section class="spot-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="spot-modal-title"><button class="spot-modal-close" type="button" aria-label="關閉旅行內容視窗" data-spot-modal-close>×</button><span class="spot-modal-label" id="spot-modal-label"></span><h2 id="spot-modal-title"></h2><p class="spot-modal-placeholder"></p><div class="spot-modal-table-wrap"><table class="spot-modal-table"><thead><tr><th scope="col">地名</th><th scope="col">資訊</th><th scope="col">交通方式</th><th scope="col">Google Map</th></tr></thead><tbody></tbody></table></div></section>';
   document.body.append(modal);
   const title = modal.querySelector('#spot-modal-title');
   const label = modal.querySelector('#spot-modal-label');
   const placeholder = modal.querySelector('.spot-modal-placeholder');
   const tableBody = modal.querySelector('.spot-modal-table tbody');
+  const tableWrap = modal.querySelector('.spot-modal-table-wrap');
   const otaruPlaces = [
     ['小樽運河', '小樽最具代表性的港町地標，沿岸可欣賞石造倉庫與散步風景。', '由小樽站步行前往。', 'https://www.google.com/maps/search/?api=1&query=小樽運河'],
     ['天狗山', '眺望小樽市區與小樽港的代表景點，也適合欣賞夜景。', '由小樽站搭乘巴士或前往纜車站。', 'https://www.google.com/maps/search/?api=1&query=小樽天狗山'],
@@ -476,17 +477,23 @@ if (detailItems.length) {
     const rows = regionalVenueData[regionKey]?.[sectionName]?.[place];
     if (rows) {
       tableBody.innerHTML = renderRows(rows);
+      if (tableWrap) tableWrap.hidden = false;
+      return;
+    }
+
+    // 旅行筆記的標籤是年月而不是地點，資料表的四個欄位沒有一欄填得出真實內容，
+    // 硬填只會產生看起來像資料的假資料。實際行程資料就緒前，這裡不顯示資料表。
+    if (sectionName === 'notes') {
+      tableBody.innerHTML = '';
+      if (tableWrap) tableWrap.hidden = true;
       return;
     }
 
     // 沒有對應地點資料時的 fallback：查詢字串必須帶入項目實際所在的地區。
-    // 旅行筆記的標籤是年月而不是地點，查地圖沒有意義，因此不提供連結。
-    const transport = sectionName === 'stays' ? '待補充住宿位置與移動方式'
-      : sectionName === 'notes' ? '依旅程安排補充' : '待補充前往方式';
-    const href = sectionName === 'notes'
-      ? null
-      : mapSearchUrl(`${place} ${currentRegionSearchName}`.trim());
+    const transport = sectionName === 'stays' ? '待補充住宿位置與移動方式' : '待補充前往方式';
+    const href = mapSearchUrl(`${place} ${currentRegionSearchName}`.trim());
     tableBody.innerHTML = `<tr><td>${place}</td><td>${info}</td><td>${transport}</td>${mapCell(place, href)}</tr>`;
+    if (tableWrap) tableWrap.hidden = false;
   };
   const closeButton = modal.querySelector('.spot-modal-close');
   let previousFocus = null;
@@ -506,8 +513,14 @@ if (detailItems.length) {
   const openModal = (item) => {
     previousFocus = document.activeElement;
     label.textContent = item.querySelector('span')?.textContent || 'TRAVEL NOTE';
-    title.textContent = item.querySelector('h3, strong')?.textContent || item.querySelector('p')?.textContent || '旅行內容';
-    if (placeholder) placeholder.textContent = item.querySelector('p')?.textContent || '內容待整理，之後將在這裡加入照片、筆記與旅行資訊。';
+    // 旅行筆記只有 span + p，標題會落在 p 上；此時不要再把同一段文字重複成內文。
+    const headingText = item.querySelector('h3, strong')?.textContent?.trim();
+    const bodyText = item.querySelector('p')?.textContent?.trim();
+    title.textContent = headingText || bodyText || '旅行內容';
+    if (placeholder) {
+      placeholder.textContent = headingText ? bodyText || '' : '';
+      placeholder.hidden = !placeholder.textContent;
+    }
     renderItemTable(item);
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
