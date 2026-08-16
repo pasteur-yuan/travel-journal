@@ -3,7 +3,6 @@
 const worldMap = document.querySelector("#world-map");
 const timezoneLabel = document.querySelector("#timezone-label");
 const countryTooltip = document.querySelector("#country-tooltip");
-const japanMarker = document.querySelector("#japan-marker");
 const nightZone = document.querySelector("#night-zone");
 const countryStrip = document.querySelector(".country-strip");
 const countryCards = [...document.querySelectorAll(".country-card")];
@@ -12,6 +11,16 @@ const mapLegend = document.querySelector(".map-legend");
 const mapStats = document.querySelector(".map-stats");
 const mapControls = document.querySelector(".map-controls");
 const mapActions = mapControls ? mapControls.querySelectorAll("[data-map-action]") : [];
+
+// 地圖上的旅行目的地。新增國家只要在這裡加一筆，marker、時區 tooltip、
+// 地圖區塊高亮與點擊連結都會自動產生。code / mapId 用來比對時區地圖的多邊形。
+const travelDestinations = [
+  {
+    code: "JP", mapId: "Japan", flag: "🇯🇵", name: "日本",
+    timezone: "UTC+09:00", latitude: 35.6762, longitude: 139.6503,
+    href: "countries/japan/index.html"
+  }
+];
 
 document.addEventListener("pointerdown", (event) => {
   const target = event.target;
@@ -67,6 +76,38 @@ const datedTimelineEntries = [...timelineEntries].filter((entry) => {
   console.warn("時間軸項目的 data-date 缺少或無法解析，已略過：", entry);
   return false;
 });
+
+// 「已探索」清單與「旅行足跡」數字改由時間軸項目推導：新增一次旅行就會自動更新，
+// 不必再手動維護三處寫死的內容（原本的 01 國家 / 03 地區已經與實際資料對不上）。
+if (datedTimelineEntries.length && (mapLegend || mapStats)) {
+  const countries = [...new Set(datedTimelineEntries.map((entry) => entry.dataset.country).filter(Boolean))];
+  const regions = new Set(datedTimelineEntries
+    .filter((entry) => entry.dataset.country && entry.dataset.region)
+    .map((entry) => `${entry.dataset.country} / ${entry.dataset.region}`));
+  const pad = (value) => String(value).padStart(2, "0");
+  const cell = (nodes) => {
+    const span = document.createElement("span");
+    span.append(...nodes);
+    return span;
+  };
+  if (mapLegend && countries.length) {
+    mapLegend.replaceChildren(
+      mapLegend.querySelector(".map-legend-label"),
+      ...countries.map((country) => cell([country]))
+    );
+  }
+  if (mapStats) {
+    const counts = [[countries.length, "國家"], [regions.size, "地區"], [datedTimelineEntries.length, "旅行節點"]];
+    mapStats.replaceChildren(
+      mapStats.querySelector(".map-stats-label"),
+      ...counts.map(([value, name]) => {
+        const number = document.createElement("b");
+        number.textContent = pad(value);
+        return cell([number, ` ${name}`]);
+      })
+    );
+  }
+}
 
 if (timelineTrack && datedTimelineEntries.length) {
   const entries = datedTimelineEntries;
@@ -355,57 +396,15 @@ if (worldMap && timezoneLabel) {
       const areas = chart.series.push(am5map.MapPolygonSeries.new(root, { geoJSON: am5geodata_worldTimeZoneAreasHigh }));
       areas.mapPolygons.template.setAll({ fill: am5.color(0xc8c2ae), fillOpacity: 0.52, stroke: am5.color(0x8b9189), strokeOpacity: 0.52, strokeWidth: 0.7, interactive: true });
       areas.mapPolygons.template.states.create("hover", { fill: am5.color(0xfff5d1), fillOpacity: 0.24, stroke: am5.color(0xfff8dc), strokeOpacity: 0.98, strokeWidth: 1.35, scale: 1.01, shadowColor: am5.color(0x5a503d), shadowBlur: 17, shadowOffsetY: 5, shadowOpacity: 0.36 });
-      const setJapanAreaState = (isActive) => {
+      const setCountryAreaState = (destination, isActive) => {
         areas.mapPolygons.each((polygon) => {
-          const id = polygon.dataItem?.dataContext?.id || polygon.dataItem?.dataContext?.name;
-          if (id === "JP" || id === "Japan") {
-            if (isActive) polygon.states.apply("hover");
-            else polygon.states.apply("default");
+          const context = polygon.dataItem?.dataContext;
+          const id = context?.id || context?.name;
+          if (id === destination.code || id === destination.mapId) {
+            polygon.states.apply(isActive ? "hover" : "default");
           }
         });
       };
-      // 使用 MapPointSeries 原生的 latitude/longitude 資料欄位，讓 marker
-      // 與同一個 MapChart 的投影、縮放及平移保持同步。
-      const destinations = chart.series.push(am5map.MapPointSeries.new(root, {}));
-      destinations.bullets.push(() => {
-        const marker = am5.Container.new(root, { width: 20, height: 20, centerX: am5.p50, centerY: am5.p50, cursorOverStyle: "pointer", interactive: true, interactiveChildren: true });
-        const emoji = am5.Label.new(root, { text: "🇯🇵", fontSize: 14, x: 10, y: 10, centerX: am5.p50, centerY: am5.p50, interactive: true, focusable: true, ariaLabel: "日本，東京，UTC+09:00", role: "button" });
-        emoji.set("opacity", 0);
-        marker.children.push(emoji);
-        const showDestinationTooltip = () => {
-          if (!countryTooltip) return;
-          const point = chart.convert({ longitude: 139.6503, latitude: 35.6762 });
-          worldMap.style.setProperty("--country-focus-x", `${point.x}px`);
-          worldMap.style.setProperty("--country-focus-y", `${point.y}px`);
-          worldMap.classList.add("is-country-focused");
-          setJapanAreaState(true);
-          countryTooltip.textContent = "🇯🇵 日本 · UTC+09:00";
-          placeCountryTooltip(point);
-          countryTooltip.classList.add("is-visible");
-          countryTooltip.setAttribute("aria-hidden", "false");
-          if (timezoneLabel) timezoneLabel.style.opacity = "0";
-        };
-        const hideDestinationTooltip = () => {
-          if (countryTooltip) { countryTooltip.classList.remove("is-visible"); countryTooltip.setAttribute("aria-hidden", "true"); }
-          worldMap.classList.remove("is-country-focused");
-          setJapanAreaState(false);
-          if (timezoneLabel) timezoneLabel.style.opacity = "1";
-        };
-        marker.events.on("pointerover", showDestinationTooltip);
-        marker.events.on("pointerout", hideDestinationTooltip);
-        emoji.events.on("pointerover", showDestinationTooltip);
-        emoji.events.on("pointerout", hideDestinationTooltip);
-        emoji.events.on("focus", showDestinationTooltip);
-        emoji.events.on("blur", hideDestinationTooltip);
-        marker.events.on("click", () => { window.location.href = "countries/japan/index.html"; });
-        return am5.Bullet.new(root, { sprite: marker });
-      });
-      destinations.pushDataItem({
-        name: "日本",
-        timezone: "UTC+09:00",
-        latitude: 35.6762,
-        longitude: 139.6503
-      });
       const isMobileMap = () => window.matchMedia("(max-width: 700px)").matches;
       const setMapView = () => {
         chart.set("zoomLevel", isMobileMap() ? 1 : 1.42);
@@ -413,41 +412,54 @@ if (worldMap && timezoneLabel) {
       };
       setMapView();
       window.addEventListener("resize", setMapView, { passive: true });
-      if (japanMarker) {
-        japanMarker.style.display = "grid";
-        const positionJapanMarker = () => {
-          const point = chart.convert({ longitude: 139.6503, latitude: 35.6762 });
-          japanMarker.style.left = `${point.x}px`;
-          japanMarker.style.top = `${point.y}px`;
-        };
-        const showJapanTooltip = () => {
-          const point = chart.convert({ longitude: 139.6503, latitude: 35.6762 });
+      // marker 由 travelDestinations 產生，座標透過 chart.convert() 換算，
+      // 因此與地圖投影、縮放保持同步。原本 amCharts bullet 與 DOM marker 兩套並存，
+      // 其中 bullet 的 emoji 是 opacity 0（看不見），只重複提供一次互動，已合併成這一套。
+      const markers = travelDestinations.map((destination) => {
+        const marker = document.createElement("button");
+        marker.className = "country-marker";
+        marker.type = "button";
+        marker.textContent = destination.flag;
+        marker.setAttribute("aria-label", `${destination.name}，${destination.timezone}`);
+        const pointOf = () => chart.convert({ longitude: destination.longitude, latitude: destination.latitude });
+        const showTooltip = () => {
+          if (!countryTooltip) return;
+          const point = pointOf();
           worldMap.style.setProperty("--country-focus-x", `${point.x}px`);
           worldMap.style.setProperty("--country-focus-y", `${point.y}px`);
           worldMap.classList.add("is-country-focused");
-          setJapanAreaState(true);
-          countryTooltip.textContent = "🇯🇵 日本 · UTC+09:00";
+          setCountryAreaState(destination, true);
+          countryTooltip.textContent = `${destination.flag} ${destination.name} · ${destination.timezone}`;
           placeCountryTooltip(point);
           countryTooltip.classList.add("is-visible");
           countryTooltip.setAttribute("aria-hidden", "false");
           if (timezoneLabel) timezoneLabel.style.opacity = "0";
         };
-        const hideJapanTooltip = () => {
-          countryTooltip.classList.remove("is-visible");
-          countryTooltip.setAttribute("aria-hidden", "true");
+        const hideTooltip = () => {
+          if (countryTooltip) {
+            countryTooltip.classList.remove("is-visible");
+            countryTooltip.setAttribute("aria-hidden", "true");
+          }
           worldMap.classList.remove("is-country-focused");
-          setJapanAreaState(false);
+          setCountryAreaState(destination, false);
           if (timezoneLabel) timezoneLabel.style.opacity = "1";
         };
-        positionJapanMarker();
-        chart.events.on("boundschanged", positionJapanMarker);
-        japanMarker.addEventListener("pointerenter", showJapanTooltip);
-        japanMarker.addEventListener("pointerleave", hideJapanTooltip);
-        japanMarker.addEventListener("pointerdown", showJapanTooltip);
-        japanMarker.addEventListener("focus", showJapanTooltip);
-        japanMarker.addEventListener("blur", hideJapanTooltip);
-        japanMarker.addEventListener("click", () => { window.location.href = "countries/japan/index.html"; });
-      }
+        marker.addEventListener("pointerenter", showTooltip);
+        marker.addEventListener("pointerleave", hideTooltip);
+        marker.addEventListener("pointerdown", showTooltip);
+        marker.addEventListener("focus", showTooltip);
+        marker.addEventListener("blur", hideTooltip);
+        marker.addEventListener("click", () => { window.location.href = destination.href; });
+        worldMap.append(marker);
+        return { marker, pointOf };
+      });
+      const positionMarkers = () => markers.forEach(({ marker, pointOf }) => {
+        const point = pointOf();
+        marker.style.left = `${point.x}px`;
+        marker.style.top = `${point.y}px`;
+      });
+      positionMarkers();
+      chart.events.on("boundschanged", positionMarkers);
       mapActions.forEach((button) => {
         button.addEventListener("click", () => {
           const action = button.dataset.mapAction;
