@@ -148,13 +148,25 @@ if (countryStrip) {
   };
   countryStrip.addEventListener("pointermove", (event) => {
     pointer = { x: event.clientX, y: event.clientY };
+    if (event.pointerType !== "mouse") return;
     syncPointerCard();
+    const activeCard = event.target.closest?.(".country-card");
+    if (activeCard) {
+      const rect = activeCard.getBoundingClientRect();
+      activeCard.style.setProperty("--card-pointer-x", `${event.clientX - rect.left + rect.width * .18}px`);
+      activeCard.style.setProperty("--card-pointer-y", `${event.clientY - rect.top + rect.height * .18}px`);
+      activeCard.style.setProperty("--card-shadow-x", `${(event.clientX - rect.left - rect.width / 2) * .035}px`);
+      activeCard.style.setProperty("--card-shadow-y", `${(event.clientY - rect.top - rect.height / 2) * .035}px`);
+      activeCard.style.setProperty("--card-tilt-x", `${((event.clientX - rect.left) / rect.width - .5) * 7}deg`);
+      activeCard.style.setProperty("--card-tilt-y", `${((event.clientY - rect.top) / rect.height - .5) * -7}deg`);
+    }
     if (event.pointerType === "mouse" && document.activeElement?.classList.contains("country-card")) {
       document.activeElement.blur();
     }
   });
   countryCards.forEach((card) => {
     card.addEventListener("pointerenter", (event) => {
+      if (event.pointerType !== "mouse") return;
       pointer = { x: event.clientX, y: event.clientY };
       if (event.pointerType === "mouse" && document.activeElement?.classList.contains("country-card")) {
         document.activeElement.blur();

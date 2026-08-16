@@ -139,13 +139,24 @@ a { color: inherit; text-decoration: none; }
 .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 1rem; margin-bottom: 1.25rem; }
 .section-heading h2 { margin: .25rem 0 0; }
 .scroll-hint { color: var(--muted); font-size: .85rem; white-space: nowrap; }
-.country-strip { position: relative; display: flex; align-items: center; min-height: 30rem; margin-inline: -.75rem; padding: 3rem 1rem 4rem; overflow: visible; }
-.country-card { flex: 0 0 min(260px, 24vw); min-height: 25rem; display: flex; flex-direction: column; justify-content: end; gap: .1rem; padding: 2rem 1.7rem; color: white; border-radius: .7rem; overflow: hidden; position: relative; isolation: isolate; transform: rotate(var(--card-rotation, 0deg)) translateX(var(--card-push, 0px)) translateY(var(--card-offset, 0)); margin-left: -1.15rem; box-shadow: 0 .85rem 1.5rem #24313a1c; transition: transform .48s cubic-bezier(.22, .75, .25, 1), box-shadow .42s ease, background-size .7s ease; will-change: transform; }
+.country-strip { position: relative; display: flex; align-items: center; min-width: 0; min-height: 30rem; margin-inline: -.75rem; padding: 5rem 3rem 6rem; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; -ms-overflow-style: none; touch-action: pan-x; perspective: 1200px; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 10%, #000 90%, transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 10%, #000 90%, transparent 100%); }
+.country-strip::-webkit-scrollbar { display: none; }
+.country-card { flex: 0 0 min(260px, 24vw); min-height: 25rem; display: flex; flex-direction: column; justify-content: end; gap: .1rem; padding: 2rem 1.7rem; color: white; border-radius: .7rem; overflow: hidden; position: relative; isolation: isolate; transform: rotate(var(--card-rotation, 0deg)) translateX(var(--card-push, 0px)) translateY(var(--card-offset, 0)); margin-left: -1.15rem; scroll-snap-align: center; scroll-snap-stop: always; box-shadow: 0 .85rem 1.5rem #24313a1c; transition: transform .8s cubic-bezier(.16, 1, .3, 1), box-shadow .7s cubic-bezier(.16, 1, .3, 1), background-size .7s ease; will-change: transform; }
 .country-card-japan { margin-left: 0; --card-rotation: -3deg; --card-offset: 1rem; }
 .country-card-korea { --card-rotation: 3deg; --card-offset: -1rem; }
 .country-card-thailand { --card-rotation: -2deg; --card-offset: .75rem; }
 .country-card-new-zealand { --card-rotation: 4deg; --card-offset: -1.25rem; }
-.country-card:hover, .country-card.is-pointer-active, .country-card:focus-visible { transform: rotate(0deg) translateY(-1rem) scale(1.045); box-shadow: 0 1.35rem 2.25rem #24313a2c; z-index: 20 !important; }
+.country-card-sweden { --card-rotation: -3deg; --card-offset: .6rem; background-image: url("../images/city.jpg"); }
+.country-card-iceland { --card-rotation: 2deg; --card-offset: -1rem; background-image: url("../images/hero.jpg"); }
+.country-card-usa { --card-rotation: -2deg; --card-offset: .9rem; background-image: url("../images/city.jpg"); }
+.country-card-vietnam { --card-rotation: 3deg; --card-offset: -.6rem; background-image: url("../images/thailand.jpg"); }
+.country-card-tahiti { --card-rotation: -2deg; --card-offset: 1rem; background-image: url("../images/new-zealand.jpg"); }
+.country-card-maldives { --card-rotation: 4deg; --card-offset: -.8rem; background-image: url("../images/hero.jpg"); }
+.country-card:hover, .country-card.is-pointer-active, .country-card:focus-visible { transform: rotateX(var(--card-tilt-y, 0deg)) rotateY(var(--card-tilt-x, 0deg)) rotate(0deg) translateY(-1.6rem) scale(1.085); box-shadow: 0 3rem 5.5rem #17232e70, 0 .55rem 1.25rem #17232e4d, inset 0 1px 0 #ffffffb0, inset 0 -2px 0 #00000035; z-index: 20 !important; }
+.country-card::after { content: ""; position: absolute; z-index: 0; inset: -18%; pointer-events: none; opacity: 0; background: radial-gradient(circle 7rem at var(--card-pointer-x, 50%) var(--card-pointer-y, 50%), #ffffff70 0, #ffffff28 28%, transparent 72%); filter: blur(18px); transform: translate3d(var(--card-shadow-x, 0px), var(--card-shadow-y, 0px), 0) scale(1.04); transition: opacity .28s ease, transform .45s cubic-bezier(.2,.75,.25,1); }
+.country-card > * { position: relative; z-index: 1; }
+.country-card:hover::before, .country-card.is-pointer-active::before, .country-card:focus-visible::before { background: linear-gradient(115deg, #ffffff42 0%, transparent 24%, #111a2240 72%, #00000078 100%); }
+.country-card:hover::after, .country-card.is-pointer-active::after, .country-card:focus-visible::after { opacity: .9; }
 .country-strip:has(.country-card:hover) .country-card:not(:hover), .country-strip:has(.country-card.is-pointer-active) .country-card:not(.is-pointer-active), .country-strip:has(.country-card:focus-visible) .country-card:not(:focus-visible) { z-index: 2; }
 .country-strip:has(.country-card:hover) .country-card:has(~ .country-card:hover), .country-strip:has(.country-card.is-pointer-active) .country-card:has(~ .country-card.is-pointer-active), .country-strip:has(.country-card:focus-visible) .country-card:has(~ .country-card:focus-visible) { --card-push: -3.6rem; }
 .country-strip:has(.country-card:hover) .country-card:hover ~ .country-card, .country-strip:has(.country-card.is-pointer-active) .country-card.is-pointer-active ~ .country-card, .country-strip:has(.country-card:focus-visible) .country-card:focus-visible ~ .country-card { --card-push: 3.6rem; }
@@ -159,6 +170,14 @@ a { color: inherit; text-decoration: none; }
 .country-card-korea { background-image: url("../images/korea.jpg"); }
 .country-card-thailand { background-image: url("../images/thailand.jpg"); }
 .country-card-new-zealand { background-image: url("../images/new-zealand.jpg"); }
+.country-card-sweden, .country-card-iceland, .country-card-usa, .country-card-vietnam, .country-card-tahiti, .country-card-maldives { color: white; border: 0; background-position: center; background-size: cover; }
+.country-card-sweden { background-image: url("../images/city.jpg"); }
+.country-card-iceland { background-image: url("../images/hero.jpg"); }
+.country-card-usa { background-image: url("../images/city.jpg"); }
+.country-card-vietnam { background-image: url("../images/thailand.jpg"); }
+.country-card-tahiti { background-image: url("../images/new-zealand.jpg"); }
+.country-card-maldives { background-image: url("../images/hero.jpg"); }
+.country-card-sweden::before, .country-card-iceland::before, .country-card-usa::before, .country-card-vietnam::before, .country-card-tahiti::before, .country-card-maldives::before { background: linear-gradient(0deg, #111a22e8, #111a2230); }
 .country-code { color: #f6c453; font-size: .8rem; font-weight: 800; letter-spacing: .15em; }
 .country-name { margin: .25rem 0; font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 800; letter-spacing: -.04em; }
 .country-meta { display: grid; gap: .35rem; min-width: 0; overflow: hidden; font-size: .85rem; opacity: .85; }
@@ -426,4 +445,4 @@ body.is-page-leaving .region-showcase { opacity: 0; transform: scale(.985); filt
 @media (max-width: 700px) { .timeline-entry.is-dot-collapsed .timeline-card { visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; min-height: 3rem !important; height: 3rem !important; transform: translateY(4px) !important; } .timeline-entry.is-dot-collapsed .timeline-dot { background: var(--paper) !important; transform: translate(-50%, -50%) !important; } }
 @media (max-width: 700px) { .region-showcase { display: flex; flex-direction: column; justify-content: center; } .region-showcase-list { align-self: stretch; width: 100%; box-sizing: border-box; margin-block: 0; } }
 @keyframes mobile-timeline-entry-in { from { opacity: 0; transform: translateY(1.25rem); } to { opacity: 1; transform: translateY(0); } }
-@media (max-width: 700px) { .country-strip { min-height: 24rem; margin-inline: -.75rem; padding: 2.5rem 3rem 2rem .9rem; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -ms-overflow-style: none; scroll-snap-type: x mandatory; } .country-strip::-webkit-scrollbar { display: none; } .country-card { flex-basis: min(78vw, 300px); min-height: 19rem; margin-left: -.7rem; scroll-snap-align: start; --card-push: 0px !important; } .country-card-japan { margin-left: 0; } .country-card:hover, .country-card.is-pointer-active, .country-card:focus-visible { transform: rotate(0deg) translateY(-.65rem) scale(1.02); } }
+@media (max-width: 700px) { .country-strip { min-height: 24rem; margin-inline: -.75rem; padding: 2.5rem 3rem 2rem .9rem; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scroll-padding-inline: .9rem; scrollbar-width: none; -ms-overflow-style: none; scroll-snap-type: x mandatory; } .country-strip::-webkit-scrollbar { display: none; } .country-card { flex-basis: min(78vw, 300px); min-height: 19rem; margin-left: -.7rem; scroll-snap-align: start; --card-push: 0px !important; } .country-card-japan { margin-left: 0; } .country-card:hover, .country-card.is-pointer-active, .country-card:focus-visible { transform: rotate(0deg) translateY(-.65rem) scale(1.02); } }
