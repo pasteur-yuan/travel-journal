@@ -118,74 +118,19 @@ export const showcaseDynamic = suite("國家頁 · 動態新增地區項目", as
   t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 });
 
-// 這個轉場曾經整整壞著沒被發現：JS 完整設定了轉場層，CSS 卻是 display: none，
-// 所以「照片從項目位置擴張填滿畫面」從來沒有出現過，兩個頁面之間也就沒有視覺線索。
-// 這裡逐幀取樣，確認它真的會顯示、而且是連續動畫而非瞬間跳到終點。
-export const pageTransition = suite("國家頁 · 進入地區頁的轉場", async (b, t) => {
+export const directRegionNavigation = suite("國家頁 · 地區直接導覽", async (b, t) => {
   await b.desktop();
   await b.goto(PAGE, { settle: 1200 });
 
   const item = '.region-showcase-item[href="tokyo/index.html"]';
-  const point = await b.eval(`(() => {
-    const el = document.querySelector('${item}');
-    const r = el.getBoundingClientRect();
-    return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2),
-             top: Math.round(r.top), height: Math.round(r.height) };
-  })()`);
+  t.check("不再建立滿版轉場圖層", await b.eval(
+    `!document.querySelector(".page-transition-layer, .region-entry-transition-layer")`));
 
-  // 先完成 hover 並靜置，再掛取樣器。長時間執行的 Runtime.evaluate 會延後
-  // 之後送出的 Input 事件，若在取樣期間才 hover，點擊會被推到取樣結束之後。
-  await b.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: point.x, y: point.y, button: "none" });
-  await sleep(200);
-
-  // 取樣器要先掛好再點擊，否則會漏掉動畫開頭
-  const sampling = b.eval(`(() => new Promise((resolve) => {
-    const layer = document.querySelector(".page-transition-layer");
-    const started = performance.now();
-    const samples = [];
-    const tick = () => {
-      const style = getComputedStyle(layer);
-      samples.push({ t: Math.round(performance.now() - started), clip: style.clipPath,
-                     opacity: Number(style.opacity), display: style.display });
-      if (performance.now() - started < 620) requestAnimationFrame(tick);
-      else resolve(samples);
-    };
-    requestAnimationFrame(tick);
-  }))()`);
-
-  await sleep(30);
-  await b.send("Input.dispatchMouseEvent", { type: "mousePressed", x: point.x, y: point.y, button: "left", clickCount: 1 });
-  await b.send("Input.dispatchMouseEvent", { type: "mouseReleased", x: point.x, y: point.y, button: "left", clickCount: 1 });
-  const samples = await sampling;
-
-  const visible = samples.filter((s) => s.display !== "none" && s.opacity > 0.5);
-  t.check("轉場層會實際顯示", visible.length > 0,
-    `${visible.length}/${samples.length} 幀可見（display=${samples.at(-1)?.display}）`);
-
-  const clips = [...new Set(samples.map((s) => s.clip))];
-  t.check("clip-path 是連續動畫而非瞬間跳到終點", clips.length >= 5,
-    `${clips.length} 個不同的 clip-path 值`);
-
-  const insets = samples
-    .map((s) => Number((s.clip.match(/inset\(([\d.]+)px/) || [])[1]))
-    .filter((n) => Number.isFinite(n));
-  t.check("擴張起點對齊被點擊的項目",
-    insets.length > 0 && Math.abs(insets[0] - point.top) <= 12,
-    `起點 top ${insets[0]?.toFixed(0)}px vs 項目 top ${point.top}px`);
-  t.check("擴張過程單向遞減至填滿畫面",
-    insets.length > 2 && insets.at(-1) < insets[0] && insets.at(-1) < 60,
-    `${insets[0]?.toFixed(0)}px → ${insets.at(-1)?.toFixed(0)}px`);
-
+  await b.click(item);
+  await sleep(500);
+  t.check("點選地區會直接進入目的地頁", await b.eval(
+    `window.location.pathname === "/countries/japan/tokyo/index.html"`));
   t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
-});
-
-export const transitionReducedMotion = suite("國家頁 · 轉場的 reduced-motion 降級", async (b, t) => {
-  await b.desktop();
-  await b.reducedMotion(true);
-  await b.goto(PAGE, { settle: 1200 });
-  t.check("reduced-motion 下轉場層不顯示", await b.eval(
-    `getComputedStyle(document.querySelector(".page-transition-layer")).display === "none"`));
-  await b.reducedMotion(false);
 });
 
 export const showcaseMobile = suite("國家頁 · 手機版", async (b, t) => {

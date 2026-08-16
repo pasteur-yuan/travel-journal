@@ -1,10 +1,6 @@
 const regionShowcase = document.querySelector(".region-showcase");
 
 if (regionShowcase) {
-  const transitionLayer = document.createElement("div");
-  transitionLayer.className = "page-transition-layer";
-  transitionLayer.setAttribute("aria-hidden", "true");
-  document.body.append(transitionLayer);
   const backdrop = regionShowcase.querySelector(".region-showcase-backdrop");
   let items = [...regionShowcase.querySelectorAll(".region-showcase-item")];
   items.forEach((item) => {
@@ -45,30 +41,6 @@ if (regionShowcase) {
     });
     ["pointerup", "pointercancel", "pointerleave"].forEach((eventName) => {
       item.addEventListener(eventName, () => item.classList.remove("is-pressed"));
-    });
-    item.addEventListener("click", (event) => {
-      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      event.preventDefault();
-      item.classList.add("is-pressed");
-      const delay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 720;
-      const releaseDelay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 180;
-      window.setTimeout(() => {
-        item.classList.remove("is-pressed");
-        item.classList.add("is-releasing");
-      }, releaseDelay);
-      window.setTimeout(() => {
-        item.classList.remove("is-releasing");
-        // 轉場層是滿版的 position: fixed，只把 clip-path 的起點設成被點項目的位置，
-        // 讓可見範圍從那裡擴張到整個畫面；照片的取景全程不變。
-        const itemRect = item.getBoundingClientRect();
-        transitionLayer.style.setProperty("--transition-clip",
-          `inset(${itemRect.top}px ${window.innerWidth - itemRect.right}px` +
-          ` ${window.innerHeight - itemRect.bottom}px ${itemRect.left}px round 1rem)`);
-        transitionLayer.style.backgroundImage = `url("${item.dataset.image}")`;
-        void transitionLayer.offsetWidth;
-        document.body.classList.add("is-page-leaving");
-      }, releaseDelay + 120);
-      window.setTimeout(() => { window.location.href = item.href; }, delay + 80);
     });
   };
   items.forEach(bindItem);
