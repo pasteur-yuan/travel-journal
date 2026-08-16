@@ -50,29 +50,6 @@ document.querySelectorAll('.region-facts-wide').forEach((facts) => {
   facts.replaceChildren(item);
 });
 
-document.querySelectorAll('.region-card-grid .region-content-card, .region-content-list article, .region-note').forEach((item) => {
-  let glowFrame = 0;
-  let pendingPointer = null;
-  const trackGlow = (event) => {
-    pendingPointer = event;
-    if (glowFrame) return;
-    glowFrame = window.requestAnimationFrame(() => {
-      const rect = item.getBoundingClientRect();
-      item.style.setProperty('--pointer-x', `${pendingPointer.clientX - rect.left}px`);
-      item.style.setProperty('--pointer-y', `${pendingPointer.clientY - rect.top}px`);
-      glowFrame = 0;
-    });
-    item.classList.add('is-pointer-active');
-  };
-  item.addEventListener('pointerenter', trackGlow);
-  item.addEventListener('pointermove', trackGlow);
-  item.addEventListener('pointerleave', () => item.classList.remove('is-pointer-active'));
-  item.addEventListener('focusin', () => item.classList.add('is-pointer-active'));
-  item.addEventListener('focusout', () => {
-    if (!item.matches(':hover')) item.classList.remove('is-pointer-active');
-  });
-});
-
 // 共用內容項目模板：所有動態新增的景點與列表項目都從同一個結構開始。
 const createRegionContentItem = (type = 'list') => {
   const item = document.createElement('article');
@@ -86,114 +63,23 @@ const createRegionContentItem = (type = 'list') => {
   return item;
 };
 
-if (document.querySelector('.region-hero-hokkaido')) {
-  const spotsList = document.querySelector('#spots .region-card-grid');
-  if (spotsList && spotsList.children.length < 3) {
-    const sapporo = createRegionContentItem('card');
-    sapporo.innerHTML = '<span>札幌</span><h3>城市街景與咖啡</h3><p>從大通公園、街角咖啡到夜晚的城市燈光，感受北海道首府輕鬆而開闊的日常節奏。</p>';
-    spotsList.append(sapporo);
-  }
-  const hokkaidoSpots = document.querySelectorAll('#spots .region-content-card');
-  const spotContent = [
-    ['小樽', '港町散步與冬日風景', '沿著運河、倉庫街與海岸慢慢散步，感受小樽安靜而帶有懷舊感的城市氣氛。'],
-    ['定山溪', '溫泉山谷與雪景', '在山谷、溪流與溫泉之間放慢腳步，記錄北海道冬季自然景色最安靜的一面。']
-  ];
-  hokkaidoSpots.forEach((spot, index) => {
-    const content = spotContent[index];
-    if (!content) return;
-    const label = spot.querySelector('span');
-    const title = spot.querySelector('h3');
-    const description = spot.querySelector('p');
-    if (label) label.textContent = content[0];
-    if (title) title.textContent = content[1];
-    if (description) description.textContent = content[2];
-  });
-  const foodList = document.querySelector('#food .region-content-list');
-  if (foodList && foodList.children.length < 3) {
-    const sapporoFood = createRegionContentItem('list');
-    sapporoFood.innerHTML = '<span>札幌</span><div><h3>湯咖哩與城市餐桌</h3><p>在札幌的街角餐館裡，從香料、湯汁到季節食材，感受北海道日常飲食的溫度。</p></div>';
-    foodList.append(sapporoFood);
-  }
-  const foodContent = [
-    ['小樽海鮮', '海鮮與甜點散步', '沿著運河與老街尋找新鮮海鮮、甜點與咖啡，讓小樽的港町風景延伸到餐桌。官方推薦的小樽三角市場也適合安排成早晨的第一站。'],
-    ['溫泉會席', '溫泉旅館的一餐', '在山谷與溫泉之間享用當季料理，從北海道蔬菜、山菜到河川與海產，感受旅館餐桌的季節變化。'],
-    ['札幌湯咖哩', '湯咖哩與北海道海味', '札幌是湯咖哩的發源地，也能在二條市場、狸小路一帶找到海鮮丼、成吉思汗烤肉與乳製甜點。'],
-    ['帝王蟹', '札幌蟹料理與海鮮放題', '以北海道帝王蟹為主角，安排一餐海鮮吃到飽，難陀位於薄野附近，適合搭配札幌夜間行程。'],
-    ['迴轉壽司', '北海道海鮮的日常餐桌', '以北海道在地魚介為主角，從北見發源的 Triton 到根室花丸，體驗高品質且親切的迴轉壽司。']
-  ];
-  if (foodList) {
-    while (foodList.children.length < foodContent.length) {
-      const content = foodContent[foodList.children.length];
-      const item = createRegionContentItem('list');
-      item.innerHTML = `<span>${content[0]}</span><div><h3>${content[1]}</h3><p>${content[2]}</p></div>`;
-      foodList.append(item);
-    }
-  }
-  const hokkaidoFood = document.querySelectorAll('#food .region-content-list article');
-  hokkaidoFood.forEach((item, index) => {
-    const content = foodContent[index];
-    if (!content) return;
-    const label = item.querySelector('span');
-    const title = item.querySelector('h3');
-    const description = item.querySelector('p');
-    if (label) label.textContent = content[0];
-    if (title) title.textContent = content[1];
-    if (description) description.textContent = content[2];
-  });
-  if (foodList) {
-    let foodGlowFrame = 0;
-    let pendingFood = null;
-    foodList.addEventListener('pointermove', (event) => {
-      const item = event.target.closest('article');
-      if (!item) return;
-      pendingFood = { item, event };
-      if (foodGlowFrame) return;
-      foodGlowFrame = window.requestAnimationFrame(() => {
-        const rect = pendingFood.item.getBoundingClientRect();
-        pendingFood.item.style.setProperty('--pointer-x', `${pendingFood.event.clientX - rect.left}px`);
-        pendingFood.item.style.setProperty('--pointer-y', `${pendingFood.event.clientY - rect.top}px`);
-        pendingFood.item.classList.add('is-pointer-active');
-        foodGlowFrame = 0;
-      });
-    });
-    foodList.addEventListener('pointerleave', () => {
-      foodList.querySelectorAll('.is-pointer-active').forEach((item) => item.classList.remove('is-pointer-active'));
-    });
-  }
-  if (spotsList) {
-    let glowFrame = 0;
-    let pendingSpot = null;
-    spotsList.addEventListener('pointermove', (event) => {
-      const spot = event.target.closest('.region-content-card');
-      if (!spot) return;
-      pendingSpot = { spot, event };
-      if (glowFrame) return;
-      glowFrame = window.requestAnimationFrame(() => {
-        const rect = pendingSpot.spot.getBoundingClientRect();
-        pendingSpot.spot.style.setProperty('--pointer-x', `${pendingSpot.event.clientX - rect.left}px`);
-        pendingSpot.spot.style.setProperty('--pointer-y', `${pendingSpot.event.clientY - rect.top}px`);
-        pendingSpot.spot.classList.add('is-pointer-active');
-        glowFrame = 0;
-      });
-    });
-    spotsList.addEventListener('pointerleave', () => {
-      spotsList.querySelectorAll('.is-pointer-active').forEach((spot) => spot.classList.remove('is-pointer-active'));
-    });
-  }
-  const hokkaidoStay = document.querySelector('#stays .region-facts-wide strong, #stays .region-content-list article h3');
-  if (hokkaidoStay) hokkaidoStay.textContent = '札幌市區・定山溪溫泉旅館';
-  const hokkaidoStayArticle = document.querySelector('#stays .region-content-list article');
-  if (hokkaidoStayArticle) {
-    let hokkaidoStayItem = hokkaidoStayArticle.querySelector('p');
-    if (!hokkaidoStayItem) {
-      hokkaidoStayItem = document.createElement('p');
-      hokkaidoStayArticle.append(hokkaidoStayItem);
-    }
-    hokkaidoStayItem.textContent = '札幌適合以車站與大通周邊作為城市據點；想放慢步調時，可安排定山溪溫泉旅館，搭配巴士或租車往返。';
-  }
-}
-
 const regionContent = {
+  hokkaido: {
+    spots: [
+      ['小樽', '港町散步與冬日風景', '沿著運河、倉庫街與海岸慢慢散步，感受小樽安靜而帶有懷舊感的城市氣氛。'],
+      ['定山溪', '溫泉山谷與雪景', '在山谷、溪流與溫泉之間放慢腳步，記錄北海道冬季自然景色最安靜的一面。'],
+      ['札幌', '城市街景與咖啡', '從大通公園、街角咖啡到夜晚的城市燈光，感受北海道首府輕鬆而開闊的日常節奏。']
+    ],
+    food: [
+      ['小樽海鮮', '海鮮與甜點散步', '沿著運河與老街尋找新鮮海鮮、甜點與咖啡，讓小樽的港町風景延伸到餐桌。官方推薦的小樽三角市場也適合安排成早晨的第一站。'],
+      ['溫泉會席', '溫泉旅館的一餐', '在山谷與溫泉之間享用當季料理，從北海道蔬菜、山菜到河川與海產，感受旅館餐桌的季節變化。'],
+      ['札幌湯咖哩', '湯咖哩與北海道海味', '札幌是湯咖哩的發源地，也能在二條市場、狸小路一帶找到海鮮丼、成吉思汗烤肉與乳製甜點。'],
+      ['帝王蟹', '札幌蟹料理與海鮮放題', '以北海道帝王蟹為主角，安排一餐海鮮吃到飽，難陀位於薄野附近，適合搭配札幌夜間行程。'],
+      ['迴轉壽司', '北海道海鮮的日常餐桌', '以北海道在地魚介為主角，從北見發源的 Triton 到根室花丸，體驗高品質且親切的迴轉壽司。']
+    ],
+    stay: '札幌市區・定山溪溫泉旅館',
+    note: ['2024 / 01', '從這裡開始累積北海道的旅行記憶。']
+  },
   tokyo: {
     spots: [
       ['淺草', '寺院、老街與隅田川', '從雷門、仲見世通一路走到淺草寺，在江戶風情與隅田川河岸之間感受東京最經典的下町日常。'],
@@ -382,7 +268,7 @@ if (detailItems.length) {
   const modal = document.createElement('div');
   modal.className = 'spot-modal';
   modal.setAttribute('aria-hidden', 'true');
-  modal.innerHTML = '<div class="spot-modal-backdrop" data-spot-modal-close></div><section class="spot-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="spot-modal-title"><button class="spot-modal-close" type="button" aria-label="關閉旅行內容視窗" data-spot-modal-close>×</button><span class="spot-modal-label" id="spot-modal-label"></span><h2 id="spot-modal-title"></h2><p class="spot-modal-placeholder">小樽的山景、運河與地方酒造，先從這三個地點開始整理。</p><div class="spot-modal-table-wrap"><table class="spot-modal-table"><thead><tr><th scope="col">地名</th><th scope="col">資訊</th><th scope="col">交通方式</th><th scope="col">Google Map</th></tr></thead><tbody><tr><td>天狗山</td><td>登上山頂眺望小樽港與城市街景。</td><td>由小樽站搭乘巴士前往天狗山纜車站。</td><td><a class="spot-modal-map-link" href="#" aria-label="天狗山 Google Map 連結待補充">開啟地圖</a></td></tr><tr><td>小樽運河街道</td><td>沿著運河與倉庫街散步，感受港町風景。</td><td>由小樽站步行前往運河周邊。</td><td><a class="spot-modal-map-link" href="#" aria-label="小樽運河街道 Google Map 連結待補充">開啟地圖</a></td></tr><tr><td>田中酒造</td><td>認識北海道清酒釀造與地方酒文化。</td><td>由小樽站步行或搭乘市區巴士前往。</td><td><a class="spot-modal-map-link" href="#" aria-label="田中酒造 Google Map 連結待補充">開啟地圖</a></td></tr></tbody></table></div></section>';
+  modal.innerHTML = '<div class="spot-modal-backdrop" data-spot-modal-close></div><section class="spot-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="spot-modal-title"><button class="spot-modal-close" type="button" aria-label="關閉旅行內容視窗" data-spot-modal-close>×</button><span class="spot-modal-label" id="spot-modal-label"></span><h2 id="spot-modal-title"></h2><p class="spot-modal-placeholder">小樽的山景、運河與地方酒造，先從這三個地點開始整理。</p><div class="spot-modal-table-wrap"><table class="spot-modal-table"><thead><tr><th scope="col">地名</th><th scope="col">資訊</th><th scope="col">交通方式</th><th scope="col">Google Map</th></tr></thead><tbody></tbody></table></div></section>';
   document.body.append(modal);
   const title = modal.querySelector('#spot-modal-title');
   const label = modal.querySelector('#spot-modal-label');
@@ -490,7 +376,17 @@ if (detailItems.length) {
       ['美瑛町民宿與旅館', '美瑛觀光協會整理的住宿選擇，適合依車站、景觀與自駕需求比較。', '由美瑛站或旭川機場轉乘巴士前往。', 'https://www.google.com/maps/search/?api=1&query=美瑛住宿']
     ]
   };
+  // 地點資料一律以「地區 → 分類 → 項目標籤 → 資料列」的結構查詢。
+  // 北海道原本散在外面的專屬陣列也併進來，讓六個地區走同一條查表路徑。
   const regionalVenueData = {
+    hokkaido: {
+      spots: {
+        '小樽': otaruPlaces, '定山溪': jozankeiPlaces, '札幌': sapporoPlaces,
+        '旭川': asahikawaPlaces, '美瑛': bieiPlaces, '函館': hakodatePlaces
+      },
+      food: hokkaidoFoodPlaces,
+      stays: hokkaidoStayPlaces
+    },
     tokyo: {
       spots: {
         '淺草': [['淺草寺', '東京最具代表性的下町寺院與觀光景點。', '由淺草站步行前往。'], ['雷門與仲見世通', '連結寺院、老街與伴手禮店的經典散步路線。', '由淺草站步行前往。']],
@@ -528,53 +424,36 @@ if (detailItems.length) {
       stays: {'博多站・天神一帶': [['JR九州飯店 Blossom 博多中央', '博多站附近的實用型住宿，適合市區與近郊移動。', '由博多站步行前往。'], ['THE BLOSSOM HAKATA Premier', '位於博多核心區，適合以步行探索市區。', '由櫛田神社前站步行前往。']], '天神': [['福岡天神東急REI酒店', '適合購物、屋台與市中心散步的住宿。', '由天神站步行前往。']]}
     }
   };
-  if (tableBody) {
-    tableBody.innerHTML = otaruPlaces.map(([place, info, transport, mapUrl]) => `<tr><td>${place}</td><td>${info}</td><td>${transport}</td><td><a class="spot-modal-map-link" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="在 Google Maps 開啟${place}">開啟地圖</a></td></tr>`).join('');
-  }
+  const mapSearchUrl = (query) =>
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  const mapCell = (name, href) => href
+    ? `<td><a class="spot-modal-map-link" href="${href}" target="_blank" rel="noopener noreferrer" aria-label="在 Google Maps 開啟${name}">開啟地圖</a></td>`
+    : '<td>—</td>';
+  // 所有資料列都由這裡產生，避免每個查表分支各自複製一份相同的樣板。
+  const renderRows = (rows) => rows.map(([name, info, transport, mapUrl]) =>
+    `<tr><td>${name}</td><td>${info}</td><td>${transport}</td>${mapCell(name, mapUrl || mapSearchUrl(name))}</tr>`
+  ).join('');
+
   const renderItemTable = (item) => {
     if (!tableBody) return;
     const place = item.querySelector('span')?.textContent?.trim() || '待補充地點';
     const info = item.querySelector('p')?.textContent?.trim() || '待補充資訊';
     const sectionName = item.closest('.region-section')?.id || 'travel';
-    const regionalRows = regionalVenueData[regionKey]?.[sectionName]?.[place];
-    if (regionalRows) {
-      tableBody.innerHTML = regionalRows.map(([venue, info, transport, mapUrl]) => `<tr><td>${venue}</td><td>${info}</td><td>${transport}</td><td><a class="spot-modal-map-link" href="${mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue)}`}" target="_blank" rel="noopener noreferrer" aria-label="在 Google Maps 開啟${venue}">開啟地圖</a></td></tr>`).join('');
+
+    const rows = regionalVenueData[regionKey]?.[sectionName]?.[place];
+    if (rows) {
+      tableBody.innerHTML = renderRows(rows);
       return;
     }
-    if (sectionName === 'spots' && place === '小樽') {
-      tableBody.innerHTML = otaruPlaces.map(([otaruPlace, otaruInfo, otaruTransport, mapUrl]) => `<tr><td>${otaruPlace}</td><td>${otaruInfo}</td><td>${otaruTransport}</td><td><a class="spot-modal-map-link" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="在 Google Maps 開啟${otaruPlace}">開啟地圖</a></td></tr>`).join('');
-      return;
-    }
-    if (sectionName === 'spots' && place === '定山溪') {
-      tableBody.innerHTML = jozankeiPlaces.map(([jozankeiPlace, jozankeiInfo, jozankeiTransport, mapUrl]) => `<tr><td>${jozankeiPlace}</td><td>${jozankeiInfo}</td><td>${jozankeiTransport}</td><td><a class="spot-modal-map-link" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="在 Google Maps 開啟${jozankeiPlace}">開啟地圖</a></td></tr>`).join('');
-      return;
-    }
-    if (sectionName === 'spots' && place === '札幌') {
-      tableBody.innerHTML = sapporoPlaces.map(([sapporoPlace, sapporoInfo, sapporoTransport, mapUrl]) => `<tr><td>${sapporoPlace}</td><td>${sapporoInfo}</td><td>${sapporoTransport}</td><td><a class="spot-modal-map-link" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="在 Google Maps 開啟${sapporoPlace}">開啟地圖</a></td></tr>`).join('');
-      return;
-    }
-    const regionalPlaces = { 旭川: asahikawaPlaces, 美瑛: bieiPlaces, 函館: hakodatePlaces }[place];
-    if (sectionName === 'spots' && regionalPlaces) {
-      tableBody.innerHTML = regionalPlaces.map(([regionalPlace, regionalInfo, regionalTransport, mapUrl]) => `<tr><td>${regionalPlace}</td><td>${regionalInfo}</td><td>${regionalTransport}</td><td><a class="spot-modal-map-link" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="在 Google Maps 開啟${regionalPlace}">開啟地圖</a></td></tr>`).join('');
-      return;
-    }
-    if (sectionName === 'food' && hokkaidoFoodPlaces[place]) {
-      tableBody.innerHTML = hokkaidoFoodPlaces[place].map(([foodPlace, foodInfo, foodTransport, mapUrl]) => `<tr><td>${foodPlace}</td><td>${foodInfo}</td><td>${foodTransport}</td><td><a class="spot-modal-map-link" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="在 Google Maps 開啟${foodPlace}">開啟地圖</a></td></tr>`).join('');
-      return;
-    }
-    if (sectionName === 'stays' && hokkaidoStayPlaces[place]) {
-      tableBody.innerHTML = hokkaidoStayPlaces[place].map(([stayPlace, stayInfo, stayTransport, mapUrl]) => `<tr><td>${stayPlace}</td><td>${stayInfo}</td><td>${stayTransport}</td><td><a class="spot-modal-map-link" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="在 Google Maps 開啟${stayPlace}">開啟地圖</a></td></tr>`).join('');
-      return;
-    }
-    const transport = sectionName === 'stays' ? '待補充住宿位置與移動方式' : sectionName === 'notes' ? '依旅程安排補充' : '待補充前往方式';
-    // 旅行筆記的標籤是年月而不是地點，查地圖沒有意義，直接不給連結。
-    if (sectionName === 'notes') {
-      tableBody.innerHTML = `<tr><td>${place}</td><td>${info}</td><td>${transport}</td><td>—</td></tr>`;
-      return;
-    }
-    const query = `${place} ${currentRegionSearchName}`.trim();
-    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-    tableBody.innerHTML = `<tr><td>${place}</td><td>${info}</td><td>${transport}</td><td><a class="spot-modal-map-link" href="${mapUrl}" target="_blank" rel="noopener noreferrer" aria-label="在 Google Maps 開啟${place}">開啟地圖</a></td></tr>`;
+
+    // 沒有對應地點資料時的 fallback：查詢字串必須帶入項目實際所在的地區。
+    // 旅行筆記的標籤是年月而不是地點，查地圖沒有意義，因此不提供連結。
+    const transport = sectionName === 'stays' ? '待補充住宿位置與移動方式'
+      : sectionName === 'notes' ? '依旅程安排補充' : '待補充前往方式';
+    const href = sectionName === 'notes'
+      ? null
+      : mapSearchUrl(`${place} ${currentRegionSearchName}`.trim());
+    tableBody.innerHTML = `<tr><td>${place}</td><td>${info}</td><td>${transport}</td>${mapCell(place, href)}</tr>`;
   };
   const closeButton = modal.querySelector('.spot-modal-close');
   let previousFocus = null;

@@ -156,6 +156,38 @@ export const mapLinks = suite("地區頁 · Google Maps 連結", async (b, t) =>
   t.check("所有地區頁皆無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 });
 
+// 重構查表結構時，資料很容易在合併過程中靜默消失——連結仍然正確，只是列數變少。
+// 這裡把每個地區的資料深度釘住，數字下降就會失敗。
+const EXPECTED_ROWS = {
+  hokkaido: 60, tokyo: 19, nagoya: 14, osaka: 13, "ise-shima": 13, fukuoka: 13
+};
+
+export const dataDepth = suite("地區頁 · 彈窗地點資料深度", async (b, t) => {
+  await b.desktop();
+  let total = 0;
+
+  for (const region of REGIONS) {
+    await b.goto(page(region), { settle: 1000 });
+    const rows = await b.eval(`(() => {
+      const items = [...document.querySelectorAll("#spots .region-content-card, " +
+        "#food .region-content-list article, #stays .region-content-list article")];
+      let count = 0;
+      items.forEach((item) => {
+        item.click();
+        count += document.querySelectorAll(".spot-modal-table tbody tr").length;
+        document.querySelector(".spot-modal-close")?.click();
+      });
+      return count;
+    })()`);
+    total += rows;
+    t.check(`${region}：地點資料列數未減少`,
+      rows >= EXPECTED_ROWS[region], `${rows} 列（基準 ${EXPECTED_ROWS[region]}）`);
+  }
+
+  const expectedTotal = Object.values(EXPECTED_ROWS).reduce((a, n) => a + n, 0);
+  t.check("全站地點資料總量未減少", total >= expectedTotal, `${total} 列（基準 ${expectedTotal}）`);
+});
+
 export const modalMobile = suite("地區頁 · 手機版彈窗", async (b, t) => {
   await b.mobile();
   await b.goto(page("fukuoka"), { settle: 1200 });
