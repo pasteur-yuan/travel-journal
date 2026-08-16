@@ -509,6 +509,10 @@ body.is-page-leaving .region-showcase { opacity: 0; transform: scale(.985); filt
 .timeline-entry:focus-visible { outline: none; }
 @media (max-width: 700px) { .timeline-year-group.is-active .timeline-entry { animation: mobile-timeline-entry-in .75s cubic-bezier(.2,.75,.25,1) both; } .timeline-year-group.is-active .timeline-entry:nth-of-type(3) { animation-delay: .08s; } .timeline-year-group.is-active .timeline-entry:nth-of-type(4) { animation-delay: .16s; } }
 @media (max-width: 700px) { .timeline-entry.is-dot-collapsed .timeline-card { visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; min-height: 3rem !important; height: 3rem !important; transform: translateY(4px) !important; } .timeline-entry.is-dot-collapsed .timeline-dot { background: var(--paper) !important; transform: translate(-50%, -50%) !important; } }
+/* 年份切換時其他年份群組的滑動：前段快、尾段長時間減速，收在慢速煞停的手感。
+   is-gliding 只用來讓 FLIP 的起始位移瞬間就位，不參與動畫。 */
+@media (max-width: 700px) { .timeline-year-group { transition: transform 1.05s cubic-bezier(.16, 1, .3, 1); } .timeline-year-group.is-gliding { transition: none; } }
+@media (max-width: 700px) and (prefers-reduced-motion: reduce) { .timeline-year-group { transition: none; } }
 /* 觸控裝置的 :hover 會在點擊後殘留，讓資訊卡脫離 JS 的 is-expanded 控制而收不回去。
    手機版改為只由 is-expanded 或鍵盤 focus 決定展開，hover 僅保留給真正有游標的裝置。 */
 @media (max-width: 700px) and (hover: none) { .timeline-entry:not(.is-expanded):not(:focus-visible) .timeline-card { height: 2.75rem; min-height: 3rem; padding: .65rem .85rem; visibility: hidden; opacity: 0; pointer-events: none; transform: translateY(4px); } .timeline-entry:not(.is-expanded):not(:focus-visible) .timeline-dot { background: var(--paper); transform: translate(-50%, -50%); } }

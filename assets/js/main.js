@@ -24,14 +24,31 @@ const timelineTrack = document.querySelector(".timeline-track");
 let timelineSwitchTimer = 0;
 const isMobileTimeline = () => window.matchMedia("(max-width: 700px)").matches;
 
-// 手機版切換年份或展開資訊卡會改變版面高度。以被點擊的元素為錨點量測前後位移並補回，
-// 讓它停在原本的視窗位置，整個頁面不會自己捲動或跳動。
-const keepAnchorInViewport = (anchor, update) => {
-  if (!anchor) { update(); return; }
-  const before = anchor.getBoundingClientRect().top;
+// 手機版年份群組的位移來自 display 切換，CSS transition 接不到。
+// 以 FLIP 記錄切換前後的位置差：先用 transform 把群組移回原位，
+// 再放手讓它沿慢速煞停的曲線滑到新位置。
+// 頁面本身完全不捲動——捲動會讓標題與時間軸以外的內容整塊位移，比年份自己移動更突兀。
+const glideYearGroups = (update) => {
+  const groups = timelineTrack ? [...timelineTrack.querySelectorAll(".timeline-year-group")] : [];
+  if (!groups.length || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    update();
+    return;
+  }
+  const before = groups.map((group) => group.getBoundingClientRect().top);
   update();
-  const delta = anchor.getBoundingClientRect().top - before;
-  if (Math.abs(delta) >= 1) window.scrollTo(0, window.scrollY + delta);
+  // 先讀完所有新位置再寫入 transform，避免讀寫交錯觸發多次 layout。
+  const deltas = groups.map((group, index) => before[index] - group.getBoundingClientRect().top);
+  const shifted = groups.filter((group, index) => {
+    if (Math.abs(deltas[index]) < 1) return false;
+    group.classList.add("is-gliding");
+    group.style.transform = `translateY(${deltas[index]}px)`;
+    return true;
+  });
+  if (!shifted.length) return;
+  window.requestAnimationFrame(() => shifted.forEach((group) => {
+    group.classList.remove("is-gliding");
+    group.style.transform = "";
+  }));
 };
 
 // 時間軸光點對齊目前年份標記的垂直中心。宣告在模組層級，
@@ -103,7 +120,7 @@ if (timelineTrack && timelineEntries.length) {
         timelineEntries.forEach((entry) => entry.classList.remove("is-expanded", "is-dot-collapsed"));
         if (document.activeElement?.closest?.(".timeline-entry")) document.activeElement.blur();
       };
-      if (mobile) keepAnchorInViewport(marker, switchYear);
+      if (mobile) glideYearGroups(switchYear);
       else switchYear();
       updateTimelineGlow(group);
       if (mobile) return;
@@ -116,6 +133,37 @@ if (timelineTrack && timelineEntries.length) {
     });
     timelineTrack.append(group);
   });
+  // 年份收合會讓文件變短。使用者若正停在頁面底部，瀏覽器會把捲動位置往上夾，
+  // 看起來就像畫面自己滑動。先量出最高的一種年份配置並預留起來，
+  // 讓切換年份與展開資訊卡都不改變文件總高度。
+  const lockTimelineHeight = () => {
+    if (!isMobileTimeline()) {
+      timelineTrack.style.minHeight = "";
+      return;
+    }
+    const groups = [...timelineTrack.querySelectorAll(".timeline-year-group")];
+    const restoreActive = groups.find((group) => group.classList.contains("is-active"));
+    const restoreExpanded = timelineTrack.querySelector(".timeline-entry.is-expanded");
+    timelineTrack.style.minHeight = "";
+    let tallest = 0;
+    groups.forEach((group) => {
+      groups.forEach((item) => item.classList.toggle("is-active", item === group));
+      const firstEntry = group.querySelector(".timeline-entry");
+      firstEntry?.classList.add("is-expanded");
+      tallest = Math.max(tallest, timelineTrack.scrollHeight);
+      firstEntry?.classList.remove("is-expanded");
+    });
+    groups.forEach((item) => item.classList.toggle("is-active", item === restoreActive));
+    restoreExpanded?.classList.add("is-expanded");
+    timelineTrack.style.minHeight = `${tallest}px`;
+  };
+  lockTimelineHeight();
+  let heightLockTimer = 0;
+  window.addEventListener("resize", () => {
+    window.clearTimeout(heightLockTimer);
+    heightLockTimer = window.setTimeout(lockTimelineHeight, 200);
+  }, { passive: true });
+
   const initialGroup = timelineTrack.querySelector(`.timeline-year-group[data-year="${activeYear}"]`);
   if (initialGroup) window.requestAnimationFrame(() => {
     centerGroup(initialGroup, false);
@@ -143,7 +191,7 @@ timelineEntries.forEach((entry) => {
   const activateEntryYear = () => {
     const yearGroup = entry.closest(".timeline-year-group");
     if (!yearGroup) return;
-    keepAnchorInViewport(dot, () => {
+    glideYearGroups(() => {
       timelineEntries.forEach((item) => item.classList.remove("is-expanded", "is-dot-collapsed"));
       timelineTrack.querySelectorAll(".timeline-year-group").forEach((item) => {
         const active = item === yearGroup;
@@ -157,7 +205,7 @@ timelineEntries.forEach((entry) => {
   // 第二次點擊同一個圓點只收回自己的資訊卡：年份群組維持展開，
   // 卡片回到第一次點擊前的 3rem 佔位高度，圓點位置與時間軸線不會被往上推。
   const collapseEntryCard = () => {
-    keepAnchorInViewport(dot, () => {
+    glideYearGroups(() => {
       entry.classList.remove("is-expanded");
       entry.classList.add("is-dot-collapsed");
     });
