@@ -19,7 +19,11 @@
     <main class="container">
       <section class="hero hero-map">
         <div class="world-map" id="world-map" role="img" aria-label="世界時區地圖，已加入的國家會顯示在地圖上">
-          <div class="night-zone" id="night-zone" aria-hidden="true"></div>
+          <div class="night-zone-viewport" aria-hidden="true">
+            <div class="night-zone" id="night-zone" data-night-zone-offset="0"></div>
+            <div class="night-zone" data-night-zone-offset="-1"></div>
+            <div class="night-zone" data-night-zone-offset="1"></div>
+          </div>
           <div class="timezone-label" id="timezone-label">UTC +09:00</div>
           <div id="timezone-chart" aria-label="精細世界時區地圖"></div>
           <div class="country-tooltip" id="country-tooltip" role="status" aria-hidden="true"></div>

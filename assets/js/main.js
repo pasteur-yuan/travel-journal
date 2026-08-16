@@ -3,7 +3,7 @@
 const worldMap = document.querySelector("#world-map");
 const timezoneLabel = document.querySelector("#timezone-label");
 const countryTooltip = document.querySelector("#country-tooltip");
-const nightZone = document.querySelector("#night-zone");
+const nightZones = [...document.querySelectorAll(".night-zone")];
 const countryStrip = document.querySelector(".country-strip");
 const countryCards = [...document.querySelectorAll(".country-card")];
 const timelineEntries = document.querySelectorAll(".timeline-entry");
@@ -336,19 +336,25 @@ if (countryStrip) {
   });
 }
 
-function updateDayNight() {
-  if (!worldMap || !nightZone) return;
-  const now = new Date();
+function updateDayNight(now = new Date()) {
+  if (!worldMap || !nightZones.length) return;
   const utcHours = now.getUTCHours() + now.getUTCMinutes() / 60;
   const sunLongitude = (12 - utcHours) * 15;
   const nightLongitude = sunLongitude + 180;
-  const x = ((((nightLongitude + 180) % 360) + 360) % 360 / 360) * worldMap.clientWidth;
-  const targetLeft = x - worldMap.clientWidth * 0.34;
-  nightZone.style.left = `${targetLeft}px`;
+  const mapWidth = worldMap.clientWidth;
+  const x = ((((nightLongitude + 180) % 360) + 360) % 360 / 360) * mapWidth;
+  const targetLeft = x - mapWidth * 0.34;
+  // 遮罩跨過世界地圖的日期變更線時，同一片夜晚會在另一側補位，
+  // 並由 night-zone-viewport 裁切，因此既沒有空白也不會滲出地圖。
+  nightZones.forEach((zone) => {
+    const offset = Number(zone.dataset.nightZoneOffset || 0);
+    zone.style.left = `${targetLeft + mapWidth * offset}px`;
+  });
 }
 
 updateDayNight();
 window.setInterval(updateDayNight, 60000);
+window.addEventListener("resize", () => updateDayNight(), { passive: true });
 
 if (worldMap && timezoneLabel) {
   const placeCountryTooltip = (point) => {
@@ -466,7 +472,9 @@ if (worldMap && timezoneLabel) {
           if (action === "reset") {
             setMapView();
           }
-          if (action === "night" && nightZone) nightZone.classList.toggle("is-hidden");
+          if (action === "night" && nightZones.length) {
+            nightZones.forEach((zone) => zone.classList.toggle("is-hidden"));
+          }
         });
       });
       chart.appear(0, 0);

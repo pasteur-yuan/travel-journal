@@ -9,6 +9,48 @@ export const map = suite("首頁 · 世界地圖", async (b, t) => {
     `(() => { const l = document.querySelector("#night-zone").style.left; return !!l && l !== "0px"; })()`),
     await b.eval(`document.querySelector("#night-zone").style.left`));
 
+  const nightWrap = await b.eval(`(() => {
+    const viewport = document.querySelector(".night-zone-viewport");
+    const read = (selector) => {
+      const rect = document.querySelector(selector)?.getBoundingClientRect();
+      return rect && { left: rect.left, right: rect.right };
+    };
+    const sample = (hour) => {
+      if (!viewport || typeof window.updateDayNight !== "function") return null;
+      window.updateDayNight(new Date(Date.UTC(2026, 0, 1, hour, 0, 0)));
+      const bounds = viewport.getBoundingClientRect();
+      return {
+        bounds: { left: bounds.left, right: bounds.right },
+        primary: read('[data-night-zone-offset="0"]'),
+        before: read('[data-night-zone-offset="-1"]'),
+        after: read('[data-night-zone-offset="1"]')
+      };
+    };
+    const result = {
+      exists: !!viewport,
+      overflow: viewport && getComputedStyle(viewport).overflow,
+      layers: document.querySelectorAll(".night-zone").length,
+      enteringLeft: sample(11),
+      enteringRight: sample(13)
+    };
+    window.updateDayNight?.();
+    return result;
+  })()`);
+  t.check("夜晚區域限制在地圖裁切視窗內",
+    nightWrap.exists && nightWrap.overflow === "hidden",
+    JSON.stringify(nightWrap));
+  t.check("夜晚區域保留左右環繞副本", nightWrap.layers === 3, `${nightWrap.layers} 個圖層`);
+  t.check("遮罩越過左緣時會從右側同步出現", (() => {
+    const state = nightWrap.enteringLeft;
+    if (!state) return false;
+    return state.primary.left < state.bounds.left && state.after.left < state.bounds.right && state.after.right > state.bounds.right;
+  })(), JSON.stringify(nightWrap.enteringLeft));
+  t.check("遮罩越過右緣時會從左側同步出現", (() => {
+    const state = nightWrap.enteringRight;
+    if (!state) return false;
+    return state.primary.right > state.bounds.right && state.before.left < state.bounds.left && state.before.right > state.bounds.left;
+  })(), JSON.stringify(nightWrap.enteringRight));
+
   const hasCharts = await b.eval(`!!(window.am5 && window.am5map)`);
   if (!hasCharts) {
     t.skip("amCharts marker 相關檢查", "amCharts CDN 未載入（離線環境）");
