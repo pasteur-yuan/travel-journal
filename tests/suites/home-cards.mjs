@@ -141,6 +141,50 @@ export const cardsMobile = suite("首頁 · 國家卡片（手機版）", async 
     swipeFocus.outerBefore === 0 && swipeFocus.outerAfter === 0,
     JSON.stringify(swipeFocus));
 
+  await b.scrollIntoView(".country-strip");
+  const neighborProbe = await b.eval(`(() => {
+    const strip = document.querySelector(".country-strip").getBoundingClientRect();
+    const target = document.querySelectorAll(".country-card")[5];
+    const card = target.getBoundingClientRect();
+    const left = Math.ceil(Math.max(card.left + 4, strip.left + 4));
+    const right = Math.floor(Math.min(card.right - 4, strip.right - 4));
+    const top = Math.ceil(Math.max(card.top + 8, strip.top + 8));
+    const bottom = Math.floor(Math.min(card.bottom - 8, strip.bottom - 8));
+    for (let y = top; y <= bottom; y += 12) {
+      for (let x = left; x <= right; x += 4) {
+        if (document.elementFromPoint(x, y)?.closest(".country-card") === target) {
+          return { point: { x, y }, strip: { left: strip.left, right: strip.right }, card: { left: card.left, right: card.right } };
+        }
+      }
+    }
+    return { point: null, strip: { left: strip.left, right: strip.right }, card: { left: card.left, right: card.right },
+      edgeTarget: document.elementFromPoint(Math.max(left, Math.min(right, strip.right - 5)), Math.round((top + bottom) / 2))?.closest(".country-card")?.className || null };
+  })()`);
+  const neighborPoint = neighborProbe.point;
+  t.check("焦點右側鄰居保留可觸控區域", !!neighborPoint, JSON.stringify(neighborProbe));
+  if (neighborPoint) {
+    await b.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [neighborPoint] });
+    await b.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await sleep(80);
+    const handoffStart = await b.eval(`(() => ({
+      centering: document.querySelector(".country-strip").classList.contains("is-mobile-centering"),
+      focusedIndex: [...document.querySelectorAll(".country-card")].findIndex((card) => card.classList.contains("is-mobile-focused"))
+    }))()`);
+    await sleep(1000);
+    const handoffEnd = await b.eval(`(() => {
+      const strip = document.querySelector(".country-strip").getBoundingClientRect();
+      const card = document.querySelectorAll(".country-card")[5].getBoundingClientRect();
+      return {
+        centering: document.querySelector(".country-strip").classList.contains("is-mobile-centering"),
+        focusedIndex: [...document.querySelectorAll(".country-card")].findIndex((item) => item.classList.contains("is-mobile-focused")),
+        centered: Math.abs((card.left + card.right) / 2 - (strip.left + strip.right) / 2) < 8
+      };
+    })()`);
+    t.check("切換鄰居焦點時先收束、再平順置中",
+      handoffStart.centering && handoffStart.focusedIndex === 5 && !handoffEnd.centering && handoffEnd.focusedIndex === 5 && handoffEnd.centered,
+      JSON.stringify({ handoffStart, handoffEnd }));
+  }
+
   await b.goto("/index.html", { settle: 900 });
   await b.eval(`window.mobileJapanFirstTap = null;
     document.addEventListener("click", (event) => {
