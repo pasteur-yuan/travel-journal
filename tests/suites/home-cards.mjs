@@ -1,4 +1,10 @@
+import { readdirSync, existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { sleep, suite } from "../harness.mjs";
+import { REGIONS, REGION_NAMES } from "../regions.mjs";
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 export const cards = suite("首頁 · 國家卡片", async (b, t) => {
   await b.desktop();
@@ -306,3 +312,58 @@ export const cardsMobile = suite("首頁 · 國家卡片（手機版）", async 
     JSON.stringify(comingSoonTap));
   t.check("手機版無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 }, { serial: true });
+
+// 跑馬燈的地區清單、國家頁 showcase 清單，三處都要與實際存在的地區子頁一致——
+// 這裡直接掃描檔案系統當作地面真相，不是拿另一份手寫清單互相比對。
+export const cardRegionSync = suite("首頁 · 國家卡片跑馬燈同步地區子頁", async (b, t) => {
+  const japanDir = join(repoRoot, "countries", "japan");
+  const actualSlugs = readdirSync(japanDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(join(japanDir, entry.name, "index.html")))
+    .map((entry) => entry.name)
+    .sort();
+  const expectedSlugs = [...REGIONS].sort();
+
+  t.check("tests/regions.mjs 的地區清單與實際資料夾一致",
+    JSON.stringify(actualSlugs) === JSON.stringify(expectedSlugs),
+    `實際 ${actualSlugs.length} 個，清單 ${expectedSlugs.length} 個`
+      + (JSON.stringify(actualSlugs) === JSON.stringify(expectedSlugs) ? "" :
+        `；差異：${JSON.stringify(actualSlugs.filter((s) => !expectedSlugs.includes(s)))} 多出、`
+        + `${JSON.stringify(expectedSlugs.filter((s) => !actualSlugs.includes(s)))} 缺少`));
+
+  await b.desktop();
+  await b.goto("/index.html", { settle: 1200 });
+
+  const marquee = await b.eval(`(() => {
+    const meta = document.querySelector(".country-card-japan .country-meta");
+    return {
+      label: meta?.getAttribute("aria-label") || "",
+      text: meta?.querySelector(".country-meta-track")?.children[0]?.textContent || ""
+    };
+  })()`);
+
+  // 用 aria-label 的「、」分隔號拆單筆地區名——「四日市・鈴鹿」本身就含「・」，
+  // 拿可視跑馬燈文字的「・」分隔號來拆會誤斷成兩筆，「、」則不會跟任何地區名衝突。
+  const labelNames = marquee.label.split("、").map((s) => s.trim()).filter(Boolean);
+  const expectedNames = REGIONS.map((slug) => REGION_NAMES[slug]);
+  const missing = expectedNames.filter((name) => !labelNames.includes(name));
+  const extra = labelNames.filter((name) => !expectedNames.includes(name));
+  const expectedText = `${expectedNames.join("・")}　`;
+
+  t.check("跑馬燈地區數與實際地區頁數一致",
+    labelNames.length === expectedNames.length,
+    `跑馬燈 ${labelNames.length} 個，實際 ${expectedNames.length} 個`);
+  t.check("跑馬燈沒有遺漏已建立的地區頁", missing.length === 0, missing.join("、") || "無遺漏");
+  t.check("跑馬燈沒有不存在頁面的預告地名", extra.length === 0, extra.join("、") || "無多餘");
+  t.check("跑馬燈可視文字與 aria-label 的地區清單一致（含順序）",
+    marquee.text === expectedText, `跑馬燈：${marquee.text}\n預期：${expectedText}`);
+
+  await b.goto("/countries/japan/index.html", { settle: 1000 });
+  const showcaseSlugs = await b.eval(`JSON.stringify([...document.querySelectorAll(".region-showcase-item")]
+    .map((item) => item.getAttribute("href")?.replace(/\\/index\\.html$/, "")).sort())`);
+
+  t.check("國家頁 showcase 清單與實際地區頁一致",
+    showcaseSlugs === JSON.stringify(expectedSlugs),
+    `showcase ${JSON.parse(showcaseSlugs).length} 筆，實際 ${expectedSlugs.length} 筆`);
+
+  t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
+});

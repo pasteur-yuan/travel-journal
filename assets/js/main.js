@@ -22,6 +22,19 @@ const travelDestinations = [
   }
 ];
 
+// 國家卡片跑馬燈的地區清單，是這份文字的單一資料來源。
+// 新增／移除 countries/<國家>/<地區>/index.html 時要同步更新這裡，
+// 並比照該國家頁 showcase 清單與 tests/regions.mjs 的 REGION_NAMES——
+// 三處都要一致，跑馬燈才不會顯示還沒建立的地區，也不會漏掉已完成的頁面。
+const countryRegions = {
+  japan: [
+    "北海道", "東京", "名古屋", "大阪", "伊勢志摩", "福岡",
+    "熊本", "宮崎", "岐阜", "鹿兒島", "大分", "佐賀", "京都", "神戶", "長野",
+    "香川", "神奈川", "四日市・鈴鹿", "愛媛", "高知", "石川", "富山",
+    "靜岡", "山梨", "滋賀", "岡山", "島根", "長崎"
+  ]
+};
+
 document.addEventListener("pointerdown", (event) => {
   const target = event.target;
   if (mapLegend?.contains(target) || mapStats?.contains(target)) return;
@@ -299,6 +312,18 @@ if (countryStrip) {
   countryCards.filter((card) => card.tagName === "A").forEach((card) => {
     const meta = card.querySelector(".country-meta");
     if (!meta) return;
+    const countryKey = card.getAttribute("href")?.match(/^countries\/([^/]+)\//)?.[1];
+    const regions = countryKey && countryRegions[countryKey];
+    const track = meta.querySelector(".country-meta-track");
+    if (regions?.length && track) {
+      meta.setAttribute("aria-label", regions.join("、"));
+      const text = `${regions.join("・")}　`;
+      [...track.children].forEach((span) => { span.textContent = text; });
+      // 22 秒對應原本 6 個地區、22 個字的跑馬燈基準速度，依實際字數等比例延長，
+      // 避免地區一多，文字捲得比讀得完還快。
+      const baseSecondsPerChar = 22 / 22;
+      track.style.animationDuration = `${(baseSecondsPerChar * text.length).toFixed(1)}s`;
+    }
     let action = meta.querySelector(".country-meta-action");
     let arrow = meta.querySelector(".country-meta-arrow");
     if (!action) {
