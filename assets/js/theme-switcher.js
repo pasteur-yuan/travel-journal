@@ -4,12 +4,22 @@
   const themeToggle = document.querySelector("[data-theme-toggle]");
   let iconSwapTimer;
 
+  // html 也要有 region-page 標記：地區頁在手機版把 body 背景固定成深色（見
+  // style.css 的 body.region-page 規則），html 要跟著套用同一條規則，
+  // 手機拉到頁面邊界、iOS 回彈露出 html 背景時才不會跟 body 對不上顏色。
+  document.documentElement.classList.toggle("region-page", document.body.classList.contains("region-page"));
+
   function applyTheme(themeKey) {
     const theme = themes[themeKey] || themes.glass;
     document.body.className = document.body.className
       .replace(/theme-\S+/g, "")
       .trim();
     document.body.classList.add(theme.className);
+    // html 同步套用主題 class，讓回彈露出的區塊維持目前主題色而不是瀏覽器預設白底。
+    document.documentElement.className = document.documentElement.className
+      .replace(/theme-\S+/g, "")
+      .trim();
+    document.documentElement.classList.add(theme.className);
     if (themeToggle) {
       const isDark = themeKey === "glass-dark";
       if (!themeToggle.querySelector(".theme-icon")) themeToggle.innerHTML = iconMarkup;
