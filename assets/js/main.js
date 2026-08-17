@@ -308,6 +308,7 @@ if (countryStrip) {
   let mobileActivatedCard = null;
   let mobileCenteringCard = null;
   let mobileCenterTarget = 0;
+  let mobileFocusSuspended = false;
   const isMobileCountryStrip = () => window.matchMedia("(max-width: 700px)").matches;
   countryCards.filter((card) => card.tagName === "A").forEach((card) => {
     const meta = card.querySelector(".country-meta");
@@ -373,6 +374,10 @@ if (countryStrip) {
     mobileFocusFrame = 0;
     mobileActivatedCard = null;
     mobileCenteringCard = null;
+    // 如果點卡片列外側時，前一次點擊觸發的置中捲動動畫還沒跑完，動畫殘留的
+    // scroll 事件會繼續呼叫 syncMobileFocusedCard，把剛清除的焦點狀態又補回來。
+    // 用旗標暫時忽略這些殘留同步，直到卡片列上有新的觸控（點擊或滑動）才恢復。
+    mobileFocusSuspended = true;
     countryCards.forEach((card) => card.classList.remove("is-mobile-focused", "is-mobile-activated"));
   };
   const centerMobileCard = (card) => {
@@ -396,6 +401,7 @@ if (countryStrip) {
       countryCards.forEach((card) => card.classList.remove("is-mobile-focused", "is-mobile-activated"));
       return;
     }
+    if (mobileFocusSuspended) return;
     const focusX = countryStrip.scrollLeft + countryStrip.clientWidth / 2;
     const focusedCard = countryCards.reduce((closest, card) => {
       const center = card.offsetLeft + card.offsetWidth / 2;
@@ -466,6 +472,11 @@ if (countryStrip) {
     // 置中與焦點樣式同時開始，讓被點擊的鄰居接手時同步推開原本的焦點卡片。
     centerMobileCard(card);
   });
+  countryStrip.addEventListener("pointerdown", () => {
+    // 卡片列上有新的觸控（點擊或滑動起點），代表使用者重新開始互動，
+    // 解除 clearMobileCardFocus() 留下的暫停旗標，恢復正常的焦點同步。
+    mobileFocusSuspended = false;
+  }, { passive: true });
   document.addEventListener("pointerdown", (event) => {
     if (!isMobileCountryStrip()) return;
     const card = event.target.closest?.(".country-card");

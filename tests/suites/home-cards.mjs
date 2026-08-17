@@ -217,19 +217,28 @@ export const cardsMobile = suite("首頁 · 國家卡片（手機版）", async 
   if (neighborPoint) {
     await b.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [neighborPoint] });
     await b.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-    await sleep(120);
-    const handoffStart = await b.eval(`(() => ({
-      focusedIndex: [...document.querySelectorAll(".country-card")].findIndex((card) => card.classList.contains("is-mobile-focused")),
-      scrollProgress: document.querySelector(".country-strip").scrollLeft - ${neighborProbe.scrollLeft},
-      incomingProgress: ${neighborProbe.incomingCenter} - (() => {
-        const card = document.querySelectorAll(".country-card")[5].getBoundingClientRect();
-        return (card.left + card.right) / 2;
-      })(),
-      outgoingProgress: ${neighborProbe.outgoingCenter} - (() => {
-        const card = document.querySelectorAll(".country-card")[4].getBoundingClientRect();
-        return (card.left + card.right) / 2;
-      })()
-    }))()`);
+    // 原生 smooth scroll 搭配 scroll-snap 的起步時間點不穩定（CDP 觸控事件送達
+    // 到瀏覽器實際處理之間也有排程延遲），單次固定睡 120ms 再量測容易撲空、
+    // 量到還沒開始動的瞬間。改成小間隔輪詢，抓到「已經開始移動」的第一個時間點，
+    // 同時設上限時間，真的卡住不動的話最後一次量測仍會是失敗狀態。
+    let handoffStart;
+    const pollDeadline = Date.now() + 600;
+    do {
+      await sleep(30);
+      handoffStart = await b.eval(`(() => ({
+        focusedIndex: [...document.querySelectorAll(".country-card")].findIndex((card) => card.classList.contains("is-mobile-focused")),
+        scrollProgress: document.querySelector(".country-strip").scrollLeft - ${neighborProbe.scrollLeft},
+        incomingProgress: ${neighborProbe.incomingCenter} - (() => {
+          const card = document.querySelectorAll(".country-card")[5].getBoundingClientRect();
+          return (card.left + card.right) / 2;
+        })(),
+        outgoingProgress: ${neighborProbe.outgoingCenter} - (() => {
+          const card = document.querySelectorAll(".country-card")[4].getBoundingClientRect();
+          return (card.left + card.right) / 2;
+        })()
+      }))()`);
+    } while (Date.now() < pollDeadline &&
+      !(handoffStart.scrollProgress > 4 && handoffStart.incomingProgress > 4 && handoffStart.outgoingProgress > 4));
     await sleep(1000);
     const handoffEnd = await b.eval(`(() => {
       const strip = document.querySelector(".country-strip").getBoundingClientRect();
