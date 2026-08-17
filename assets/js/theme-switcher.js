@@ -3,6 +3,11 @@
   const iconMarkup = '<svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><g class="theme-icon-sun"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"></path></g><path class="theme-icon-moon" d="M15.8 3.6a8.7 8.7 0 1 0 4.6 15.9A8.2 8.2 0 1 1 15.8 3.6Z"></path></svg>';
   const themeToggle = document.querySelector("[data-theme-toggle]");
   let iconSwapTimer;
+  let switchEndTimer;
+  // 動畫（420ms 圖示翻轉、1800ms 整段旋轉）進行中，忽略任何新的切換請求，
+  // 避免上一次還沒切完，下一次點擊就把 body class 立即改掉、
+  // 圖示卻還停在上一次動畫排定的中途狀態，兩者對不上。
+  let isSwitching = false;
 
   // html 也要有 region-page 標記：地區頁在手機版把 body 背景固定成深色（見
   // style.css 的 body.region-page 規則），html 要跟著套用同一條規則，
@@ -27,14 +32,26 @@
       themeToggle.title = isDark ? "切換亮色主題" : "切換暗色主題";
       themeToggle.setAttribute("aria-pressed", String(isDark));
       clearTimeout(iconSwapTimer);
+      clearTimeout(switchEndTimer);
       const updateIcon = () => themeToggle.setAttribute("data-icon-state", isDark ? "dark" : "light");
-      if (themeToggle.dataset.ready === "true") {
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (themeToggle.dataset.ready === "true" && !reducedMotion) {
+        isSwitching = true;
+        themeToggle.setAttribute("aria-disabled", "true");
         themeToggle.classList.add("is-switching");
         iconSwapTimer = window.setTimeout(() => {
           updateIcon();
         }, 420);
-        window.setTimeout(() => themeToggle.classList.remove("is-switching"), 1800);
+        switchEndTimer = window.setTimeout(() => {
+          themeToggle.classList.remove("is-switching");
+          themeToggle.removeAttribute("aria-disabled");
+          isSwitching = false;
+        }, 1800);
       } else {
+        // reduced motion 或第一次套用主題：沒有動畫可等，圖示與鎖定狀態立即到位。
+        themeToggle.classList.remove("is-switching");
+        themeToggle.removeAttribute("aria-disabled");
+        isSwitching = false;
         updateIcon();
         themeToggle.dataset.ready = "true";
       }
@@ -43,6 +60,7 @@
   }
 
   themeToggle?.addEventListener("click", () => {
+    if (isSwitching) return;
     applyTheme(document.body.classList.contains("theme-glass-dark") ? "glass" : "glass-dark");
   });
   applyTheme(savedTheme);
