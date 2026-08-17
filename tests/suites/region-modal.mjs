@@ -107,15 +107,18 @@ export const mapLinks = suite("地區頁 · Google Maps 連結", async (b, t) =>
   let totalItems = 0;
   const wrongRegion = [];
   const missingLink = [];
-  let noteCells = 0;
-  let noteTotalSeen = 0;
+  let noteHiddenOk = 0;
+  let noteHiddenTotal = 0;
+  let itineraryOk = 0;
+  let itineraryTotal = 0;
+  const itineraryBroken = [];
 
   for (const region of REGIONS) {
     await b.goto(page(region), { settle: 1000 });
     const result = await b.eval(`(() => {
       const items = [...document.querySelectorAll(${JSON.stringify(ITEM_SELECTOR)})];
-      const wrong = [], missing = [];
-      let notes = 0, noteTotal = 0;
+      const wrong = [], missing = [], brokenItinerary = [];
+      let noteHidden = 0, noteHiddenTotal = 0, itinerary = 0, itineraryTotal = 0;
       items.forEach((item) => {
         item.click();
         const section = item.closest(".region-section")?.id;
@@ -123,11 +126,23 @@ export const mapLinks = suite("地區頁 · Google Maps 連結", async (b, t) =>
         const links = [...document.querySelectorAll(".spot-modal-table .spot-modal-map-link")]
           .map(a => decodeURIComponent(a.getAttribute("href") || ""));
         if (section === "notes") {
-          // 筆記的標籤是年月，四個欄位填不出真實內容，因此整張資料表都不該出現。
-          noteTotal++;
           const wrap = document.querySelector(".spot-modal-table-wrap");
           const rows = document.querySelectorAll(".spot-modal-table tbody tr").length;
-          if (wrap.hidden && rows === 0) notes++;
+          // 四欄表格（地名／資訊／交通方式／Google Map）不會拿來顯示筆記，
+          // 不管有沒有行程軌跡資料都一樣——四個欄位對筆記來說沒有一欄填得出真實內容。
+          const tableCorrectlyHidden = wrap.hidden && rows === 0;
+          const itineraryEl = document.querySelector(".spot-modal-itinerary");
+          const hasItineraryContent = itineraryEl && !itineraryEl.hidden &&
+            itineraryEl.querySelectorAll(".spot-modal-itinerary-stop").length > 0;
+          if (hasItineraryContent) {
+            itineraryTotal++;
+            if (tableCorrectlyHidden) itinerary++;
+            else brokenItinerary.push(section + " / " + label + "：四欄表格沒有正確隱藏");
+          } else {
+            // 沒有行程軌跡資料的筆記：表格跟行程軌跡容器都必須隱藏，不能編造內容。
+            noteHiddenTotal++;
+            if (tableCorrectlyHidden && itineraryEl?.hidden) noteHidden++;
+          }
         } else {
           if (!links.length) missing.push(section + " / " + label);
           links.forEach((link) => {
@@ -138,11 +153,14 @@ export const mapLinks = suite("地區頁 · Google Maps 連結", async (b, t) =>
         }
         document.querySelector(".spot-modal-close")?.click();
       });
-      return { count: items.length, wrong, missing, notes, noteTotal };
+      return { count: items.length, wrong, missing, noteHidden, noteHiddenTotal, itinerary, itineraryTotal, brokenItinerary };
     })()`);
     totalItems += result.count;
-    noteCells += result.notes;
-    noteTotalSeen += result.noteTotal;
+    noteHiddenOk += result.noteHidden;
+    noteHiddenTotal += result.noteHiddenTotal;
+    itineraryOk += result.itinerary;
+    itineraryTotal += result.itineraryTotal;
+    itineraryBroken.push(...result.brokenItinerary.map((w) => `${region}: ${w}`));
     wrongRegion.push(...result.wrong.map((w) => `${region}: ${w}`));
     missingLink.push(...result.missing.map((m) => `${region}: ${m}`));
   }
@@ -152,9 +170,12 @@ export const mapLinks = suite("地區頁 · Google Maps 連結", async (b, t) =>
   t.check("地圖連結不會指向其他地區",
     wrongRegion.length === 0,
     wrongRegion.length ? `${wrongRegion.length} 筆，例如 ${wrongRegion[0]}` : `已檢查 ${totalItems} 個項目`);
-  t.check("旅行筆記不顯示編造的資料表",
-    noteTotalSeen > 0 && noteCells === noteTotalSeen,
-    `${noteCells}/${noteTotalSeen} 筆的資料表已隱藏且無資料列`);
+  t.check("沒有行程軌跡資料的旅行筆記不顯示編造的資料表",
+    noteHiddenTotal > 0 && noteHiddenOk === noteHiddenTotal,
+    `${noteHiddenOk}/${noteHiddenTotal} 筆的資料表已隱藏且無資料列`);
+  t.check("有行程軌跡資料的旅行筆記顯示停留點清單，不是四欄表格",
+    itineraryTotal > 0 && itineraryOk === itineraryTotal,
+    itineraryBroken.length ? itineraryBroken.slice(0, 3).join("；") : `${itineraryOk}/${itineraryTotal} 筆正確顯示`);
   t.check("所有地區頁皆無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 });
 
