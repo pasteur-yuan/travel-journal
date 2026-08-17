@@ -150,6 +150,35 @@ export const mapMobile = suite("首頁 · 世界地圖（手機版兩段式 mark
   await b.eval(`window.scrollTo(0, 0)`);
   await sleep(200);
 
+  // 左右拖曳不會撐大頁面寬度、把整頁卡在拖到一半的位置回不去。光暈的 --map-pointer-x
+  // 直接讀游標相對座標、沒有上限夾制，手指靠近地圖右側時 18rem 寬的光暈本體會整個
+  // 推出手機版 viewport 外；.world-map 沒裁乾淨的話 document 的 scrollWidth 會被撐大，
+  // 瀏覽器就會把左右拖曳當成頁面橫向捲動處理。
+  const dragXBox = await b.eval(`(() => {
+    const el = document.querySelector(".world-map");
+    const r = el.getBoundingClientRect();
+    return { left: r.left, top: r.top, width: r.width, height: r.height, vh: window.innerHeight };
+  })()`);
+  const dragStartX = dragXBox.left + dragXBox.width * 0.8;
+  const dragY = Math.min(Math.max(dragXBox.top + dragXBox.height * 0.5, 60), dragXBox.vh - 60);
+  await b.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: dragStartX, y: dragY }] });
+  await sleep(20);
+  for (const dx of [10, 30, 60, 100, 150, 200]) {
+    await b.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: dragStartX - dx, y: dragY }] });
+    await sleep(20);
+  }
+  const widthDuringDrag = await b.eval(`({
+    scrollWidth: document.documentElement.scrollWidth,
+    clientWidth: document.documentElement.clientWidth
+  })`);
+  await b.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await sleep(300);
+  const scrollXAfterDrag = await b.eval(`window.scrollX`);
+  t.check("手指在地圖上左右拖曳不會撐大頁面寬度（地圖光暈裁在卡片內）",
+    widthDuringDrag.scrollWidth === widthDuringDrag.clientWidth, JSON.stringify(widthDuringDrag));
+  t.check("手指在地圖上左右拖曳後頁面沒有被拖到卡住（scrollX 回到 0）",
+    scrollXAfterDrag === 0, `scrollX=${scrollXAfterDrag}`);
+
   // 「只保留已探索國家的可點擊 icon」：手機版時區多邊形本身不應保留原生互動，
   // 避免它接手觸控手勢、攔截本該交給頁面捲動的滑動。
   const interactive = await b.eval(`(() => {
