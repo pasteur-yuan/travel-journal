@@ -96,7 +96,100 @@ export const map = suite("首頁 · 世界地圖", async (b, t) => {
   })()`);
   t.check("地圖上移動會更新時區標籤", /^UTC [+−]\d{2}:00$/.test(label), label);
 
+  // 桌面版點擊 marker 要立即轉導，不受手機版兩段式觸控邏輯影響。
+  await b.click(".country-marker");
+  await sleep(300);
+  t.check("桌面版點擊 marker 立即轉導（不受手機版兩段式觸控影響）",
+    await b.eval(`location.pathname.includes("countries/japan")`));
+
   t.check("首頁無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
+});
+
+export const mapMobile = suite("首頁 · 世界地圖（手機版兩段式 marker）", async (b, t) => {
+  await b.mobile();
+  await b.goto("/index.html", { settle: 1600 });
+
+  const hasCharts = await b.eval(`!!(window.am5 && window.am5map)`);
+  if (!hasCharts) {
+    t.skip("手機版 marker 相關檢查", "amCharts CDN 未載入（離線環境）");
+    return;
+  }
+
+  t.check("地圖底層設定 touch-action:pan-y（非 marker 區域上下滑動時交還頁面捲動）",
+    await b.eval(`getComputedStyle(document.getElementById("timezone-chart")).touchAction`) === "pan-y",
+    await b.eval(`getComputedStyle(document.getElementById("timezone-chart")).touchAction`));
+  t.check("地圖底層不可選取",
+    await b.eval(`getComputedStyle(document.getElementById("timezone-chart")).userSelect`) === "none",
+    await b.eval(`getComputedStyle(document.getElementById("timezone-chart")).userSelect`));
+
+  // 「只保留已探索國家的可點擊 icon」：手機版時區多邊形本身不應保留原生互動，
+  // 避免它接手觸控手勢、攔截本該交給頁面捲動的滑動。
+  const interactive = await b.eval(`(() => {
+    const root = am5.registry.rootElements[0];
+    const chart = root.container.children.getIndex(0);
+    const flags = [];
+    chart.series.each((series) => { if (series.mapPolygons) flags.push(series.mapPolygons.template.get("interactive")); });
+    return flags;
+  })()`);
+  t.check("手機版時區多邊形皆非原生互動", interactive.every((f) => !f), JSON.stringify(interactive));
+
+  const markerPoint = await b.eval(`(() => {
+    const m = document.querySelector(".country-marker");
+    const r = m.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  })()`);
+
+  // 第一次點擊：只固定顯示 tooltip，不轉導。
+  await b.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [markerPoint] });
+  await b.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await sleep(300);
+  const afterFirstTap = await b.eval(`({
+    url: location.pathname,
+    tooltipVisible: document.querySelector("#country-tooltip")?.classList.contains("is-visible"),
+    focused: document.querySelector("#world-map").classList.contains("is-country-focused")
+  })`);
+  t.check("手機版第一次點擊 marker 只顯示 tooltip、不轉導",
+    !afterFirstTap.url.includes("countries/japan") && afterFirstTap.tooltipVisible && afterFirstTap.focused,
+    JSON.stringify(afterFirstTap));
+
+  // 第二次點擊同一個 marker：轉導。
+  await b.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [markerPoint] });
+  await b.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await sleep(300);
+  t.check("手機版第二次點擊同一個 marker 才轉導",
+    await b.eval(`location.pathname.includes("countries/japan")`));
+
+  // 回上一頁，測試點擊地圖外側會收起已固定的 tooltip。
+  await b.goto("/index.html", { settle: 1200 });
+  const point2 = await b.eval(`(() => {
+    const m = document.querySelector(".country-marker");
+    const r = m.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  })()`);
+  await b.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [point2] });
+  await b.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await sleep(300);
+  const pinned = await b.eval(`document.querySelector("#country-tooltip").classList.contains("is-visible")`);
+  t.check("點擊地圖外側前，tooltip 確實已固定", pinned);
+
+  const outsidePoint = await b.eval(`(() => {
+    const el = document.querySelector(".site-header .brand");
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  })()`);
+  await b.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [outsidePoint] });
+  await b.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await sleep(300);
+  const afterOutsideTap = await b.eval(`({
+    url: location.pathname,
+    tooltipVisible: document.querySelector("#country-tooltip")?.classList.contains("is-visible"),
+    focused: document.querySelector("#world-map").classList.contains("is-country-focused")
+  })`);
+  t.check("點擊地圖外側會收起已固定的 tooltip、不會轉導",
+    !afterOutsideTap.url.includes("countries/japan") && !afterOutsideTap.tooltipVisible && !afterOutsideTap.focused,
+    JSON.stringify(afterOutsideTap));
+
+  t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 });
 
 export const summary = suite("首頁 · 已探索與旅行足跡（由時間軸推導）", async (b, t) => {

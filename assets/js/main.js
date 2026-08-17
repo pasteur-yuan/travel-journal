@@ -578,14 +578,23 @@ if (worldMap && timezoneLabel) {
       };
       const isMobileMap = () => window.matchMedia("(max-width: 700px)").matches;
       const setMapView = () => {
-        chart.set("zoomLevel", isMobileMap() ? 1 : 1.42);
-        chart.set("centerGeoPoint", { longitude: 0, latitude: isMobileMap() ? 8 : 3 });
+        const mobile = isMobileMap();
+        chart.set("zoomLevel", mobile ? 1 : 1.42);
+        chart.set("centerGeoPoint", { longitude: 0, latitude: mobile ? 8 : 3 });
+        // 手機版地圖只保留國家 icon 可互動，時區多邊形不接手原生手勢，
+        // 才不會攔截手指在地圖上下滑動、原本該由頁面接手的捲動。
+        areas.mapPolygons.template.set("interactive", !mobile);
       };
       setMapView();
       window.addEventListener("resize", setMapView, { passive: true });
       // marker 由 travelDestinations 產生，座標透過 chart.convert() 換算，
       // 因此與地圖投影、縮放保持同步。原本 amCharts bullet 與 DOM marker 兩套並存，
       // 其中 bullet 的 emoji 是 opacity 0（看不見），只重複提供一次互動，已合併成這一套。
+      // 手機版採兩段式觸控：第一次點擊只固定顯示該國 tooltip，第二次點擊同一個
+      // icon 才轉導；改點別的 icon 則換成顯示新 tooltip，不會誤觸轉導。桌面版
+      // 維持原本 hover／focus 立即顯示、click 立即轉導的行為，不受這裡影響。
+      let mobilePinnedMarker = null;
+      let mobilePinnedHide = null;
       const markers = travelDestinations.map((destination) => {
         const marker = document.createElement("button");
         marker.className = "country-marker";
@@ -620,9 +629,30 @@ if (worldMap && timezoneLabel) {
         marker.addEventListener("pointerdown", showTooltip);
         marker.addEventListener("focus", showTooltip);
         marker.addEventListener("blur", hideTooltip);
-        marker.addEventListener("click", () => { window.location.href = destination.href; });
+        marker.addEventListener("click", (event) => {
+          if (isMobileMap()) {
+            if (mobilePinnedMarker !== marker) {
+              event.preventDefault();
+              if (mobilePinnedHide) mobilePinnedHide();
+              mobilePinnedMarker = marker;
+              mobilePinnedHide = hideTooltip;
+              showTooltip();
+              return;
+            }
+            mobilePinnedMarker = null;
+            mobilePinnedHide = null;
+          }
+          window.location.href = destination.href;
+        });
         worldMap.append(marker);
         return { marker, pointOf };
+      });
+      document.addEventListener("pointerdown", (event) => {
+        if (!isMobileMap() || !mobilePinnedMarker) return;
+        if (event.target.closest?.(".country-marker")) return;
+        mobilePinnedHide?.();
+        mobilePinnedMarker = null;
+        mobilePinnedHide = null;
       });
       const positionMarkers = () => markers.forEach(({ marker, pointOf }) => {
         const point = pointOf();
