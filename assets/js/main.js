@@ -67,12 +67,15 @@ document.addEventListener("pointerdown", (event) => {
 
 const timelineTrack = document.querySelector(".timeline-track");
 let timelineSwitchTimer = 0;
-// 加 (hover: none) 是為了平板：橫向平板寬度常常超過 700px（例如 iPad Pro 11 橫向
-// 1194px），純寬度判斷會讓它掉回桌面版邏輯。(hover: none) 才是真正代表「這個裝置
-// 沒有滑鼠、只有觸控」，不論寬度多寬、不論橫向直向都成立，平板才不會因為畫面較寬
-// 就退回桌面版 hover／直接觸發的邏輯。窄的桌面視窗（有滑鼠但硬是縮小）仍靠寬度那半
-// 邊抓到，跟修改前的行為一致。
-const isMobileTimeline = () => window.matchMedia("(max-width: 700px), (hover: none)").matches;
+// 這裡刻意不像 isMobileCountryStrip／isMobileMap 一樣加 (hover: none)。
+// 手機版的差異不是「有沒有 hover」，而是整段換成垂直堆疊排版（.timeline-track
+// 從 display:flex 橫向捲動改成 display:block 垂直清單），只在 max-width:700px
+// 的 CSS 裡才有對應樣式；平板寬度沒有這組 CSS，若讓 isMobileTimeline() 在平板
+// 也回傳 true，JS 會照垂直清單的假設去量測／鎖定高度、跑 FLIP 動畫，但畫面其實
+// 還是桌面版的橫向排版，兩者對不上，實測會讓時間軸整段看起來空白（年份都在，
+// 底下的旅程卡片消失）。桌面版的橫向捲動本來就是 overflow-x:auto + scroll-snap，
+// 觸控滑動原生就能用，不需要靠這個旗標切換手機版邏輯才能操作。
+const isMobileTimeline = () => window.matchMedia("(max-width: 700px)").matches;
 
 // 手機版年份群組的位移來自 display 切換，CSS transition 接不到。
 // 以 FLIP 記錄切換前後的位置差：先用 transform 把群組移回原位，
@@ -281,6 +284,12 @@ if (mapStats && timezoneLabel) {
   });
 }
 
+// 卡片預設用 :hover／:focus-visible 顯示，觸控裝置沒有 hover，不管寬度多寬
+// 都需要「點圓點來顯示／收起卡片」這條路徑才看得到內容——這跟 isMobileTimeline()
+// 決定的垂直堆疊排版是兩件事：桌面版橫向排版本身就撐得下 .is-expanded 直接生效
+// （見 style.css 第 210 行等未被 700px 媒體查詢包住的規則），只是原本點圓點的
+// 邏輯整個被 isMobileTimeline() 擋住，平板寬度會落到「沒有 hover 也點不到」。
+const timelineTapReveal = () => isMobileTimeline() || window.matchMedia("(hover: none)").matches;
 timelineEntries.forEach((entry) => {
   const dot = entry.querySelector(".timeline-dot");
   const activateEntryYear = () => {
@@ -315,7 +324,7 @@ timelineEntries.forEach((entry) => {
     if (event.pointerType === "mouse" && !isMobileTimeline() && !entry.matches(":focus-within")) entry.classList.remove("is-expanded");
   });
   dot?.addEventListener("click", (event) => {
-    if (!isMobileTimeline()) { event.preventDefault(); return; }
+    if (!timelineTapReveal()) { event.preventDefault(); return; }
     event.preventDefault();
     event.stopPropagation();
     if (entry.classList.contains("is-expanded")) collapseEntryCard();
@@ -325,7 +334,7 @@ timelineEntries.forEach((entry) => {
     const clickedCard = event.target.closest(".timeline-card");
     const clickedDot = event.target.closest(".timeline-dot");
     if (clickedDot) { event.preventDefault(); return; }
-    if (isMobileTimeline() && (!clickedCard || !entry.classList.contains("is-expanded"))) event.preventDefault();
+    if (timelineTapReveal() && (!clickedCard || !entry.classList.contains("is-expanded"))) event.preventDefault();
   });
 });
 
