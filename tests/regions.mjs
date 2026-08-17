@@ -1,6 +1,6 @@
 // 地區頁清單的單一來源。新增地區頁時只改這裡，各測試群組會自動涵蓋。
 export const REGION_NAMES = {
-  hokkaido: "北海道", tokyo: "東京", nagoya: "名古屋", osaka: "大阪",
+  hokkaido: "北海道", tokyo: "東京", tochigi: "栃木", nagoya: "名古屋", osaka: "大阪",
   "ise-shima": "伊勢志摩", fukuoka: "福岡",
   kumamoto: "熊本", miyazaki: "宮崎", gifu: "岐阜", kagoshima: "鹿兒島",
   oita: "大分", saga: "佐賀", kyoto: "京都", kobe: "神戶", nagano: "長野",

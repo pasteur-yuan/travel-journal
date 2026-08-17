@@ -26,3 +26,4 @@ The following local JPEGs are 1920px Wikimedia Commons derivatives (or the avail
 | Okayama | Korakuen | 663highland | CC BY 2.5 | [Commons](https://commons.wikimedia.org/wiki/File:160319_Korakuen_Okayama_Japan03n.jpg) |
 | Shimane | Izumo Taisha | 663highland | CC BY 2.5 | [Commons](https://commons.wikimedia.org/wiki/File:Izumo-taisha14bs4592.jpg) |
 | Nagasaki | Watazumi Shrine, Tsushima | ブルーノ・プラス | CC BY-SA 4.0 | [Commons](https://commons.wikimedia.org/wiki/File:Watatsumi.torii.jpg) |
+| Tochigi | Yomeimon Gate, Nikkō Tōshō-gū | lumoplank | CC0 1.0 | [Commons](https://commons.wikimedia.org/wiki/File:Toshogu_Shrine,_Nikko_-_ToshoguShrine7872.jpg) |

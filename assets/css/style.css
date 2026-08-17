@@ -293,6 +293,7 @@ h2 { margin-bottom: 1.5rem; }
 .region-hero-content p { margin: 0; color: #f0e8d8; font-size: clamp(1rem, 2vw, 1.35rem); }
 .region-hero-hokkaido { background-image: url("../images/hokkaido.jpg"); }
 .region-hero-tokyo { background-image: url("../images/tokyo.jpg"); }
+.region-hero-tochigi { background-image: url("../images/tochigi.jpg"); }
 .region-hero-nagoya { background-image: url("../images/nagoya.jpg"); }
 .region-hero-osaka { background-image: url("../images/osaka.jpg"); }
 .region-hero-ise-shima { background-image: url("../images/ise-shima.jpg"); }

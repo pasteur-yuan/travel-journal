@@ -164,7 +164,7 @@ const EXPECTED_ROWS = {
   hokkaido: 93, tokyo: 59, nagoya: 40, osaka: 21, "ise-shima": 20, fukuoka: 93, kumamoto: 18,
   miyazaki: 17, gifu: 12, kagoshima: 11, oita: 11, saga: 9, kyoto: 17, kobe: 14, nagano: 8,
   kagawa: 7, kanagawa: 8, yokkaichi: 6, ehime: 4, kochi: 5, ishikawa: 3, toyama: 5,
-  shizuoka: 5, yamanashi: 4, shiga: 4, okayama: 4, shimane: 4, nagasaki: 4
+  shizuoka: 7, yamanashi: 4, shiga: 4, okayama: 4, shimane: 4, nagasaki: 4, tochigi: 6
 };
 
 export const dataDepth = suite("地區頁 · 彈窗地點資料深度", async (b, t) => {
@@ -191,6 +191,52 @@ export const dataDepth = suite("地區頁 · 彈窗地點資料深度", async (b
 
   const expectedTotal = Object.values(EXPECTED_ROWS).reduce((a, n) => a + n, 0);
   t.check("全站地點資料總量未減少", total >= expectedTotal, `${total} 列（基準 ${expectedTotal}）`);
+});
+
+// Task 1.3 的候選住宿必須落在實際所在地的地區頁。這份清單只放已確認為日本旅宿的
+// 24 筆；台南的「清水漾」與箱根小涌園 Yunessun（溫泉設施，非住宿）刻意不列入。
+const VERIFIED_STAYS = {
+  hokkaido: ['きたゆざわ 森のソラニワ', 'ベッセルホテルカンパーナすすきの', 'ベッセルイン札幌中島公園'],
+  tokyo: ['東武ホテルレバント東京'],
+  tochigi: ['界 鬼怒川', 'ホテル鬼怒川御苑'],
+  nagoya: ['ホテルフォルツァ名古屋栄', 'ザ ロイヤルパーク キャンバス 名古屋'],
+  kagoshima: ['界 霧島'],
+  oita: ['アマネク別府ゆらり'],
+  kyoto: ['エスペリアホテル京都', 'HIDEOUT SUITE at TUNE STAY KYOTO'],
+  kobe: ['有馬温泉 月光園 游月山荘'],
+  nagano: ['星のや軽井沢'],
+  kanagawa: ['Nazuna 箱根 宮ノ下'],
+  shizuoka: ['HOTEL CLAD', '伊豆北川温泉 望水'],
+  fukuoka: [
+    'ザ ロイヤルパーク キャンバス 福岡中洲', 'BEB5門司港 by 星野リゾート', 'seven x seven 糸島',
+    'ホテルマリノアリゾート福岡', 'ホテルビスタ福岡［中洲川端］', 'THE GATE HOTEL 福岡 by HULIC',
+    'HOTEL IL PALAZZO'
+  ]
+};
+
+export const verifiedStays = suite("地區頁 · 已確認住宿資料", async (b, t) => {
+  await b.desktop();
+  const missing = [];
+
+  for (const [region, expected] of Object.entries(VERIFIED_STAYS)) {
+    await b.goto(page(region), { settle: 1000 });
+    const names = await b.eval(`(() => {
+      const found = new Set();
+      [...document.querySelectorAll("#stays .region-content-list article")].forEach((item) => {
+        item.click();
+        document.querySelectorAll(".spot-modal-table tbody td:first-child")
+          .forEach((cell) => found.add(cell.textContent.trim()));
+        document.querySelector(".spot-modal-close")?.click();
+      });
+      return [...found];
+    })()`);
+    const absent = expected.filter((name) => !names.includes(name));
+    if (absent.length) missing.push(`${region}：${absent.join('、')}`);
+  }
+
+  t.check("24 間已確認旅宿皆位於正確地區頁的住宿資料表",
+    missing.length === 0, missing.join('；') || '24 間皆已收錄');
+  t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 });
 
 export const modalMobile = suite("地區頁 · 手機版彈窗", async (b, t) => {
