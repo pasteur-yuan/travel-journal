@@ -121,6 +121,34 @@ export const mapMobile = suite("首頁 · 世界地圖（手機版兩段式 mark
   t.check("地圖底層不可選取",
     await b.eval(`getComputedStyle(document.getElementById("timezone-chart")).userSelect`) === "none",
     await b.eval(`getComputedStyle(document.getElementById("timezone-chart")).userSelect`));
+  // touch-action 實機測試無效（amCharts5 在 canvas 上對 touchstart 呼叫
+  // preventDefault()，compositor 並未略過接手捲動），改用 pointer-events: none
+  // 讓 canvas 完全跳出 hit-test；這裡直接送出觸控拖曳序列驗證頁面真的會捲動，
+  // 而不是只檢查計算樣式（touch-action 那兩項計算樣式檢查即使修法失效也會過）。
+  t.check("手機版地圖底層跳出 hit-test（pointer-events: none）",
+    await b.eval(`getComputedStyle(document.getElementById("timezone-chart")).pointerEvents`) === "none",
+    await b.eval(`getComputedStyle(document.getElementById("timezone-chart")).pointerEvents`));
+
+  const dragScrollBox = await b.eval(`(() => {
+    const el = document.querySelector(".world-map");
+    const r = el.getBoundingClientRect();
+    return { left: r.left, top: r.top, width: r.width, height: r.height, vh: window.innerHeight };
+  })()`);
+  const dragX = dragScrollBox.left + dragScrollBox.width * 0.5;
+  const dragStartY = Math.min(Math.max(dragScrollBox.top + dragScrollBox.height * 0.5, 60), dragScrollBox.vh - 60);
+  await b.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: dragX, y: dragStartY }] });
+  await sleep(20);
+  for (const dy of [10, 30, 60, 100, 150, 200]) {
+    await b.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: dragX, y: dragStartY - dy }] });
+    await sleep(20);
+  }
+  await b.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await sleep(300);
+  const scrollYAfterDrag = await b.eval(`window.scrollY`);
+  t.check("手指在地圖非 marker 區域上下滑動時頁面正常捲動（不被地圖攔截）",
+    scrollYAfterDrag > 100, `scrollY=${scrollYAfterDrag}`);
+  await b.eval(`window.scrollTo(0, 0)`);
+  await sleep(200);
 
   // 「只保留已探索國家的可點擊 icon」：手機版時區多邊形本身不應保留原生互動，
   // 避免它接手觸控手勢、攔截本該交給頁面捲動的滑動。
