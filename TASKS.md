@@ -2,7 +2,7 @@
 
 待辦清單。每一項都寫明**需要提供什麼**與**會寫進哪裡**，提供內容後可直接施工。
 
-現況：28 個地區頁、389 列地點資料、754 項測試通過。
+現況：29 個地區頁、514 列地點資料、1185 項測試通過。
 
 ---
 
@@ -99,7 +99,7 @@
 ---
 
 ### 1.8 首頁時間軸的旅程
-**狀態**：時間軸只有 5 筆（北海道、東京、福岡、首爾、南島），但站上已有 28 個地區頁。
+**狀態**：時間軸只有 5 筆（北海道、東京、福岡、首爾、南島），但站上已有 29 個地區頁。
 
 首頁右下「旅行足跡」的國家數與地區數是由時間軸項目推導的，所以現在顯示的數字反映不出實際內容。
 
@@ -253,11 +253,11 @@ AGENTS.md 要求確認名稱、所在地、交通方式與是否仍營業。最�
 - [x] **測試執行器平行化** — ✅ 完成。244s → 82s（3.0×）。群組分散到多個獨立 Chrome、共用單一靜態伺服器；輸出以原始順序緩衝後逐一沖出，順序與序列執行完全一致。預設 jobs 為核心數一半（上限 6），`--jobs=N` / `TEST_JOBS` 可覆寫。`jobs=8` 實測會因 CPU 競爭出現 flaky（捲動位置漂 3px），因此逐像素斷言捲動位置或在動畫中途取樣的三個群組標記 `{ serial: true }`，於平行階段之後獨佔執行。
 - [ ] **旅行筆記行程軌跡模組** — 欄位與放置方式已定，等 1.1 的資料
 - [ ] **全站 i18n 多語系** — 以繁中為預設、英文為第一個新增語言；建立共用翻譯字典與語言切換控制，將頁首、導覽、分類、按鈕、modal 與動態注入內容的 UI 文案改由 key 取用，使用 `localStorage` 記憶選擇並以瀏覽器語言作首次預設。國家、地區與地點資料需保留各語系名稱／描述欄位；完成後檢查鍵盤可及性、頁面標題與 `lang` 屬性。初期共用 HTML 結構，未來英文內容成熟且需要 SEO 時，再評估改為 `/en/` 的獨立靜態路徑與 `hreflang`。
-- [ ] **CSS media query 合併** — 12 個 `max-width: 700px` 區塊、11 個 `prefers-reduced-motion`，最長一行 2,315 字元。合併會改變宣告順序，是唯一有實質風險的重構，需逐塊合併＋每次跑測試與截圖比對
+- [ ] **CSS media query 合併** — 18 個 `max-width: 700px` 區塊、11 個 `prefers-reduced-motion`，最長一行 2,315 字元。合併會改變宣告順序，是唯一有實質風險的重構，需逐塊合併＋每次跑測試與截圖比對
 - [ ] **3 個失效 class** — `hero-cover`、`region-card-action`、`region-card-featured`，夾在共用 selector 裡，與上一項一起處理
 - [x] **地區頁 HTML 樣板化** — ✅ 改用風險較低的兩件事取代完整模板引擎（不管 client-side 還是 build-time，都會加深 JS 依賴或帶來「產生後又被手改」的漂移風險）：
-  1. `tools/generate-region-page.mjs`——零依賴 Node 小腳本，新增地區頁時產生骨架，取代複製貼上手改；完全不碰 28 個既有檔案，寫完會列出還需要手動補的其他檔案（`region-detail.js` 的四個 map、國家頁 showcase、CSS 背景、`tests/regions.mjs`）。
-  2. `tests/suites/region-html-skeleton.mjs`（「地區頁 · HTML 骨架一致性」）——直接讀 28 個地區頁的原始檔案比對骨架（doctype、head、breadcrumb、hero class、五個 section 的 id／編號／固定文字、footer、script 順序），不開瀏覽器所以跑不到 1 秒；卡片數量、overview 敘述等會隨真實內容變動的部分刻意不檢查。
+  1. `tools/generate-region-page.mjs`——零依賴 Node 小腳本，新增地區頁時產生骨架，取代複製貼上手改；完全不碰既有的地區頁檔案，寫完會列出還需要手動補的其他檔案（`region-detail.js` 的四個 map、國家頁 showcase、CSS 背景、`tests/regions.mjs`）。
+  2. `tests/suites/region-html-skeleton.mjs`（「地區頁 · HTML 骨架一致性」）——直接讀全部地區頁（目前 29 個）的原始檔案比對骨架（doctype、head、breadcrumb、hero class、五個 section 的 id／編號／固定文字、footer、script 順序），不開瀏覽器所以跑不到 1 秒；卡片數量、overview 敘述等會隨真實內容變動的部分刻意不檢查。
 
   寫測試時就抓到一個真的存在的漂移：原本 6 個完整地區頁（hokkaido/tokyo/nagoya/osaka/ise-shima/fukuoka）的「STAY & MOVE」用未跳脫的 `&`，其餘 22 個新地區頁用 `&amp;`——兩種瀏覽器都會正常顯示，不是 render bug，但源碼不一致，已統一成 `&amp;`。這就是這次要防的那類問題：不是省字數，是抓「新舊模板不小心長得不一樣」。
 
