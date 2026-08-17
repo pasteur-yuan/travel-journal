@@ -12,9 +12,12 @@
 }
 
 /* html 也套用同一份主題 class（見 theme-switcher.js），讓手機拉到頁面邊界、
-   iOS 回彈露出 html 背景時維持目前主題色，不會閃出瀏覽器預設的白底。 */
-html.theme-glass, body.theme-glass { --ink: #35383a; --muted: #777b7d; --paper: #f1f0ed; --surface: #fbfaf7; --accent: #b29a68; --line: #dcdcd7; background: radial-gradient(circle at 12% 8%, #fffefbe8, transparent 30%), radial-gradient(circle at 86% 18%, #e7dfc9aa, transparent 32%), linear-gradient(135deg, #f4f3f0, #e7e6e2 50%, #faf9f6); }
-html.theme-glass-dark, body.theme-glass-dark { --ink: #e8e9e8; --muted: #a9adae; --paper: #1d2022; --surface: #292d30; --accent: #c5ad78; --line: #454b4e; background: radial-gradient(circle at 12% 8%, #68707455, transparent 30%), radial-gradient(circle at 86% 18%, #4d505844, transparent 32%), linear-gradient(135deg, #1d2022, #292d30 50%, #17191a); }
+   iOS 回彈露出 html 背景時維持目前主題色，不會閃出瀏覽器預設的白底。
+   background 簡寫只列了漸層（background-image），沒寫顏色的話 background-color
+   會是初始值 transparent——iOS 回彈畫的正是 background-color，不是漸層本身，
+   所以還要另外補一條純色的 background-color，跟漸層的基底色對齊。 */
+html.theme-glass, body.theme-glass { --ink: #35383a; --muted: #777b7d; --paper: #f1f0ed; --surface: #fbfaf7; --accent: #b29a68; --line: #dcdcd7; background: radial-gradient(circle at 12% 8%, #fffefbe8, transparent 30%), radial-gradient(circle at 86% 18%, #e7dfc9aa, transparent 32%), linear-gradient(135deg, #f4f3f0, #e7e6e2 50%, #faf9f6); background-color: #f1f0ed; }
+html.theme-glass-dark, body.theme-glass-dark { --ink: #e8e9e8; --muted: #a9adae; --paper: #1d2022; --surface: #292d30; --accent: #c5ad78; --line: #454b4e; background: radial-gradient(circle at 12% 8%, #68707455, transparent 30%), radial-gradient(circle at 86% 18%, #4d505844, transparent 32%), linear-gradient(135deg, #1d2022, #292d30 50%, #17191a); background-color: #1d2022; }
 body.theme-glass .site-header, body.theme-glass .region-section-nav, body.theme-glass .map-legend, body.theme-glass .map-stats, body.theme-glass .country-tooltip { background: color-mix(in srgb, #ffffff 42%, transparent); border-color: #ffffff70; box-shadow: 0 12px 34px #3d68802b, inset 0 1px 0 #ffffffc2; backdrop-filter: blur(24px) saturate(135%); -webkit-backdrop-filter: blur(24px) saturate(135%); }
 body.theme-glass .site-header { border-bottom-color: #ffffff70; }
 body.theme-glass.region-page .site-header { color: var(--ink); background: color-mix(in srgb, #f1f0ed 88%, transparent); border-bottom-color: #dcdcd7; box-shadow: inset 0 -1px 0 #ffffffd9, 0 8px 24px #6f716d28; }

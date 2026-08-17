@@ -40,6 +40,11 @@ export const theme = suite("全站 · 主題切換", async (b, t) => {
       `html=${shape.htmlClass} body=${shape.bodyClass}`);
     t.check(`${name}：html 背景與 body 完全一致，拉到邊界不會露出瀏覽器預設白底`,
       shape.htmlBg === shape.bodyBg, `html=${shape.htmlBg}\nbody=${shape.bodyBg}`);
+    // iOS 橡皮筋回彈畫的是 background-color，不是 background-image（漸層）。
+    // 只有漸層、沒補純色的話 background-color 會落回初始值 transparent，
+    // html/body 兩邊的計算值仍然「一致」，但一致的是「都透明」，回彈時還是會閃白底。
+    t.check(`${name}：html 背景色不是 transparent（漸層本身在 iOS 回彈時不會被畫出來）`,
+      shape.htmlBg.split("|")[0] !== "rgba(0, 0, 0, 0)", shape.htmlBg.split("|")[0]);
     t.check(`${name}：按鈕有圖示與 aria-label`,
       shape.hasIcon && !!shape.label, `icon=${shape.hasIcon} label=${shape.label}`);
     t.check(`${name}：按鈕標記 aria-pressed`,
