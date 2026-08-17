@@ -67,7 +67,12 @@ document.addEventListener("pointerdown", (event) => {
 
 const timelineTrack = document.querySelector(".timeline-track");
 let timelineSwitchTimer = 0;
-const isMobileTimeline = () => window.matchMedia("(max-width: 700px)").matches;
+// 加 (hover: none) 是為了平板：橫向平板寬度常常超過 700px（例如 iPad Pro 11 橫向
+// 1194px），純寬度判斷會讓它掉回桌面版邏輯。(hover: none) 才是真正代表「這個裝置
+// 沒有滑鼠、只有觸控」，不論寬度多寬、不論橫向直向都成立，平板才不會因為畫面較寬
+// 就退回桌面版 hover／直接觸發的邏輯。窄的桌面視窗（有滑鼠但硬是縮小）仍靠寬度那半
+// 邊抓到，跟修改前的行為一致。
+const isMobileTimeline = () => window.matchMedia("(max-width: 700px), (hover: none)").matches;
 
 // 手機版年份群組的位移來自 display 切換，CSS transition 接不到。
 // 以 FLIP 記錄切換前後的位置差：先用 transform 把群組移回原位，
@@ -332,7 +337,9 @@ if (countryStrip) {
   let mobileCenteringCard = null;
   let mobileCenterTarget = 0;
   let mobileFocusSuspended = false;
-  const isMobileCountryStrip = () => window.matchMedia("(max-width: 700px)").matches;
+  // (hover: none) 涵蓋所有寬度、方向的觸控裝置（含較寬的橫向平板），詳見上方
+  // isMobileTimeline 的說明。
+  const isMobileCountryStrip = () => window.matchMedia("(max-width: 700px), (hover: none)").matches;
   countryCards.filter((card) => card.tagName === "A").forEach((card) => {
     const meta = card.querySelector(".country-meta");
     if (!meta) return;
@@ -599,7 +606,10 @@ if (worldMap && timezoneLabel) {
           }
         });
       };
-      const isMobileMap = () => window.matchMedia("(max-width: 700px)").matches;
+      // (hover: none) 涵蓋所有寬度、方向的觸控裝置（含較寬的橫向平板），詳見
+      // isMobileTimeline 的說明；地圖的兩段式 marker 點擊、時區多邊形停用原生
+      // 互動，平板橫向也要一致套用，不能因為畫面比 700px 寬就退回桌面版邏輯。
+      const isMobileMap = () => window.matchMedia("(max-width: 700px), (hover: none)").matches;
       const setMapView = () => {
         const mobile = isMobileMap();
         chart.set("zoomLevel", mobile ? 1 : 1.42);

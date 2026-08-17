@@ -168,6 +168,21 @@ export class Browser {
       { features: [{ name: "hover", value: "none" }, { name: "pointer", value: "coarse" }] });
   }
 
+  /**
+   * 平板視窗，含觸控與 hover: none。預設是 iPad 直向（768×1024），
+   * 傳 { landscape: true } 換成橫向（1024×768）——寬度會超過 701–1199px
+   * 的平板排版斷點上限，剛好用來驗證「橫向平板不會退回桌面版邏輯」
+   * （靠 hover: none，不是靠寬度）。
+   */
+  async tablet({ landscape = false } = {}) {
+    const [width, height] = landscape ? [1024, 768] : [768, 1024];
+    await this.send("Emulation.setDeviceMetricsOverride",
+      { width, height, deviceScaleFactor: 2, mobile: true });
+    await this.send("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
+    await this.send("Emulation.setEmulatedMedia",
+      { features: [{ name: "hover", value: "none" }, { name: "pointer", value: "coarse" }] });
+  }
+
   async reducedMotion(enabled = true) {
     await this.send("Emulation.setEmulatedMedia", {
       features: [{ name: "prefers-reduced-motion", value: enabled ? "reduce" : "no-preference" }]
