@@ -140,15 +140,27 @@ export const showcaseMobile = suite("國家頁 · 手機版", async (b, t) => {
 
   const res = await b.eval(`(() => {
     const list = document.querySelector(".region-showcase-list");
+    // .region-showcase 是 overflow: hidden 的裁切框：項目一旦超出它就是「被切掉」，
+    // 而且不會反映成頁面水平捲動，所以必須直接量幾何而不是量 scrollWidth。
+    const clip = document.querySelector(".region-showcase").getBoundingClientRect();
+    const items = [...document.querySelectorAll(".region-showcase-item")];
+    const clipped = items
+      .map(i => ({ name: i.querySelector("h3").textContent, r: i.getBoundingClientRect() }))
+      .filter(({ r }) => r.left < clip.left - .5 || r.right > clip.right + .5)
+      .map(({ name, r }) => \`\${name} 左\${r.left.toFixed(1)} 右\${r.right.toFixed(1)}\`);
     return {
       listScrolls: list.scrollHeight > list.clientHeight + 1,
       pageScrollsSideways: document.documentElement.scrollWidth > document.documentElement.clientWidth,
       descriptionsVisible: [...document.querySelectorAll(".region-showcase-item p")]
-        .every(p => getComputedStyle(p).opacity === "1")
+        .every(p => getComputedStyle(p).opacity === "1"),
+      clipBox: \`左\${clip.left.toFixed(1)} 右\${clip.right.toFixed(1)}\`,
+      clipped
     };
   })()`);
   t.check("手機版地區清單仍維持內部捲動", res.listScrolls);
   t.check("手機版不產生水平捲動", !res.pageScrollsSideways);
   t.check("手機版地區描述直接可見", res.descriptionsVisible);
+  t.check("手機版地區項目沒有被裁切框切掉",
+    res.clipped.length === 0, res.clipped.join(" | ") || `裁切框 ${res.clipBox}，全部項目都在框內`);
   t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 });
