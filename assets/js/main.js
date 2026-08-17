@@ -35,11 +35,34 @@ const countryRegions = {
   ]
 };
 
+// 「已探索」與「旅行足跡」原本只靠 CSS :hover／:focus-within 展開，觸控裝置
+// 沒有 hover、且 .map-legend 過去沒有 tabindex 也拿不到 focus-within，等於
+// 手機／鍵盤完全展開不了。改成點擊／Enter／Space 明確切換 is-expanded class，
+// 疊加在既有的 hover／focus-within 樣式上（不是取代）：滑鼠移開後 hover 消失，
+// 但點擊釘住的展開狀態會留著，兩者互不衝突。
+[mapLegend, mapStats].forEach((el) => {
+  if (!el) return;
+  el.addEventListener("click", () => {
+    const expanded = el.classList.toggle("is-expanded");
+    el.setAttribute("aria-expanded", String(expanded));
+  });
+  el.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    const expanded = el.classList.toggle("is-expanded");
+    el.setAttribute("aria-expanded", String(expanded));
+  });
+});
+
 document.addEventListener("pointerdown", (event) => {
   const target = event.target;
   if (mapLegend?.contains(target) || mapStats?.contains(target)) return;
   if (document.activeElement === mapLegend || mapLegend?.contains(document.activeElement)) mapLegend?.blur();
   if (document.activeElement === mapStats || mapStats?.contains(document.activeElement)) mapStats?.blur();
+  mapLegend?.classList.remove("is-expanded");
+  mapLegend?.setAttribute("aria-expanded", "false");
+  mapStats?.classList.remove("is-expanded");
+  mapStats?.setAttribute("aria-expanded", "false");
 }, { passive: true });
 
 const timelineTrack = document.querySelector(".timeline-track");

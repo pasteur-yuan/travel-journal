@@ -279,3 +279,83 @@ export const summary = suite("首頁 · 已探索與旅行足跡（由時間軸�
     data.stats[2] === `${String(data.entryCount).padStart(2, "0")} 旅行節點`, data.stats[2]);
   t.check("數字皆為兩位數補零", data.stats.every((s) => /^\d{2} /.test(s)), JSON.stringify(data.stats));
 });
+
+const toggleState = (b, sel) => b.eval(`(() => {
+  const el = document.querySelector(${JSON.stringify(sel)});
+  return { expanded: el.classList.contains("is-expanded"), aria: el.getAttribute("aria-expanded") };
+})()`);
+
+export const legendStatsToggle = suite("首頁 · 已探索與旅行足跡點擊收折", async (b, t) => {
+  await b.desktop();
+  await b.goto("/index.html", { settle: 1200 });
+
+  // 原本只靠 CSS :hover／:focus-within 展開，.map-legend 過去沒有 tabindex，
+  // 觸控與鍵盤完全展開不了。改成點擊／Enter／Space 明確切換，且要能與既有
+  // hover／focus 表現共存（hover 是暫時預覽，點擊是釘住），兩者不衝突。
+  const initial = await toggleState(b, ".map-legend");
+  t.check("已探索：初始為收折狀態", !initial.expanded && initial.aria === "false", JSON.stringify(initial));
+
+  await b.click(".map-legend");
+  const afterClick = await toggleState(b, ".map-legend");
+  t.check("已探索：點擊後展開，aria-expanded 同步", afterClick.expanded && afterClick.aria === "true",
+    JSON.stringify(afterClick));
+
+  await b.click(".map-legend");
+  const afterSecondClick = await toggleState(b, ".map-legend");
+  t.check("已探索：再次點擊收折", !afterSecondClick.expanded && afterSecondClick.aria === "false",
+    JSON.stringify(afterSecondClick));
+
+  // 鍵盤：Tab 聚焦後 Enter／Space 切換，跟滑鼠點擊走同一套邏輯。
+  await b.focus(".map-stats");
+  await b.press("Enter");
+  const afterEnter = await toggleState(b, ".map-stats");
+  t.check("旅行足跡：鍵盤 Enter 可展開", afterEnter.expanded && afterEnter.aria === "true", JSON.stringify(afterEnter));
+  await b.press("Enter");
+  const afterEnter2 = await toggleState(b, ".map-stats");
+  t.check("旅行足跡：再次 Enter 收折", !afterEnter2.expanded && afterEnter2.aria === "false", JSON.stringify(afterEnter2));
+  await b.press(" ");
+  const afterSpace = await toggleState(b, ".map-stats");
+  t.check("旅行足跡：Space 也可切換", afterSpace.expanded && afterSpace.aria === "true", JSON.stringify(afterSpace));
+
+  // 點擊地圖外側會收起已展開的資訊框（兩個都測，且互不干擾彼此的狀態）。
+  await b.click(".map-legend"); // 展開已探索
+  const bothExpanded = { legend: await toggleState(b, ".map-legend"), stats: await toggleState(b, ".map-stats") };
+  t.check("點擊外側前，已探索與旅行足跡都已展開", bothExpanded.legend.expanded && bothExpanded.stats.expanded,
+    JSON.stringify(bothExpanded));
+  await b.click(".site-header .brand");
+  await sleep(100);
+  const afterOutsideClick = { legend: await toggleState(b, ".map-legend"), stats: await toggleState(b, ".map-stats") };
+  t.check("點擊外側後，兩個資訊框都收折", !afterOutsideClick.legend.expanded && !afterOutsideClick.stats.expanded,
+    JSON.stringify(afterOutsideClick));
+
+  // 兩個資訊框各自獨立：只展開一個，另一個不受影響。
+  await b.click(".map-legend");
+  const onlyLegend = { legend: await toggleState(b, ".map-legend"), stats: await toggleState(b, ".map-stats") };
+  t.check("只點已探索時，旅行足跡不受影響", onlyLegend.legend.expanded && !onlyLegend.stats.expanded,
+    JSON.stringify(onlyLegend));
+  await b.click(".map-legend");
+
+  // hover 既有行為不受影響：不點擊，單純 hover 仍要能展開（暫時預覽，跟點擊釘住並存）。
+  await b.hover(".map-legend");
+  await sleep(350);
+  const hoverOpacity = await b.eval(
+    `getComputedStyle(document.querySelector(".map-legend > span:not(.map-legend-label)")).opacity`);
+  t.check("純 hover（沒有點擊）仍可展開內容，不受新邏輯影響", hoverOpacity === "1", hoverOpacity);
+  const hoverNotPinned = await toggleState(b, ".map-legend");
+  t.check("純 hover 不會設定 aria-expanded（只有點擊才是釘住狀態）",
+    !hoverNotPinned.expanded && hoverNotPinned.aria === "false", JSON.stringify(hoverNotPinned));
+
+  // 手機版：觸控 tap 走一樣的 click 事件路徑。
+  await b.mobile();
+  await b.goto("/index.html", { settle: 1200 });
+  await b.tap(".map-legend");
+  const mobileExpanded = await toggleState(b, ".map-legend");
+  t.check("手機版：tap 可展開已探索", mobileExpanded.expanded && mobileExpanded.aria === "true",
+    JSON.stringify(mobileExpanded));
+  await b.tap(".map-legend");
+  const mobileCollapsed = await toggleState(b, ".map-legend");
+  t.check("手機版：再次 tap 收折", !mobileCollapsed.expanded && mobileCollapsed.aria === "false",
+    JSON.stringify(mobileCollapsed));
+
+  t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
+});
