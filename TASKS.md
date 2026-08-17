@@ -30,12 +30,20 @@
 
 ---
 
-### 1.2 各地區的美食（含已提供的 273 筆候選）
-**狀態**：22 個新地區頁的「美食」章節全是樣板佔位文字；已收到依料理類型整理的 273 筆候選名單，尚未逐筆查證所在地、店名、營業狀態與對應地區。
+### 1.2 各地區的美食（含已提供的 273 筆候選）— ✅ 已完成
+273 筆候選全部逐一查證所在地、正確店名與營業狀態並分類寫入，含最後 6 筆你提供 Google Maps 連結後補查的結果。
 
-執行規則：每筆先以官方店家／觀光資料確認，依所在地寫進 `regionContent[地區].food` 與 `regionalVenueData[地區].food`。外層項目可依料理主題或城市建立，但每個項目的 modal 資料表不可混用不同地區或店家的資料；所在地不明的店家先保留在待確認清單，不寫入網站。完整原始名單見附錄 A.2。
+**22 個新地區**：47 筆確認落在 14 個地區內，已寫入 `regionContent[地區].food` 與 `regionalVenueData[地區].food`：kobe 7／kyoto 10／miyazaki 6／kumamoto 4／kanagawa 4／kagoshima 3／oita 3（2 主題，由布まぶし心兩分店併一組）／gifu 2／kagawa 2／kochi 2／saga 1／ehime 1／shizuoka 1／ishikawa 1。kochi、kanagawa、saga、ehime、shizuoka、ishikawa 因分店數少，已依規範刪除 HTML 樣板多餘的佔位卡，避免產生 fallback 假資料列。
 
-適用：kumamoto miyazaki gifu kagoshima oita saga kyoto kobe nagano kagawa kanagawa yokkaichi ehime kochi ishikawa toyama shizuoka yamanashi shiga okayama shimane nagasaki
+13 筆同名多分店候選依「離主要大車站最近」的原則選定分店並寫入：Kurumi→鎌倉店(kanagawa)、鯛壽司→京都河原町店(kyoto)、若松屋→熊本川尻店(kumamoto)、Unatatsu→愛媛松山店(ehime)、cafe&bar anthem→神戶元町店(kobe)、スヌーピー茶屋→京都嵐山店(kyoto，比由布院、高山都近車站)、Grateful's→神戶須磨店(kobe，出站即到)、Yakiniku Rinn→熱海店(shizuoka)、若大将→金澤店(ishikawa，岡山店最近車站要 3 公里)、Nigirimeshi→京都舞鶴店(kyoto)、魚がし日本一→港未來店(kanagawa)、日本酒原価酒蔵→橫濱本店(kanagawa)、Original Pancake House→熊本站店(kumamoto，車站直結)。
+
+最後 6 筆你提供 Google Maps 連結後，解出真實店名並確認地點：雪洞（余市らあ麺、Le Musée 主廚監修的鯡魚拉麵）→ hokkaido、Tsunagokoro（綱ごころ，薩摩川內屋台居酒屋）→ kagoshima、Musashi（黒毛和牛博多牛まぶし武蔵，博多站前和牛丼）→ fukuoka、凱裡（牡蠣×海老かいり渋谷2号店）→ tokyo、Amihama Shokudo（あみ浜食堂，土佐市浜燒吃到飽）→ kochi、Tsujiya Shijogokomachiten（京都炭火串焼つじや四条御幸町店）→ kyoto。三筆落在 22 地區清單內（kagoshima、kochi、kyoto），三筆屬既有地區（hokkaido、fukuoka、tokyo）。
+
+**既有 6 個地區**：其餘約 220 筆確認地點落在既有的 hokkaido／tokyo／nagoya／osaka／fukuoka／ise-shima 範圍內，已依區域或料理主題分組寫入：hokkaido +14（札幌拉麵四天王、薄野燒肉燒鳥、白石關東煮、大通三明治、小樽・余市拉麵與和牛等）／tokyo +32（上野、淺草、阿佐谷高圓寺、新宿赤坂六本木、澀谷惠比壽、目黑祐天寺、池袋、大塚、下北澤、人形町愛宕、蒲田、新木場東大和、一頭買和牛連鎖等）／nagoya +5／osaka +4／ise-shima +1（併入既有「海女料理」主題，未另開新卡）／fukuoka +26（北九州、久留米八女柳川、天神大名、博多站前、柳橋市場、糸島、薬院、天神壽司街、太宰府大濠、大宮飯糰）。
+
+**零命中地區**：yokkaichi、nagano、yamanashi、shiga、shimane、nagasaki——273 筆裡沒有任何一筆查證後落在這六個地區，需要新的候選名單才能補上美食章節。
+
+執行規則（供未來新候選參考）：每筆先以官方店家／觀光資料確認，依所在地寫進 `regionContent[地區].food` 與 `regionalVenueData[地區].food`。外層項目可依料理主題或城市建立，但每個項目的 modal 資料表不可混用不同地區或店家的資料；所在地不明的店家先保留在待確認清單，不寫入網站。完整原始名單見附錄 A.2。
 
 ---
 
@@ -229,6 +237,8 @@ AGENTS.md 要求確認名稱、所在地、交通方式與是否仍營業。最�
 
 ## 4. 程式（等你決定何時做）
 
+- [ ] **首頁國家圖卡跑馬燈同步地區子頁** — 每張首頁國家圖卡的跑馬燈僅顯示該國家目前已有對應子頁的地區，不能保留不存在頁面的預告地名，也不能漏列已建立頁面；尚未有任何地區子頁的 Coming soon 國家卡維持適當空狀態。地區清單需有單一資料來源，新增／移除 `countries/<country>/<region>/index.html` 時能同步更新，並以測試驗證圖卡跑馬燈、國家頁清單與實際子頁路徑一致。
+- [ ] **手機版邊界拉動出現白底** — 所有頁面在手機上拉到上下或左右邊界、繼續拖曳時，會短暫露出白色畫面，放開後才回彈。需統一處理 `html`／`body` 與各頁主要捲動容器的 overscroll 背景與行為，讓回彈期間維持目前亮／暗液態玻璃主題，不露出白邊；同時不可破壞地區頁、首頁卡片列與手機版時間軸既有的垂直／水平手勢。驗收範圍：首頁、日本國家頁、全部地區頁，亮暗主題皆測，iOS Safari 與 Android Chrome 實機確認。
 - [x] **測試執行器平行化** — ✅ 完成。244s → 82s（3.0×）。群組分散到多個獨立 Chrome、共用單一靜態伺服器；輸出以原始順序緩衝後逐一沖出，順序與序列執行完全一致。預設 jobs 為核心數一半（上限 6），`--jobs=N` / `TEST_JOBS` 可覆寫。`jobs=8` 實測會因 CPU 競爭出現 flaky（捲動位置漂 3px），因此逐像素斷言捲動位置或在動畫中途取樣的三個群組標記 `{ serial: true }`，於平行階段之後獨佔執行。
 - [ ] **旅行筆記行程軌跡模組** — 欄位與放置方式已定，等 1.1 的資料
 - [ ] **全站 i18n 多語系** — 以繁中為預設、英文為第一個新增語言；建立共用翻譯字典與語言切換控制，將頁首、導覽、分類、按鈕、modal 與動態注入內容的 UI 文案改由 key 取用，使用 `localStorage` 記憶選擇並以瀏覽器語言作首次預設。國家、地區與地點資料需保留各語系名稱／描述欄位；完成後檢查鍵盤可及性、頁面標題與 `lang` 屬性。初期共用 HTML 結構，未來英文內容成熟且需要 SEO 時，再評估改為 `/en/` 的獨立靜態路徑與 `hreflang`。
