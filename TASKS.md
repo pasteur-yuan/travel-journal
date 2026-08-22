@@ -20,7 +20,7 @@
 **做法**（模組本身，跟資料是否填入無關）：查表方式比照 `regionalVenueData`：用筆記卡的標籤（年 / 月）當 key，值是「天」的陣列，每天依序列出停留點。有資料時 modal 改顯示時間軸式的「時間 → 地名 → 類型 → 備註 → 到下一站的交通方式」清單，取代原本四欄表格；沒有資料的筆記維持原樣（表格與時間軸都隱藏，不編造內容）。
 
 **加資料的方式**：一次給一趟（或一天）即可，不用一次補齊全部。每趟行程要同時補兩件事，缺一不可：
-1. 一筆筆記文字（年月標籤＋一句話敘述）——由於現在全部地區的 `#notes` HTML 裡都沒有 `.region-note` 了，第一則筆記要新增到 `regionContent[地區].note`（`region-detail.js` 裡的 `if (note && currentRegionContent.note) {...}` 分支會把它寫回 `#notes .region-note`——但 HTML 裡目前沒有這個元素，所以還需要在該地區 HTML 的 `#notes` 章節補回 `<div class="region-note"><span></span><p></p></div>` 這個容器，JS 才有地方可以寫入；之後同一地區的第二則以後才是直接 append 到 `regionAdditionalContent[地區].notes`）。
+1. 一筆筆記文字（年月標籤＋一句話敘述）——由於現在全部地區的 `#notes` HTML 裡都沒有 `.region-note` 了，某個地區要加第一則筆記時，先跑 `node tools/ensure-region-note.mjs <地區 slug>` 補回空的 `.region-note` 容器（比照 `generate-region-page.mjs` 的做法：零依賴、只在本機執行、直接寫回靜態 HTML，容器內容留空，不重複填字），再把實際內容寫進 `regionContent[地區].note`——`region-detail.js` 裡的 `if (note && currentRegionContent.note) {...}` 分支會在頁面載入時把文字寫進這個容器。這個工具是**冪等**的：容器已經存在就不會重複加，可以放心重複執行。同一地區的第二則筆記以後，直接 append 到 `regionAdditionalContent[地區].notes` 即可，不需要再跑這個工具（容器已經在了）。
 2. 對應的行程軌跡——寫進 `regionItineraries[地區][同一個年月標籤]`，這是點開卡片後 modal 顯示的停留點清單。兩邊的「年月標籤」文字要完全一致，modal 才查得到對應的行程。
 
 行程明細格式見下方表格。如果同一趟旅程橫跨多個地區，或同一天橫跨兩個地區，模組會依實際地點正確拆開到各自的地區——上一輪處理「去趣行程總覽.md」時已經驗證過這個邏輯沒問題（例如 2025 年 4-5 月九州行程同時觸及熊本、宮崎、大分、福岡；熊本出發去宮崎高千穗再回熊本的單日跨地區也拆得開），所以之後補資料不需要重新設計，照著同一份表格格式給即可。
