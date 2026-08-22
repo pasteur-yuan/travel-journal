@@ -1,23 +1,31 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import { runInNewContext } from "node:vm";
 import { sleep, suite } from "../harness.mjs";
 import { REGIONS } from "../regions.mjs";
 
 const page = (r) => `/countries/japan/${r}/index.html`;
 
-const noteItems = (b) => b.eval(`[...document.querySelectorAll(
-  "#notes .region-note, #notes .region-content-list article"
-)].map(el => ({ label: el.querySelector("span").textContent.trim(), tag: el.tagName }))`);
+// 讀 region-notes.js 的原始碼取得真實的 regionNotes 當比對基準，不在測試裡
+// 另外寫一份資料——避免兩邊各自維護、彼此漂移。
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const regionNotesSource = readFileSync(join(repoRoot, "assets", "js", "region-notes.js"), "utf8");
+const regionNotes = runInNewContext(`${regionNotesSource}\nregionNotes;`);
+
+const NOTE_SELECTOR = "#notes .region-content-list article";
+const noteLabels = (b) => b.eval(`[...document.querySelectorAll(${JSON.stringify(NOTE_SELECTOR)})]
+  .map(el => el.querySelector("span").textContent.trim())`);
 
 // 逐地區找出第一則「有行程軌跡資料」的筆記（點開後 .spot-modal-itinerary 有內容）。
 // 不寫死特定地區／標籤，資料是逐筆補回來的，寫死會變成每加一趟行程就要改一次測試。
 const findNoteWithItinerary = async (b) => {
   for (const region of REGIONS) {
     await b.goto(page(region), { settle: 1000 });
-    const labels = await b.eval(`[...document.querySelectorAll(
-      "#notes .region-note, #notes .region-content-list article"
-    )].map(el => el.querySelector("span").textContent.trim())`);
+    const labels = await noteLabels(b);
     for (const label of labels) {
       await b.eval(`(() => {
-        const items = [...document.querySelectorAll("#notes .region-note, #notes .region-content-list article")];
+        const items = [...document.querySelectorAll(${JSON.stringify(NOTE_SELECTOR)})];
         items.find(el => el.querySelector("span").textContent.trim() === ${JSON.stringify(label)}).click();
       })()`);
       await sleep(250);
@@ -34,30 +42,23 @@ const findNoteWithItinerary = async (b) => {
 };
 
 export const notesOrder = suite("地區頁 · 旅行筆記卡片順序", async (b, t) => {
-  // 迴歸測試：#notes 底下有兩個直接子 div（區塊編號「05」與實際內容），
-  // 原本用 '#notes > div' 抓內容容器會抓到第一個（編號），導致
-  // regionAdditionalContent[地區].notes 的內容被插到編號 div 裡，排到
-  // regionContent[地區].note（第一則筆記）前面。這裡驗證的是「插入順序」
-  // 這個具體被打破的不變量，不是年月遞增——筆記本來就不保證依時間排序
-  // （例如 fukuoka 後來補上的 2025/05 排在既有的 2026/03、2026/04 之後，
-  // 這是正常的、insertion order，不是 bug）。第一則筆記固定是 DIV.region-note，
-  // 其餘都是 ARTICLE.region-content-list-item，只要 DIV 排在所有 ARTICLE
-  // 前面，就代表順序沒有被打亂。
+  // region-notes.js 的 regionNotes[地區] 是陣列，畫面上應該依陣列順序顯示——
+  // 渲染邏輯只是單純 forEach + append，理論上不會亂序，這裡釘住這個不變量，
+  // 避免未來改動渲染邏輯時（例如排序、去重）意外打亂顯示順序。
+  // 不寫死地區清單，依 regionNotes 實際有資料的地區逐一檢查。
   await b.desktop();
-  for (const region of ["hokkaido", "tokyo", "nagoya", "osaka", "ise-shima", "fukuoka", "oita", "kumamoto", "miyazaki", "saga"]) {
-    await b.goto(page(region), { settle: 1000 });
-    const items = await noteItems(b);
-    if (items.length === 0) {
-      // 目前所有地區的旅行筆記都是空的，沒有項目可以比較順序——
-      // 這不是「順序正確」，是根本沒有東西可以驗證，用 skip 誠實反映。
-      t.skip(`${region}：第一則筆記（region-note）排在其餘附加筆記之前`, "目前沒有任何筆記項目");
-      continue;
+  const regionsWithNotes = REGIONS.filter((r) => regionNotes[r]?.length);
+  if (!regionsWithNotes.length) {
+    t.skip("旅行筆記畫面順序與 regionNotes 陣列順序一致", "目前沒有任何地區有筆記資料");
+  } else {
+    for (const region of regionsWithNotes) {
+      await b.goto(page(region), { settle: 1000 });
+      const domLabels = await noteLabels(b);
+      const expectedLabels = regionNotes[region].map((n) => n.label);
+      t.check(`${region}：畫面顯示順序與 regionNotes 陣列順序一致`,
+        JSON.stringify(domLabels) === JSON.stringify(expectedLabels),
+        `畫面：${JSON.stringify(domLabels)}，預期：${JSON.stringify(expectedLabels)}`);
     }
-    const divIndex = items.findIndex((i) => i.tag === "DIV");
-    const firstArticleIndex = items.findIndex((i) => i.tag === "ARTICLE");
-    const ok = divIndex === -1 || firstArticleIndex === -1 || divIndex < firstArticleIndex;
-    t.check(`${region}：第一則筆記（region-note）排在其餘附加筆記之前`,
-      ok, JSON.stringify(items));
   }
   t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 });
@@ -67,16 +68,12 @@ export const itineraryContent = suite("地區頁 · 旅行筆記行程軌跡", a
 
   // 沒有行程軌跡資料的筆記：兩者都不顯示，不編造內容。這條在資料是空的
   // 現況下必然為真，資料補回來後也仍然要對「沒補資料的那些筆記」成立。
-  // 目前所有地區的旅行筆記本身都是空的（連 .region-note 都還沒有），
-  // 找不到任何項目可點時 skip，而不是對著不存在的元素硬點造成例外。
   await b.goto(page("hokkaido"), { settle: 1000 });
-  const hasAnyNote = await b.eval(`!!document.querySelector(
-    "#notes .region-note, #notes .region-content-list article")`);
+  const hasAnyNote = await b.eval(`!!document.querySelector(${JSON.stringify(NOTE_SELECTOR)})`);
   if (!hasAnyNote) {
     t.skip("沒有行程軌跡資料的筆記兩者都不顯示", "目前沒有任何筆記項目可以點擊");
   } else {
-    await b.eval(`document.querySelector(
-      "#notes .region-note, #notes .region-content-list article").click()`);
+    await b.eval(`document.querySelector(${JSON.stringify(NOTE_SELECTOR)}).click()`);
     await sleep(300);
     const noItinerary = await b.eval(`({
       tableHidden: document.querySelector(".spot-modal-table-wrap").hidden,
@@ -97,7 +94,7 @@ export const itineraryContent = suite("地區頁 · 旅行筆記行程軌跡", a
   } else {
     await b.goto(page(found.region), { settle: 1000 });
     await b.eval(`(() => {
-      const items = [...document.querySelectorAll("#notes .region-note, #notes .region-content-list article")];
+      const items = [...document.querySelectorAll(${JSON.stringify(NOTE_SELECTOR)})];
       items.find(el => el.querySelector("span").textContent.trim() === ${JSON.stringify(found.label)}).click();
     })()`);
     await sleep(300);
@@ -140,7 +137,7 @@ export const itineraryAccessibility = suite("地區頁 · 旅行筆記行程軌�
 
     // 鍵盤：Tab 到有行程軌跡的筆記卡片，Enter 開啟，內容跟滑鼠點擊一致。
     await b.eval(`(() => {
-      const items = [...document.querySelectorAll("#notes .region-note, #notes .region-content-list article")];
+      const items = [...document.querySelectorAll(${JSON.stringify(NOTE_SELECTOR)})];
       items.find(el => el.querySelector("span").textContent.trim() === ${JSON.stringify(found.label)}).focus();
     })()`);
     await b.press("Enter");
@@ -161,7 +158,7 @@ export const itineraryAccessibility = suite("地區頁 · 旅行筆記行程軌�
     await b.mobile();
     await b.goto(page(found.region), { settle: 1000 });
     await b.eval(`(() => {
-      const items = [...document.querySelectorAll("#notes .region-note, #notes .region-content-list article")];
+      const items = [...document.querySelectorAll(${JSON.stringify(NOTE_SELECTOR)})];
       const target = items.find(el => el.querySelector("span").textContent.trim() === ${JSON.stringify(found.label)});
       target.setAttribute("data-test-tap-target", "1");
     })()`);

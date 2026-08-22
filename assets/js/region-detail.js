@@ -401,10 +401,31 @@ if (currentRegionContent) {
   updateItems('#food .region-content-list', currentRegionContent.food);
   const stay = document.querySelector('#stays .region-content-list article h3');
   if (stay && currentRegionContent.stay) stay.textContent = currentRegionContent.stay;
-  const note = document.querySelector('#notes .region-note');
-  if (note && currentRegionContent.note) {
-    note.querySelector('span').textContent = currentRegionContent.note[0];
-    note.querySelector('p').textContent = currentRegionContent.note[1];
+}
+
+// 旅行筆記（含行程軌跡）改由 region-notes.js 的全域 regionNotes 提供，見該檔案
+// 開頭註解。跟 spots/food/stays 不同，筆記卡片只有兩個欄位（標籤、敘述，沒有
+// h3 標題），所以用專屬的 createNoteItem，不能沿用 createRegionContentItem('list')——
+// 沿用的話會把敘述文字塞進 h3、留下永遠空白的 p，這是修這次改動前就存在的 bug。
+const createNoteItem = () => {
+  const item = document.createElement('article');
+  item.className = 'region-note';
+  item.innerHTML = '<span></span><p></p>';
+  return item;
+};
+const currentRegionNotes = regionNotes[regionKey] || [];
+if (currentRegionNotes.length) {
+  const notesContainer = document.querySelector('#notes h2')?.parentElement;
+  if (notesContainer) {
+    const notesList = document.createElement('div');
+    notesList.className = 'region-content-list';
+    currentRegionNotes.forEach((note) => {
+      const item = createNoteItem();
+      item.querySelector('span').textContent = note.label;
+      item.querySelector('p').textContent = note.description;
+      notesList.append(item);
+    });
+    notesContainer.append(notesList);
   }
 }
 
@@ -727,22 +748,9 @@ if (additionalContent) {
   appendItems('#spots .region-card-grid', additionalContent.spots, 'card');
   appendItems('#food .region-content-list', additionalContent.food, 'list');
   appendItems('#stays .region-content-list', additionalContent.stays, 'list');
-  // #notes 底下有兩個直接子 div（區塊編號「05」與實際內容），原本寫
-  // '#notes > div' 只會抓到第一個（編號），.region-note 從來沒被移進
-  // notesList，新加的筆記反而插到編號 div 裡、排到第一則筆記前面。
-  // 改成直接抓 .region-note 的父層，保證抓到裝內容的那個 div。
-  const notesSection = document.querySelector('#notes .region-note')?.parentElement;
-  if (additionalContent.notes?.length && notesSection && !notesSection.querySelector('.region-content-list')) {
-    const notesList = document.createElement('div');
-    notesList.className = 'region-content-list';
-    const existingNote = notesSection.querySelector('.region-note');
-    if (existingNote) notesList.append(existingNote);
-    notesSection.append(notesList);
-  }
-  appendItems('#notes .region-content-list', additionalContent.notes, 'list');
 }
 
-const detailItems = [...document.querySelectorAll('#spots .region-content-card, #food .region-content-list article, #stays .region-content-list article, #notes .region-note, #notes .region-content-list article')];
+const detailItems = [...document.querySelectorAll('#spots .region-content-card, #food .region-content-list article, #stays .region-content-list article, #notes .region-content-list article')];
 if (detailItems.length) {
   const modal = document.createElement('div');
   modal.className = 'spot-modal';
@@ -1962,21 +1970,6 @@ if (detailItems.length) {
       ]
     }
   };
-  // 旅行筆記的行程軌跡：以筆記卡的標籤（年 / 月）為 key，對應到該次旅程在這個
-  // 地區內的實際停留點，查表方式比照 regionalVenueData 用「地區 → 標籤」兩層。
-  // 每個標籤下是「天」的陣列，每天依序列出停留點；stops 裡的 transport 是
-  // 前往下一個停留點的方式與耗時，最後一站沒有 transport（原始資料本來就沒有，
-  // 不是漏填）。同一趟旅程若橫跨多個地區，只收錄屬於這個地區的停留點，
-  // 不代表當天其餘時間沒有行程。
-  const regionItineraries = {
-    hokkaido: {},
-    fukuoka: {},
-    oita: {},
-    nagoya: {},
-    kumamoto: {},
-    miyazaki: {},
-    saga: {}
-  };
   const mapSearchUrl = (query) =>
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
   const mapCell = (name, href) => href
@@ -2011,10 +2004,12 @@ if (detailItems.length) {
     const sectionName = item.closest('.region-section')?.id || 'travel';
 
     // 旅行筆記若有對應的行程軌跡資料，改顯示時間軸式的停留點清單，
-    // 不使用「地名、資訊、交通方式、Google Map」四欄表格——查表方式與下面
-    // 的 regionalVenueData 一致，都是用項目的標籤文字當 key。
+    // 不使用「地名、資訊、交通方式、Google Map」四欄表格——查表方式是在
+    // region-notes.js 的 regionNotes[地區] 陣列裡找標籤文字相符的那筆筆記，
+    // 讀它的 itinerary 欄位（筆記文字與行程軌跡現在放在同一個物件裡，
+    // 不必再靠兩份資料的標籤字串互相對應）。
     if (sectionName === 'notes') {
-      const days = regionItineraries[regionKey]?.[place];
+      const days = (regionNotes[regionKey] || []).find((n) => n.label === place)?.itinerary;
       if (days?.length) {
         if (itineraryWrap) {
           itineraryWrap.innerHTML = renderItinerary(days);

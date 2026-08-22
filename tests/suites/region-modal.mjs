@@ -2,7 +2,7 @@ import { sleep, suite } from "../harness.mjs";
 import { REGIONS, REGION_SEARCH_NAMES as REGION_NAMES } from "../regions.mjs";
 
 const ITEM_SELECTOR = "#spots .region-content-card, #food .region-content-list article, " +
-  "#stays .region-content-list article, #notes .region-note, #notes .region-content-list article";
+  "#stays .region-content-list article, #notes .region-content-list article";
 const page = (r) => `/countries/japan/${r}/index.html`;
 
 export const modal = suite("地區頁 · 內容彈窗", async (b, t) => {

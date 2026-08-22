@@ -23,6 +23,7 @@ const NAV_LINKS = [
 const SCRIPTS = [
   "../../../assets/js/themes.js",
   "../../../assets/js/theme-switcher.js",
+  "../../../assets/js/region-notes.js",
   "../../../assets/js/region-detail.js"
 ];
 

@@ -39,11 +39,11 @@ git diff --check
 |---|---|---|---|
 | 首頁 | `index.html` | amCharts CDN ×4 → `main.js` → `themes.js` → `theme-switcher.js` | `assets/...` |
 | 國家頁 | `countries/<country>/index.html` | `themes.js` → `theme-switcher.js` → `region-showcase.js` | `../../assets/...` |
-| 地區頁 | `countries/<country>/<region>/index.html` | `themes.js` → `theme-switcher.js` → `region-detail.js` | `../../../assets/...` |
+| 地區頁 | `countries/<country>/<region>/index.html` | `themes.js` → `theme-switcher.js` → `region-notes.js` → `region-detail.js` | `../../../assets/...` |
 
 新增頁面時複製對應模板的 DOM 結構與 script 順序，不要另寫一套 CSS/JS。
 
-**script 順序是硬性需求**：`themes.js` 宣告全域 `const themes`，`theme-switcher.js` 直接依賴它。所有 script 放在 `</body>` 前、無 `defer`、無 `DOMContentLoaded` 包裝，頂層程式碼即時執行。
+**script 順序是硬性需求**：`themes.js` 宣告全域 `const themes`，`theme-switcher.js` 直接依賴它；`region-notes.js` 宣告全域 `const regionNotes`，`region-detail.js` 直接依賴它，同一模式。所有 script 放在 `</body>` 前、無 `defer`、無 `DOMContentLoaded` 包裝，頂層程式碼即時執行。
 
 所有頁面的 `<title>` 統一是「出去玩」，並掛同一個 `assets/images/favicon.svg`（依深度調整相對路徑）。頁面身分靠 breadcrumb 呈現，不靠 title。
 
@@ -63,19 +63,21 @@ git diff --check
 
 地區身分由 `.region-hero` 上的 `region-hero-<region>` class 決定，解析成 `regionKey`（如 `tokyo`、`ise-shima`）。**所有地區走完全相同的程式路徑**，沒有任何地區有專屬分支或專屬陣列。所有資料 map 都以 `regionKey` 為 key：
 
-1. `regionContent[regionKey]` — 覆寫前 N 筆 spots / food，以及 stay、note 文字。
+1. `regionContent[regionKey]` — 覆寫前 N 筆 spots / food，以及 stay 文字。
 2. `stayBaseContent[regionKey]` — `#stays` 第一筆項目的內容。
-3. `regionAdditionalContent[regionKey]` — 額外 append 的 spots / food / stays / notes。
+3. `regionAdditionalContent[regionKey]` — 額外 append 的 spots / food / stays。
 4. `regionSearchNames[regionKey]` — 查地圖時補在關鍵字後面的地區名。
 
-所有動態項目一律透過 `createRegionContentItem(type)`（`'card'` 給 `.region-card-grid`，`'list'` 給 `.region-content-list`）建立，確保 DOM 結構一致。
+`#notes` 章節不在上面這幾個 map 裡：旅行筆記（含行程軌跡）獨立在 `assets/js/region-notes.js` 的全域 `regionNotes[regionKey]`，因為這份資料未來可能被 `region-detail.js` 以外的頁面參考。每個地區是一個陣列，依顯示順序排列，元素是 `{ label, description, itinerary? }`——第一則跟第二則以後用的是同一套資料結構，不像 spots/food/stays 分「覆寫前 N 筆」跟「額外 append」兩層。
+
+所有動態項目一律透過 `createRegionContentItem(type)`（`'card'` 給 `.region-card-grid`，`'list'` 給 `.region-content-list`）建立，確保 DOM 結構一致；筆記例外，用專屬的 `createNoteItem()`（只有 `<span>`／`<p>` 兩欄，沒有 `<h3>`），因為筆記的顯示欄位（標籤＋一句話敘述）跟 spots/food/stays 的三欄（標籤＋標題＋敘述）不一樣，共用同一個建構函式會讓其中一欄對不上。
 
 ### Modal 資料表的查表順序
 
-點擊任一內容項目會開啟共用 modal，`renderItemTable(item)` 以「項目 `<span>` 的文字」＋「所屬 section id」查表，只有兩層：
+點擊任一內容項目會開啟共用 modal，`renderItemTable(item)` 以「項目 `<span>` 的文字」＋「所屬 section id」查表：
 
 1. `regionalVenueData[regionKey][sectionName][place]` — 全部地區統一的資料來源，結構固定是「地區 → 分類 → 項目標籤 → 資料列陣列」。每筆資料列是 `[名稱, 說明, 交通, 地圖網址?]`，第四欄省略時自動以名稱產生 Google Maps 查詢。
-2. Fallback：單列表格，查詢字串補上 `regionSearchNames[regionKey]`（例：`原宿 東京`）。**`#notes` 章節例外**：筆記的標籤是年月而非地點，四個欄位沒有一欄填得出真實內容，因此整張資料表隱藏（`.spot-modal-table-wrap` 設 `hidden`）而不是填佔位字串。
+2. Fallback：單列表格，查詢字串補上 `regionSearchNames[regionKey]`（例：`原宿 東京`）。**`#notes` 章節例外**：不查 `regionalVenueData`，而是在 `regionNotes[regionKey]` 裡找標籤相符的那筆筆記，讀它的 `itinerary` 欄位——有資料就顯示時間軸式的停留點清單（`.spot-modal-itinerary`），取代四欄表格；沒有 `itinerary` 欄位（多數筆記目前如此）就兩者都隱藏，不編造內容。筆記的標籤是年月而非地點，四個欄位本來就沒有一欄填得出真實內容，所以不會落到上面的 fallback。
 
 Google Maps 連結統一由 `mapSearchUrl()` 產生（`https://www.google.com/maps/search/?api=1&query=<encodeURIComponent(名稱)>`），儲存格統一由 `mapCell()` 產生（`target="_blank" rel="noopener noreferrer"`）。渲染統一走 `renderRows()`——不要為單一地區另寫渲染函式。
 
@@ -130,7 +132,7 @@ marker 由 `main.js` 頂端的 `travelDestinations` 陣列產生：每筆資料�
 ## 新增內容的檢查點
 
 - 新增國家：`countries/<country>/index.html` + `countries/<country>/<region>/index.html`，在 `main.js` 的 `travelDestinations` 加一筆，並在首頁加 `.country-card`（尚未建頁時用非連結的 `<div>`，不可留失效連結）。
-- 新增地區頁：需要 `region-hero-<region>` class、五個章節 id（`overview` / `spots` / `food` / `stays` / `notes`），並在 `region-detail.js` 的 `regionNames`、`regionSearchNames`、`regionContent`、`regionalVenueData` 補上對應 key（`stayBaseContent` 只有已累積住宿資料的地區才需要）；另外要在 `countries/japan/index.html` 加 showcase 項目、`style.css` 加 `.region-hero-<region>` 背景，以及 `tests/regions.mjs` 的 `REGION_NAMES`——測試群組的地區清單全部由那一份推導。
+- 新增地區頁：需要 `region-hero-<region>` class、五個章節 id（`overview` / `spots` / `food` / `stays` / `notes`），並在 `region-detail.js` 的 `regionNames`、`regionSearchNames`、`regionContent`、`regionalVenueData` 補上對應 key（`stayBaseContent` 只有已累積住宿資料的地區才需要），以及 `region-notes.js` 的 `regionNotes` 補上一個空陣列 `[]`（旅行筆記是選填內容，之後有真實筆記或行程資料再往陣列裡加）；另外要在 `countries/japan/index.html` 加 showcase 項目、`style.css` 加 `.region-hero-<region>` 背景，以及 `tests/regions.mjs` 的 `REGION_NAMES`——測試群組的地區清單全部由那一份推導。
 - 景點卡片只有一張時，記得刪掉 HTML 樣板裡第二張佔位卡；沒刪的話它會產生一列 fallback 假資料與無意義的地圖查詢。
 - 新增時間軸項目：`.timeline-entry` 必須有 `data-date`、`data-country`、`data-region`，缺 `data-date` 會被跳過並在 console 警告。
 - 圖片放 `assets/images/`，不依賴圖片 CDN。
