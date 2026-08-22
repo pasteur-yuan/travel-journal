@@ -21,6 +21,13 @@ const regionImageSlugs = {
   '山梨': 'yamanashi', '滋賀': 'shiga', '岡山': 'okayama', '島根': 'shimane',
   '長崎': 'nagasaki'
 };
+// 依 trip.regions[0] 查對應地區頁的主視覺，時間軸資訊卡與旅程彈窗共用同一份
+// 圖，換地區時兩處要一起換。查不到對應 slug（地區還沒收錄，或非日本旅程）
+// 就退回 japan.jpg，不留空白背景。回傳值可以直接指定成 CSS 的 background 值：
+// url() 的相對路徑是相對「引用它的樣式表」（assets/css/style.css）解析，不是
+// 相對 index.html，所以要跟 style.css 既有的 .region-hero-<slug> 一樣用
+// ../images/，不能寫 assets/images/。
+const regionCardImage = (trip) => `url("../images/${regionImageSlugs[trip.regions[0]] || "japan"}.jpg")`;
 
 // 時間軸節點從 trips.js 的全域 trips 動態產生，不再手寫在 index.html 裡——
 // 新增一趟旅程只要在 trips.js 加一筆，這裡會自動長出對應節點，不用碰 HTML。
@@ -47,13 +54,7 @@ const buildTimelineEntry = (trip) => {
   dot.setAttribute("aria-hidden", "true");
   const card = document.createElement("span");
   card.className = "timeline-card";
-  // 卡片背景圖依主要地區換成對應地區頁的主視覺；查不到對應 slug（尚未收錄的
-  // 地區，或非日本旅程）就退回 japan.jpg 這張泛用素材，不留空白卡片。
-  // 這個自訂屬性只會被 style.css 裡的 background 宣告讀取，url() 的相對路徑是
-  // 相對「該條規則所在的樣式表」（assets/css/style.css）解析，不是相對 index.html，
-  // 所以要跟 style.css 既有的 .region-hero-<slug> 一樣用 ../images/，不能寫 assets/images/。
-  const cardImageSlug = regionImageSlugs[trip.regions[0]] || "japan";
-  card.style.setProperty("--timeline-card-image", `url("../images/${cardImageSlug}.jpg")`);
+  card.style.setProperty("--timeline-card-image", regionCardImage(trip));
   const code = document.createElement("span");
   code.className = "timeline-code";
   code.textContent = `${year}.${month} · ${trip.country}`;
@@ -353,8 +354,9 @@ if (mapStats && timezoneLabel) {
 const tripModal = document.createElement("div");
 tripModal.className = "spot-modal";
 tripModal.setAttribute("aria-hidden", "true");
-tripModal.innerHTML = '<div class="spot-modal-backdrop" data-spot-modal-close></div><section class="spot-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="trip-modal-title"><button class="spot-modal-close" type="button" aria-label="關閉旅程視窗" data-spot-modal-close>×</button><span class="spot-modal-label" id="trip-modal-label"></span><h2 id="trip-modal-title"></h2><div class="spot-modal-itinerary"></div></section>';
+tripModal.innerHTML = '<div class="spot-modal-backdrop" data-spot-modal-close></div><section class="spot-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="trip-modal-title"><button class="spot-modal-close" type="button" aria-label="關閉旅程視窗" data-spot-modal-close>×</button><div class="spot-modal-hero"><span class="spot-modal-label" id="trip-modal-label"></span><h2 id="trip-modal-title"></h2></div><div class="spot-modal-itinerary"></div></section>';
 document.body.append(tripModal);
+const tripModalHero = tripModal.querySelector(".spot-modal-hero");
 const tripModalLabel = tripModal.querySelector("#trip-modal-label");
 const tripModalTitle = tripModal.querySelector("#trip-modal-title");
 const tripModalItinerary = tripModal.querySelector(".spot-modal-itinerary");
@@ -463,6 +465,7 @@ const openTripModal = (trip, byKeyboard = false) => {
   tripModalOpenedByKeyboard = byKeyboard;
   tripModalPreviousFocus = document.activeElement;
   timelineEntries.forEach((entry) => entry.classList.remove("is-expanded"));
+  tripModalHero.style.setProperty("--spot-modal-image", regionCardImage(trip));
   tripModalLabel.textContent = trip.label;
   tripModalTitle.textContent = trip.teaser;
   tripModalItinerary.innerHTML = renderTripItinerary(trip.itinerary);

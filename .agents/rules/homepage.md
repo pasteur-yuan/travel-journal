@@ -50,7 +50,9 @@
 
 卡片以 `flex-direction: column; justify-content: end; align-items: flex-start` 對齊，地區名在下方靠左。不要在 `<strong>` 與 `<span>` 之間插入額外文字元素。
 
-卡片背景圖依 `regions[0]` 換成對應地區頁主視覺，不是全日本共用一張：`main.js` 的 `regionImageSlugs`（中文地區名 → slug）查出 slug 寫進 `--timeline-card-image`，`style.css` 的 `.timeline-entry-japan .timeline-card` 用 `var(--timeline-card-image, none)` 讀出來，查不到就退回 `japan.jpg`。**`url()` 要寫 `../images/<slug>.jpg`，不能寫 `assets/images/<slug>.jpg`**——自訂屬性裡的相對路徑是相對 `style.css` 解析，不是相對 `index.html`。
+卡片背景圖依 `regions[0]` 換成對應地區頁主視覺，不是全日本共用一張：`main.js` 的 `regionCardImage(trip)` 用 `regionImageSlugs`（中文地區名 → slug）查出 slug，回傳 `url("../images/<slug>.jpg")`；查不到就退回 `japan.jpg`。**要寫 `../images/<slug>.jpg`，不能寫 `assets/images/<slug>.jpg`**——自訂屬性裡的相對路徑是相對 `style.css` 解析，不是相對 `index.html`。
+
+`regionCardImage()` 同時餵給資訊卡（`--timeline-card-image`）與旅程彈窗頂部（`--spot-modal-image`，`.spot-modal-hero` 包住彈窗的 label／h2，只有首頁旅程彈窗有這層，地區頁地點彈窗不受影響），換地區時兩處自動一起換，讓從資訊卡點進去的彈窗視覺上是同一張圖的延伸。
 
 規則：
 
@@ -80,6 +82,7 @@
 
 - modal 顯示整趟 `itinerary`，跨地區行程仍維持一份按日期排序的連續清單。
 - 每站依序顯示時間、地名、類型、備註與前往下一站的交通；最後一站沒有 `transport` 時不編造。
+- `.spot-modal-itinerary` 用 `flex: 1; min-height: 0` 撐滿對話框剩餘高度，不能寫死 `height`（會在對話框底部留空白）。這需要 `.spot-modal-dialog` 是定值 `height`（不是 `min-height`）——只有 `min-height` 時 `flex: 1` 沒有邊界可撐，會退化成用內容高度撐開對話框，實測會爆到兩千多 px。`.spot-modal-table-wrap`（地區頁地點彈窗）是平行、互斥顯示的另一條路徑，維持寫死高度，不受影響。
 - 天數用左右翻頁瀏覽，不是上下捲動：`.spot-modal-itinerary-days` 一次顯示一天，原生水平捲動＋`scroll-snap-type: x mandatory`，左右按鈕與 `ArrowLeft`／`ArrowRight` 都呼叫同一個 `goTo(index)`；換頁目標用 `index * clientWidth`，不要用子元素的 `offsetLeft`（相對 `.spot-modal-dialog` 量，不是相對捲動容器，會算錯）。只有一天時不畫按鈕。
 - 單日站數多時 `.spot-modal-itinerary-day` 自己垂直捲動，`.spot-modal-itinerary-date`（DAY 徽章＋日期）用 `position: sticky; top: 0` 貼在最上面。背景不是固定存在——預設沒有背景，`scrollTop > 0` 時才加 `is-pinned`（霧面背景＋blur＋往下淡出），避免靜止畫面上出現一條突兀的色塊。
 - 支援背景點擊、關閉按鈕、Escape；開啟後 focus 進入 modal，關閉後還原原焦點。

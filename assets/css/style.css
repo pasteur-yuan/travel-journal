@@ -467,17 +467,23 @@ body.is-region-entered .region-hero-content { opacity: 1; transform: translateY(
 .spot-modal { position: fixed; z-index: 200; inset: 0; display: grid; place-items: center; padding: 1.5rem; visibility: hidden; opacity: 0; transition: none; }
 .spot-modal.is-open { visibility: visible; opacity: 1; }
 .spot-modal-backdrop { position: absolute; inset: 0; background: color-mix(in srgb, var(--ink) 42%, transparent); backdrop-filter: blur(12px) saturate(120%); -webkit-backdrop-filter: blur(12px) saturate(120%); }
-.spot-modal-dialog { position: relative; width: min(1200px, calc(100vw - 2rem)); min-height: min(760px, calc(100svh - 3rem)); display: flex; flex-direction: column; justify-content: flex-start; padding: clamp(3rem, 5vw, 5rem) clamp(3.5rem, 9vw, 8rem); color: var(--ink); background: color-mix(in srgb, var(--surface) 76%, transparent); border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); border-radius: 1.5rem; box-shadow: inset 0 1px 0 #ffffffb8, 0 24px 70px #24313a38, 0 0 45px color-mix(in srgb, var(--accent) 18%, transparent); backdrop-filter: blur(24px) saturate(135%); -webkit-backdrop-filter: blur(24px) saturate(135%); transform: translateY(8px) scale(.99); transition: transform .12s cubic-bezier(.2,.75,.25,1); }
+.spot-modal-dialog { position: relative; width: min(1200px, calc(100vw - 2rem)); height: min(760px, calc(100svh - 3rem)); display: flex; flex-direction: column; justify-content: flex-start; --spot-modal-pad-y: clamp(3rem, 5vw, 5rem); --spot-modal-pad-x: clamp(3.5rem, 9vw, 8rem); padding: var(--spot-modal-pad-y) var(--spot-modal-pad-x); color: var(--ink); background: color-mix(in srgb, var(--surface) 76%, transparent); border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); border-radius: 1.5rem; box-shadow: inset 0 1px 0 #ffffffb8, 0 24px 70px #24313a38, 0 0 45px color-mix(in srgb, var(--accent) 18%, transparent); backdrop-filter: blur(24px) saturate(135%); -webkit-backdrop-filter: blur(24px) saturate(135%); transform: translateY(8px) scale(.99); transition: transform .12s cubic-bezier(.2,.75,.25,1); }
 .spot-modal.is-open .spot-modal-dialog { transform: translateY(0) scale(1); }
 /* 449 行那條手機版覆寫在檔案順序上跑在這個基礎宣告「之前」，padding／border-radius
    一直被這裡蓋掉、從未真的生效（width／min-height 沒受影響，因為基礎宣告自己就用
    min()／svh 算出等效的窄螢幕結果）。這裡刻意放在基礎宣告之後，讓 padding 真的縮小，
    手機版才有多一點寬度可以排內容。 */
-@media (max-width: 700px) { .spot-modal-dialog { padding: 2.25rem 1.5rem; border-radius: 1.25rem; } }
+@media (max-width: 700px) { .spot-modal-dialog { --spot-modal-pad-y: 2.25rem; --spot-modal-pad-x: 1.5rem; padding: var(--spot-modal-pad-y) var(--spot-modal-pad-x); border-radius: 1.25rem; } .spot-modal-hero { border-radius: 1.25rem 1.25rem 0 0; } }
 .spot-modal-close { position: absolute; top: 1rem; right: 1rem; width: 2.25rem; height: 2.25rem; display: grid; place-items: center; color: var(--muted); background: color-mix(in srgb, var(--surface) 62%, transparent); border: 0; border-radius: 50%; cursor: pointer; font: inherit; font-size: 1.5rem; line-height: 1; transition: color .2s ease, background .2s ease, transform .2s ease; }
 .spot-modal-close:hover, .spot-modal-close:focus-visible { color: var(--accent); background: var(--surface); transform: rotate(8deg) scale(1.05); outline: none; }
 .spot-modal-label { color: var(--accent); font-size: .78rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .spot-modal-dialog h2 { margin: .45rem 0 1rem; font-size: clamp(2rem, 6vw, 4rem); line-height: 1.1; }
+/* 旅程彈窗專用：只有 main.js 建立的 tripModal 有這層包住 label／h2，地區頁的
+   單一地點彈窗沒有，不受影響。用負 margin 把背景圖拉到跟 .spot-modal-dialog
+   一樣的邊界＋圓角，跟時間軸資訊卡（.timeline-entry-japan .timeline-card）
+   共用同一張圖、同一種深色漸層蓋版，讓從卡片點進來的彈窗視覺上是同一張圖的延伸。 */
+.spot-modal-hero { margin: calc(-1 * var(--spot-modal-pad-y)) calc(-1 * var(--spot-modal-pad-x)) 0; padding: var(--spot-modal-pad-y) var(--spot-modal-pad-x) 2.5rem; border-radius: 1.5rem 1.5rem 0 0; background: linear-gradient(0deg, #152c2ab8, #152c2a28), var(--spot-modal-image, none) center/cover; }
+.spot-modal-hero h2 { color: white; }
 .spot-modal-placeholder { max-width: 34rem; margin: 0; color: var(--muted); font-size: 1.05rem; }
 .spot-modal-table-wrap { height: min(420px, calc(100svh - 260px)); margin-top: 2.5rem; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; -ms-overflow-style: none; }
 .spot-modal-table-wrap::-webkit-scrollbar { display: none; }
@@ -498,7 +504,7 @@ body.is-region-entered .region-hero-content { opacity: 1; transform: translateY(
    .country-strip／.timeline-track 同一套「原生捲動＋scrollTo」慣例，不是另刻一套輪播。
    停留點視覺上比照首頁時間軸的 dot／line 語彙（.timeline-dot 同款漸層與內陰影），
    讓從時間軸節點點進來的彈窗在視覺上是同一套時間軸的延伸，而不是換了一套表格。 */
-.spot-modal-itinerary { display: flex; align-items: center; gap: .5rem; height: min(420px, calc(100svh - 260px)); margin-top: 2.5rem; }
+.spot-modal-itinerary { display: flex; align-items: center; gap: .5rem; flex: 1; min-height: 0; margin-top: 2.5rem; }
 .spot-modal-itinerary-nav { flex: 0 0 auto; width: 2.25rem; height: 2.25rem; display: grid; place-items: center; color: var(--muted); background: color-mix(in srgb, var(--surface) 62%, transparent); border: 0; border-radius: 50%; cursor: pointer; font-size: .85rem; transition: color .2s ease, background .2s ease, transform .2s ease, opacity .2s ease; }
 .spot-modal-itinerary-nav:hover:not(:disabled), .spot-modal-itinerary-nav:focus-visible:not(:disabled) { color: var(--accent); background: var(--surface); transform: scale(1.08); outline: none; }
 .spot-modal-itinerary-nav:disabled { opacity: .3; cursor: not-allowed; }

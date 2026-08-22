@@ -57,6 +57,10 @@ export const modal = suite("首頁時間軸 · 旅程彈窗", async (b, t) => {
   const revealed = await b.eval(
     `document.querySelector(".timeline-entry").classList.contains("is-expanded")`);
   t.check("hover 後資訊卡展開（開彈窗的前置條件）", revealed);
+  // openTripModal 開啟時會清掉 .is-expanded，要在點擊之前先記下展開卡片的背景圖，
+  // 才能跟彈窗打開後的背景圖比對是不是同一張。
+  const cardImage = await b.eval(
+    `document.querySelector(".timeline-card").style.getPropertyValue("--timeline-card-image")`);
 
   // 點擊已展開的卡片開啟彈窗。
   await b.click(".timeline-card");
@@ -74,7 +78,13 @@ export const modal = suite("首頁時間軸 · 旅程彈窗", async (b, t) => {
     bodyLocked: document.body.classList.contains("modal-is-open"),
     focusInside: document.querySelector(".spot-modal").contains(document.activeElement),
     daysOverscroll: getComputedStyle(document.querySelector(".spot-modal-itinerary-days")).overscrollBehaviorX,
-    dayOverscroll: getComputedStyle(document.querySelector(".spot-modal-itinerary-day")).overscrollBehaviorY
+    dayOverscroll: getComputedStyle(document.querySelector(".spot-modal-itinerary-day")).overscrollBehaviorY,
+    heroImage: document.querySelector(".spot-modal-hero")?.style.getPropertyValue("--spot-modal-image"),
+    itineraryFlexGrow: getComputedStyle(document.querySelector(".spot-modal-itinerary")).flexGrow,
+    dialogHeight: document.querySelector(".spot-modal-dialog").getBoundingClientRect().height,
+    viewportHeight: window.innerHeight,
+    gapBelowItinerary: document.querySelector(".spot-modal-dialog").getBoundingClientRect().bottom
+      - document.querySelector(".spot-modal-itinerary").getBoundingClientRect().bottom
   })`);
   t.check("展開狀態下點擊卡片會開啟彈窗", opened.open);
   t.check("開啟時解除 aria-hidden", opened.hidden === "false", opened.hidden);
@@ -85,6 +95,23 @@ export const modal = suite("首頁時間軸 · 旅程彈窗", async (b, t) => {
     opened.daysOverscroll === "contain" && opened.dayOverscroll === "contain",
     `days=${opened.daysOverscroll} day=${opened.dayOverscroll}`);
   t.check("焦點移入彈窗", opened.focusInside);
+  // 行程軌跡要撐滿對話框剩餘高度，不能留一塊寫死高度以外的空白。用像素差距判斷
+  // 不夠準：不同旅程標題折行數不同、對話框自己的 padding 也隨 viewport 縮放，
+  // 「合法的留白」跟「回到寫死高度」的差距經常小到分不出來。直接驗證機制本身
+  // 才可靠：.spot-modal-itinerary 必須是 flex: 1（撐滿），.spot-modal-dialog 的
+  // 實際高度要落在 min(760px, 100svh - 3rem) 附近——如果 .spot-modal-dialog
+  // 只有 min-height（不是定值 height），flex: 1 就沒有邊界可以撐滿，會退化成
+  // 用內容自己的高度撐開對話框，對話框整個爆版（實測發生過，衝到兩千多 px）。
+  t.check("行程軌跡用 flex: 1 撐滿對話框，不是寫死高度",
+    opened.itineraryFlexGrow === "1", opened.itineraryFlexGrow);
+  const expectedDialogHeight = Math.min(760, opened.viewportHeight - 48);
+  t.check("對話框高度符合 min(760px, 100svh - 3rem)，沒有被內容撐爆",
+    Math.abs(opened.dialogHeight - expectedDialogHeight) < 20,
+    `實際 ${opened.dialogHeight}px，預期約 ${expectedDialogHeight}px`);
+  t.check("行程軌跡底部沒有留下大片沒用到的空白（寬鬆檢查，抓明顯壞掉的情況）",
+    opened.gapBelowItinerary < 200, `${opened.gapBelowItinerary}px`);
+  t.check("彈窗頂部背景圖跟資訊卡展開時的背景圖是同一張（同一個地區）",
+    !!opened.heroImage && opened.heroImage === cardImage, `hero=${opened.heroImage} vs card=${cardImage}`);
   t.check("彈窗標籤對應 trip.label", opened.label === trip.label, `${opened.label} vs ${trip.label}`);
   t.check("彈窗標題對應 trip.teaser", opened.title === trip.teaser,
     `${opened.title} vs ${trip.teaser}`);
@@ -244,10 +271,16 @@ export const modalAccessibility = suite("首頁時間軸 · 旅程彈窗可及�
   await sleep(300);
   const mobileState = await b.eval(`({
     open: document.querySelector(".spot-modal").classList.contains("is-open"),
-    stopCount: document.querySelectorAll(".spot-modal-itinerary-stop").length
+    stopCount: document.querySelectorAll(".spot-modal-itinerary-stop").length,
+    gapBelowItinerary: document.querySelector(".spot-modal-dialog").getBoundingClientRect().bottom
+      - document.querySelector(".spot-modal-itinerary").getBoundingClientRect().bottom
   })`);
   t.check("手機版 tap 資訊卡可開啟彈窗", mobileState.open && mobileState.stopCount > 0,
     JSON.stringify(mobileState));
+  // 桌機版那邊已經直接驗證 flex: 1／定值 height 這兩個機制本身，這裡維持寬鬆的
+  // 像素檢查即可，只是手機版視窗的補充防線，不需要重複機制檢查。
+  t.check("手機版行程軌跡也撐滿對話框剩餘高度，底部沒有大片空白",
+    mobileState.gapBelowItinerary < 200, `${mobileState.gapBelowItinerary}px`);
 
   t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 });

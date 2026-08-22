@@ -56,7 +56,7 @@ tools/generate-region-page.mjs      新地區頁產生器
 - `assets/js/trips.js::trips` 是首頁旅程資料的唯一來源。`main.js` 依它產生 `.timeline-entry`、年份群組、已探索清單、統計與旅程 modal。
 - `main.js::travelDestinations` 是地圖 marker、tooltip、高亮與目的連結的同一來源。
 - `main.js::countryRegions` 是首頁國家卡片的地區跑馬燈來源；它必須與國家頁 showcase、實際頁面及 `REGION_NAMES` 對齊。
-- `main.js::regionImageSlugs`（中文地區名 → 地區頁 slug）決定時間軸資訊卡背景圖用哪張地區頁主視覺；同樣要與 `REGION_NAMES` 對齊，缺 key 會退回泛用的 `japan.jpg`。
+- `main.js::regionImageSlugs`（中文地區名 → 地區頁 slug）決定時間軸資訊卡與旅程彈窗頂部共用哪張地區頁主視覺（`regionCardImage(trip)` 統一查表）；同樣要與 `REGION_NAMES` 對齊，缺 key 會退回泛用的 `japan.jpg`。
 - 地區頁所有地區共用 `region-detail.js` 的 `regionNames`、`regionSearchNames`、`regionContent`、`stayBaseContent`、`regionAdditionalContent` 與 `regionalVenueData`。不得增加 `if (regionKey === ...)` 式的專屬渲染路徑。
 - `regionalVenueData` 固定為「地區 → `spots|food|stays` → 外層項目標籤 → 資料列陣列」。每個項目可以有自己的資料表，但渲染器必須共用。
 
