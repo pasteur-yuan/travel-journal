@@ -101,10 +101,12 @@ export const modal = suite("首頁時間軸 · 旅程彈窗", async (b, t) => {
   await b.hover(".timeline-entry");
   await b.click(".timeline-card");
   await sleep(300);
-  await b.eval(`document.querySelector(".spot-modal-close").click()`);
+  await b.click(".spot-modal-close");
   await sleep(250);
   t.check("關閉按鈕可關閉彈窗",
     await b.eval(`!document.querySelector(".spot-modal").classList.contains("is-open")`));
+  t.check("關閉彈窗後資訊卡完全收折隱藏（不殘留半截未收折卡片）",
+    await b.eval(`getComputedStyle(document.querySelector(".timeline-entry .timeline-card")).visibility === "hidden"`));
 
   t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 });

@@ -118,9 +118,19 @@ marker 由 `main.js` 頂端的 `travelDestinations` 陣列產生：每筆資料�
 
 時間軸節點完全由 `assets/js/trips.js` 的全域 `trips` 陣列動態產生（`main.js` 的 `buildTimelineEntry()`），`index.html` 的 `.timeline-track` 本身是空的——不再像其他區塊那樣有「HTML seed、JS 覆寫」的兩階段，是純粹從資料建 DOM。新增一趟旅程只要在 `trips.js` 加一筆，不用碰 `index.html`；`trips.js` 裡沒有的旅程，時間軸上就不會有對應節點，不會出現示範用的假資料。
 
-每個 trip 是 `{ label, date, country, regions, teaser, description, itinerary }`：`regions` 是這趟旅程實際踏過的地區 tag 陣列（可以不只一個，例如一趟行程橫跨多個地區時**不會**拆成多個節點，時間軸上仍是一個節點，`itinerary` 也是同一份連貫清單、不依地區拆分）；`teaser` 是資訊卡展開時顯示的短句，`description` 是彈窗標題的完整敘述——兩者分開是因為 `.timeline-card` 是固定高度、`overflow: hidden` 的小卡片，塞進太長的句子會把上面的日期/地區名擠出可視範圍，`<strong>` 地區名同理只顯示 `regions[0]`（視為主要地區），完整地區清單仍在 `dataset.regions`（逗號分隔）裡供統計使用。
+每個 trip 是 `{ label, date, country, regions, teaser, description, itinerary }`：`regions` 是這趟旅程實際踏過的地區 tag 陣列（可以不只一個，例如一趟行程橫跨多個地區時**不會**拆成多個節點，時間軸上仍是一個節點，`itinerary` 也是同一份連貫清單、不依地區拆分）；`teaser` 保留於資料結構但**目前不渲染於資訊卡**（卡片固定高度、`overflow: hidden`，額外文字會把上方元素擠出可視範圍）；`description` 是彈窗標題的完整敘述。
+
+**時間軸資訊卡 DOM 結構**：`.timeline-card` 內容固定為兩個子元素，不可多加：
+1. `<strong>` — `regions[0]`（主地區名，大字，卡片左下角）
+2. `<span class="timeline-code">` — `yyyy.mm · 🇯🇵 國名`
+
+卡片以 `flex-direction: column; justify-content: end; align-items: flex-start` 靠左下對齊，`<strong>` 在下方。`<strong>` 只顯示 `regions[0]`（視為主要地區），完整地區清單仍在 `dataset.regions`（逗號分隔）裡供統計使用。
+
+**卡片顯示控制**：CSS 選擇器只允許使用 `:hover`、`:focus-visible` 與 `.is-expanded` 三種觸發條件。**禁止使用 `:focus-within` 控制 `visibility`**——程式關閉 modal 後會呼叫 `focusTarget?.blur()` 以清除焦點殘留，`:focus-within` 會在此時意外讓已收折的卡片重新浮出一截。
 
 **點擊行為**：桌面版 hover／觸控裝置點圓點展開資訊卡是既有行為，不受這裡影響；資訊卡在展開狀態下被點擊（或節點聚焦後按 Enter／Space）才會開啟彈窗，顯示完整行程——彈窗樣式與資料流搬自地區頁原本的旅行筆記彈窗（`.spot-modal` + `.spot-modal-itinerary`，`renderTripItinerary`／`renderTripItineraryDay`／`renderTripItineraryStop` 對應搬過來），差別是首頁彈窗不需要地區頁 modal 的四欄表格。所有節點一律是 `<div>`（不是 `<a>`），點擊不會導航到國家或地區頁。
+
+**modal 開關與焦點管理**：`openTripModal(trip, byKeyboard)` 與 `closeTripModal(byKeyboard)` 都會先呼叫 `timelineEntries.forEach(e => e.classList.remove('is-expanded'))` 清除所有卡片展開狀態。關閉時：鍵盤（Escape）關閉只還原 `focusTarget.focus()`；滑鼠點擊關閉按鈕則在 `focus()` 之後再呼叫 `blur()`，防止節點殘留 `:focus` 狀態讓卡片重新顯示。`byKeyboard` 旗標由呼叫端傳入（keydown 事件傳 `true`，click 事件傳 `false`）。
 
 **「已探索」／「旅行足跡」統計**：`mapLegend`／`mapStats` 一樣是由 `datedTimelineEntries` 推導，國家沿用 `dataset.country`（含國旗＋國名）去重；地區數改成把每個節點的 `dataset.regions` 攤平、去重計算——不是「節點數」，一趟旅程即使橫跨多個地區、時間軸上只有一個節點，地區數仍要反映真實數字。「旅行節點」這個統計已經拿掉，`.map-stats` 現在只有「國家」「地區」兩格。
 
@@ -143,7 +153,7 @@ marker 由 `main.js` 頂端的 `travelDestinations` 陣列產生：每筆資料�
 
 - 新增國家：`countries/<country>/index.html` + `countries/<country>/<region>/index.html`，在 `main.js` 的 `travelDestinations` 加一筆，並在首頁加 `.country-card`（尚未建頁時用非連結的 `<div>`，不可留失效連結）。
 - 新增地區頁：需要 `region-hero-<region>` class、四個章節 id（`overview` / `spots` / `food` / `stays`），並在 `region-detail.js` 的 `regionNames`、`regionSearchNames`、`regionContent`、`regionalVenueData` 補上對應 key（`stayBaseContent` 只有已累積住宿資料的地區才需要）；另外要在 `countries/japan/index.html` 加 showcase 項目、`style.css` 加 `.region-hero-<region>` 背景，以及 `tests/regions.mjs` 的 `REGION_NAMES`——測試群組的地區清單全部由那一份推導。
-- 新增一趟旅程：在 `assets/js/trips.js` 的 `trips` 加一筆（`label`／`date`／`country`／`regions`／`teaser`／`description`／`itinerary`），首頁時間軸節點與旅程彈窗會自動出現，不用碰 `index.html`。
+- 新增一趟旅程：在 `assets/js/trips.js` 的 `trips` 加一筆（`label`／`date`／`country`／`regions`／`teaser`／`description`／`itinerary`），首頁時間軸節點與旅程彈窗會自動出現，不用碰 `index.html`。`teaser` 欄位仍需填寫以維持資料完整性，但目前不渲染於卡片畫面；卡片只顯示主地區名（`regions[0]`）與 `yyyy.mm · 🇯🇵 國名`。
 - 景點卡片只有一張時，記得刪掉 HTML 樣板裡第二張佔位卡；沒刪的話它會產生一列 fallback 假資料與無意義的地圖查詢。
 - 圖片放 `assets/images/`，不依賴圖片 CDN。
 - GitHub Pages 大小寫敏感，路徑大小寫必須與檔案系統完全一致。

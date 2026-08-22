@@ -37,13 +37,10 @@ const buildTimelineEntry = (trip) => {
   code.textContent = `${year}.${month} · ${trip.country}`;
   // <strong> 只放第一個地區（regions 陣列的順序視為「主要地區」在前）：
   // .timeline-card 的 strong 是 1.7rem 大字，卡片本身只有約 190px 寬，
-  // 三個地區串起來會換行到把上面的日期擠出可視範圍（overflow: hidden）。
   // 完整地區清單仍然在 dataset.regions／aria-label 裡，不影響地區數統計。
   const regionLabel = document.createElement("strong");
   regionLabel.textContent = trip.regions[0];
-  const teaser = document.createElement("span");
-  teaser.textContent = trip.teaser;
-  card.append(code, regionLabel, teaser);
+  card.append(regionLabel, code);
   entry.append(dot, card);
   // 掛在節點上供點擊／鍵盤開啟彈窗時直接取用，不用另外查表。
   entry.trip = trip;
@@ -359,17 +356,27 @@ const renderTripItineraryDay = (day) => {
 const renderTripItinerary = (days) => days.map(renderTripItineraryDay).join("");
 
 let tripModalPreviousFocus = null;
-const closeTripModal = () => {
+let tripModalOpenedByKeyboard = false;
+const closeTripModal = (byKeyboard = false) => {
   tripModal.classList.remove("is-open");
   tripModal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("modal-is-open");
+  timelineEntries.forEach((entry) => entry.classList.remove("is-expanded"));
   const focusTarget = tripModalPreviousFocus;
   tripModalPreviousFocus = null;
-  focusTarget?.focus();
+  if (byKeyboard || tripModalOpenedByKeyboard) {
+    focusTarget?.focus();
+  } else {
+    focusTarget?.focus();
+    focusTarget?.blur();
+  }
+  tripModalOpenedByKeyboard = false;
 };
-const openTripModal = (trip) => {
+const openTripModal = (trip, byKeyboard = false) => {
   if (!trip) return;
+  tripModalOpenedByKeyboard = byKeyboard;
   tripModalPreviousFocus = document.activeElement;
+  timelineEntries.forEach((entry) => entry.classList.remove("is-expanded"));
   tripModalLabel.textContent = trip.label;
   tripModalTitle.textContent = trip.description;
   tripModalItinerary.innerHTML = renderTripItinerary(trip.itinerary);
@@ -379,10 +386,10 @@ const openTripModal = (trip) => {
   tripModalCloseButton.focus();
 };
 tripModal.addEventListener("click", (event) => {
-  if (event.target.matches("[data-spot-modal-close]")) closeTripModal();
+  if (event.target.matches("[data-spot-modal-close]")) closeTripModal(false);
 });
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && tripModal.classList.contains("is-open")) closeTripModal();
+  if (event.key === "Escape" && tripModal.classList.contains("is-open")) closeTripModal(true);
 });
 
 // 卡片預設用 :hover／:focus-visible 顯示，觸控裝置沒有 hover，不管寬度多寬
@@ -422,7 +429,7 @@ timelineEntries.forEach((entry) => {
     }
   });
   entry.addEventListener("pointerleave", (event) => {
-    if (event.pointerType === "mouse" && !isMobileTimeline() && !entry.matches(":focus-within")) entry.classList.remove("is-expanded");
+    if (event.pointerType === "mouse" && !isMobileTimeline()) entry.classList.remove("is-expanded");
   });
   dot?.addEventListener("click", (event) => {
     if (!timelineTapReveal()) { event.preventDefault(); return; }
@@ -444,7 +451,7 @@ timelineEntries.forEach((entry) => {
   entry.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
-    openTripModal(entry.trip);
+    openTripModal(entry.trip, true);
   });
 });
 

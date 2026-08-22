@@ -40,9 +40,15 @@
 - `date`：第一天日期，用於年份分組。
 - `country`：國旗與國名。
 - `regions`：實際踏過的地區陣列，第一筆是卡片主地區，完整陣列用於統計與可及性名稱。
-- `teaser`：短卡文案，需控制長度避免擠出固定卡片。
-- `description`：整趟旅程的完整摘要。
+- `teaser`：保留欄位，目前**不渲染**於時間軸資訊卡；資料仍需填寫以維持結構完整。
+- `description`：整趟旅程的完整摘要（彈窗標題使用）。
 - `itinerary`：依日期排列的 day 陣列；每個 stop 包含時間、地名、類型、備註及前往下一站的 `transport`。
+
+**時間軸資訊卡 DOM 結構**：`buildTimelineEntry()` 產生的 `.timeline-card` 內容順序為：
+1. `<strong>` — `regions[0]`（主地區名，大字，卡片左下角）
+2. `<span class="timeline-code">` — `yyyy.mm · 🇯🇵 國名`
+
+卡片以 `flex-direction: column; justify-content: end; align-items: flex-start` 對齊，地區名在下方靠左。不要在 `<strong>` 與 `<span>` 之間插入額外文字元素。
 
 規則：
 
@@ -55,7 +61,8 @@
 桌面互動：
 
 - 點年份時平順移到主要視覺位置並收合其他卡片；不得因切換年份自動觸發卡片 hover。
-- 只有滑鼠移到旅程點或鍵盤 focus 時顯示卡片；未 focus 卡片完全收起。
+- 只有滑鼠移到旅程點（`:hover`）或鍵盤 Tab 聚焦（`:focus-visible`）或點觸圓點（`.is-expanded`）時顯示卡片；未觸發任一條件則卡片完全隱藏（`visibility: hidden`）。
+- **禁止使用 `:focus-within` 控制卡片 `visibility`**：程式關閉 modal 後會呼叫 `focusTarget?.blur()`，`:focus-within` 會在此時意外讓卡片重新顯示一截。
 - 年份群組的卡片交替向下／向上展開，向上卡片不可遮住標題，時間軸容器要保留完整浮出空間。
 - 點已展開卡片或以鍵盤 Enter／Space 開啟旅程 modal。
 
@@ -73,3 +80,5 @@
 - 每站依序顯示時間、地名、類型、備註與前往下一站的交通；最後一站沒有 `transport` 時不編造。
 - 支援背景點擊、關閉按鈕、Escape；開啟後 focus 進入 modal，關閉後還原原焦點。
 - modal 開啟時鎖定頁面捲動；樣式與地區頁 modal 共用現有 class，不另造相似視窗系統。
+- **開關 modal 時必須清除所有節點的 `.is-expanded`**：`openTripModal()` 與 `closeTripModal()` 都呼叫 `timelineEntries.forEach(e => e.classList.remove('is-expanded'))`。
+- **關閉 modal 的焦點還原策略**：鍵盤（Escape / Enter／Space）關閉時保留 `focusTarget.focus()`，滑鼠點擊關閉按鈕時額外呼叫 `focusTarget.blur()`，避免 `:focus` 狀態讓已收折的卡片殘留。`openTripModal` 接受 `byKeyboard` 旗標（預設 `false`），鍵盤觸發時傳 `true`。
