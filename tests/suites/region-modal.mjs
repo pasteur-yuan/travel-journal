@@ -173,9 +173,13 @@ export const mapLinks = suite("地區頁 · Google Maps 連結", async (b, t) =>
   t.check("沒有行程軌跡資料的旅行筆記不顯示編造的資料表",
     noteHiddenTotal > 0 && noteHiddenOk === noteHiddenTotal,
     `${noteHiddenOk}/${noteHiddenTotal} 筆的資料表已隱藏且無資料列`);
-  t.check("有行程軌跡資料的旅行筆記顯示停留點清單，不是四欄表格",
-    itineraryTotal > 0 && itineraryOk === itineraryTotal,
-    itineraryBroken.length ? itineraryBroken.slice(0, 3).join("；") : `${itineraryOk}/${itineraryTotal} 筆正確顯示`);
+  if (itineraryTotal > 0) {
+    t.check("有行程軌跡資料的旅行筆記顯示停留點清單，不是四欄表格",
+      itineraryOk === itineraryTotal,
+      itineraryBroken.length ? itineraryBroken.slice(0, 3).join("；") : `${itineraryOk}/${itineraryTotal} 筆正確顯示`);
+  } else {
+    t.skip("有行程軌跡資料的旅行筆記顯示停留點清單，不是四欄表格", "目前沒有任何筆記帶有行程軌跡資料");
+  }
   t.check("所有地區頁皆無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 });
 

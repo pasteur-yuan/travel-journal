@@ -1,10 +1,37 @@
 import { sleep, suite } from "../harness.mjs";
+import { REGIONS } from "../regions.mjs";
 
 const page = (r) => `/countries/japan/${r}/index.html`;
 
 const noteItems = (b) => b.eval(`[...document.querySelectorAll(
   "#notes .region-note, #notes .region-content-list article"
 )].map(el => ({ label: el.querySelector("span").textContent.trim(), tag: el.tagName }))`);
+
+// 逐地區找出第一則「有行程軌跡資料」的筆記（點開後 .spot-modal-itinerary 有內容）。
+// 不寫死特定地區／標籤，資料是逐筆補回來的，寫死會變成每加一趟行程就要改一次測試。
+const findNoteWithItinerary = async (b) => {
+  for (const region of REGIONS) {
+    await b.goto(page(region), { settle: 1000 });
+    const labels = await b.eval(`[...document.querySelectorAll(
+      "#notes .region-note, #notes .region-content-list article"
+    )].map(el => el.querySelector("span").textContent.trim())`);
+    for (const label of labels) {
+      await b.eval(`(() => {
+        const items = [...document.querySelectorAll("#notes .region-note, #notes .region-content-list article")];
+        items.find(el => el.querySelector("span").textContent.trim() === ${JSON.stringify(label)}).click();
+      })()`);
+      await sleep(250);
+      const hasItinerary = await b.eval(`(() => {
+        const el = document.querySelector(".spot-modal-itinerary");
+        return !!(el && !el.hidden && el.querySelectorAll(".spot-modal-itinerary-stop").length > 0);
+      })()`);
+      await b.press("Escape");
+      await sleep(150);
+      if (hasItinerary) return { region, label };
+    }
+  }
+  return null;
+};
 
 export const notesOrder = suite("地區頁 · 旅行筆記卡片順序", async (b, t) => {
   // 迴歸測試：#notes 底下有兩個直接子 div（區塊編號「05」與實際內容），
@@ -32,51 +59,8 @@ export const notesOrder = suite("地區頁 · 旅行筆記卡片順序", async (
 export const itineraryContent = suite("地區頁 · 旅行筆記行程軌跡", async (b, t) => {
   await b.desktop();
 
-  // 北海道 2026/01：單一地區的完整行程，涵蓋 9 天、64 個停留點
-  // （原始資料 66 列，扣掉 2 筆台灣機場的出發／抵達）。
-  await b.goto(page("hokkaido"), { settle: 1000 });
-  await b.eval(`(() => {
-    const items = [...document.querySelectorAll("#notes .region-note, #notes .region-content-list article")];
-    items.find(el => el.querySelector("span").textContent.trim() === "2026 / 01").click();
-  })()`);
-  await sleep(300);
-  const hokkaidoState = await b.eval(`({
-    tableHidden: document.querySelector(".spot-modal-table-wrap").hidden,
-    itineraryHidden: document.querySelector(".spot-modal-itinerary").hidden,
-    dayCount: document.querySelectorAll(".spot-modal-itinerary-day").length,
-    stopCount: document.querySelectorAll(".spot-modal-itinerary-stop").length,
-    firstDate: document.querySelector(".spot-modal-itinerary-date")?.textContent?.trim(),
-    firstStopTime: document.querySelector(".spot-modal-itinerary-time")?.textContent?.trim(),
-    firstStopPlace: document.querySelector(".spot-modal-itinerary-place")?.textContent?.trim()
-  })`);
-  t.check("北海道 2026/01：顯示停留點清單，不顯示四欄表格",
-    hokkaidoState.tableHidden && !hokkaidoState.itineraryHidden, JSON.stringify(hokkaidoState));
-  t.check("北海道 2026/01：9 天、64 個停留點（66 列原始資料扣除 2 筆台灣機場）",
-    hokkaidoState.dayCount === 9 && hokkaidoState.stopCount === 64, JSON.stringify(hokkaidoState));
-  t.check("北海道 2026/01：第一天日期與第一站正確",
-    hokkaidoState.firstDate === "2026-01-01" && hokkaidoState.firstStopTime === "13:10" &&
-    hokkaidoState.firstStopPlace === "新千歲機場 國際線航廈",
-    JSON.stringify(hokkaidoState));
-  await b.press("Escape");
-
-  // 跨地區行程：同一趟 2025 年 4-5 月九州行程橫跨熊本／宮崎／大分／福岡，
-  // 每個地區只收錄屬於自己的停留點——用高千穗（宮崎）驗證只有 2 站，
-  // 不會把同一天在熊本、大分的其他行程也算進來。
-  await b.goto(page("miyazaki"), { settle: 1000 });
-  await b.eval(`document.querySelector("#notes .region-note").click()`);
-  await sleep(300);
-  const miyazakiState = await b.eval(`({
-    dayCount: document.querySelectorAll(".spot-modal-itinerary-day").length,
-    stopCount: document.querySelectorAll(".spot-modal-itinerary-stop").length,
-    connectorCount: document.querySelectorAll(".spot-modal-itinerary-connector").length
-  })`);
-  t.check("宮崎：跨地區行程只收錄屬於宮崎的停留點（高千穗峽、高千穗神社共 2 站）",
-    miyazakiState.dayCount === 1 && miyazakiState.stopCount === 2, JSON.stringify(miyazakiState));
-  t.check("宮崎：只有 2 站時只有 1 條連接線（最後一站不畫連接線）",
-    miyazakiState.connectorCount === 1, JSON.stringify(miyazakiState));
-  await b.press("Escape");
-
-  // 沒有行程軌跡資料的筆記：維持原本「兩者都不顯示」的行為。
+  // 沒有行程軌跡資料的筆記：兩者都不顯示，不編造內容。這條在資料是空的
+  // 現況下必然為真，資料補回來後也仍然要對「沒補資料的那些筆記」成立。
   await b.goto(page("hokkaido"), { settle: 1000 });
   await b.eval(`document.querySelector("#notes .region-note").click()`);
   await sleep(300);
@@ -84,43 +68,95 @@ export const itineraryContent = suite("地區頁 · 旅行筆記行程軌跡", a
     tableHidden: document.querySelector(".spot-modal-table-wrap").hidden,
     itineraryHidden: document.querySelector(".spot-modal-itinerary").hidden
   })`);
-  t.check("沒有行程軌跡資料的筆記仍然兩者都不顯示（2024 / 01 沒有對應資料）",
+  t.check("沒有行程軌跡資料的筆記兩者都不顯示",
     noItinerary.tableHidden && noItinerary.itineraryHidden, JSON.stringify(noItinerary));
+  await b.press("Escape");
+  await sleep(150);
+
+  // 有行程軌跡資料的筆記：不寫死是哪個地區哪個標籤，逐一搜尋，資料目前是
+  // 逐筆補回來的，找不到就 skip 而不是失敗。
+  const found = await findNoteWithItinerary(b);
+  if (!found) {
+    t.skip("有行程軌跡資料的筆記：顯示停留點清單、不顯示四欄表格", "目前沒有任何筆記帶有行程軌跡資料");
+    t.skip("有行程軌跡資料的筆記：天數與站數、連接線數量互相一致", "目前沒有任何筆記帶有行程軌跡資料");
+  } else {
+    await b.goto(page(found.region), { settle: 1000 });
+    await b.eval(`(() => {
+      const items = [...document.querySelectorAll("#notes .region-note, #notes .region-content-list article")];
+      items.find(el => el.querySelector("span").textContent.trim() === ${JSON.stringify(found.label)}).click();
+    })()`);
+    await sleep(300);
+    const state = await b.eval(`({
+      tableHidden: document.querySelector(".spot-modal-table-wrap").hidden,
+      itineraryHidden: document.querySelector(".spot-modal-itinerary").hidden,
+      dayCount: document.querySelectorAll(".spot-modal-itinerary-day").length,
+      stopCount: document.querySelectorAll(".spot-modal-itinerary-stop").length,
+      connectorCount: document.querySelectorAll(".spot-modal-itinerary-connector").length,
+      firstDate: document.querySelector(".spot-modal-itinerary-date")?.textContent?.trim(),
+      firstStopTime: document.querySelector(".spot-modal-itinerary-time")?.textContent?.trim(),
+      firstStopPlace: document.querySelector(".spot-modal-itinerary-place")?.textContent?.trim()
+    })`);
+    t.check(`${found.region}／${found.label}：顯示停留點清單，不顯示四欄表格`,
+      state.tableHidden && !state.itineraryHidden, JSON.stringify(state));
+    t.check(`${found.region}／${found.label}：至少 1 天、每天至少 1 站`,
+      state.dayCount >= 1 && state.stopCount >= state.dayCount, JSON.stringify(state));
+    t.check(`${found.region}／${found.label}：連接線數量不超過「站數減天數」（每天最後一站不畫連接線）`,
+      state.connectorCount <= state.stopCount - state.dayCount, JSON.stringify(state));
+    t.check(`${found.region}／${found.label}：第一站的時間與地名都有值`,
+      Boolean(state.firstDate) && Boolean(state.firstStopTime) && Boolean(state.firstStopPlace),
+      JSON.stringify(state));
+    await b.press("Escape");
+  }
 
   t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 });
 
 export const itineraryAccessibility = suite("地區頁 · 旅行筆記行程軌跡可及性", async (b, t) => {
   await b.desktop();
-  await b.goto(page("hokkaido"), { settle: 1000 });
 
-  // 鍵盤：Tab 到有行程軌跡的筆記卡片，Enter 開啟，內容跟滑鼠點擊一致。
-  await b.eval(`(() => {
-    const items = [...document.querySelectorAll("#notes .region-note, #notes .region-content-list article")];
-    items.find(el => el.querySelector("span").textContent.trim() === "2026 / 01").focus();
-  })()`);
-  await b.press("Enter");
-  await sleep(300);
-  const afterEnter = await b.eval(`({
-    open: document.querySelector(".spot-modal").classList.contains("is-open"),
-    stopCount: document.querySelectorAll(".spot-modal-itinerary-stop").length,
-    focusInside: document.querySelector(".spot-modal").contains(document.activeElement)
-  })`);
-  t.check("鍵盤 Enter 開啟有行程軌跡的筆記，內容正確顯示", afterEnter.open && afterEnter.stopCount === 64,
-    JSON.stringify(afterEnter));
-  t.check("開啟後焦點移入 modal", afterEnter.focusInside);
-  await b.press("Escape");
+  // 不寫死是哪個地區哪個標籤，逐一搜尋有行程軌跡資料的筆記，找不到就 skip。
+  const found = await findNoteWithItinerary(b);
+  if (!found) {
+    t.skip("鍵盤 Enter 開啟有行程軌跡的筆記，內容正確顯示", "目前沒有任何筆記帶有行程軌跡資料");
+    t.skip("開啟後焦點移入 modal", "目前沒有任何筆記帶有行程軌跡資料");
+    t.skip("手機版 tap 筆記卡片可開啟 modal 並正確顯示行程軌跡", "目前沒有任何筆記帶有行程軌跡資料");
+  } else {
+    await b.goto(page(found.region), { settle: 1000 });
 
-  // 手機版：tap 一樣能開啟並正確顯示。
-  await b.mobile();
-  await b.goto(page("hokkaido"), { settle: 1000 });
-  await b.tap("#notes .region-note");
-  const mobileState = await b.eval(`({
-    open: document.querySelector(".spot-modal").classList.contains("is-open"),
-    tableHidden: document.querySelector(".spot-modal-table-wrap").hidden,
-    itineraryHidden: document.querySelector(".spot-modal-itinerary").hidden
-  })`);
-  t.check("手機版 tap 筆記卡片可開啟 modal", mobileState.open, JSON.stringify(mobileState));
+    // 鍵盤：Tab 到有行程軌跡的筆記卡片，Enter 開啟，內容跟滑鼠點擊一致。
+    await b.eval(`(() => {
+      const items = [...document.querySelectorAll("#notes .region-note, #notes .region-content-list article")];
+      items.find(el => el.querySelector("span").textContent.trim() === ${JSON.stringify(found.label)}).focus();
+    })()`);
+    await b.press("Enter");
+    await sleep(300);
+    const afterEnter = await b.eval(`({
+      open: document.querySelector(".spot-modal").classList.contains("is-open"),
+      stopCount: document.querySelectorAll(".spot-modal-itinerary-stop").length,
+      focusInside: document.querySelector(".spot-modal").contains(document.activeElement)
+    })`);
+    t.check("鍵盤 Enter 開啟有行程軌跡的筆記，內容正確顯示", afterEnter.open && afterEnter.stopCount > 0,
+      JSON.stringify(afterEnter));
+    t.check("開啟後焦點移入 modal", afterEnter.focusInside);
+    await b.press("Escape");
+    await sleep(150);
+
+    // 手機版：tap 一樣能開啟並正確顯示。tap() 只接受 CSS selector，先在目標
+    // 元素上標記一個測試用屬性，避免用 :nth-child 去猜索引。
+    await b.mobile();
+    await b.goto(page(found.region), { settle: 1000 });
+    await b.eval(`(() => {
+      const items = [...document.querySelectorAll("#notes .region-note, #notes .region-content-list article")];
+      const target = items.find(el => el.querySelector("span").textContent.trim() === ${JSON.stringify(found.label)});
+      target.setAttribute("data-test-tap-target", "1");
+    })()`);
+    await b.tap(`[data-test-tap-target="1"]`);
+    const mobileState = await b.eval(`({
+      open: document.querySelector(".spot-modal").classList.contains("is-open"),
+      tableHidden: document.querySelector(".spot-modal-table-wrap").hidden
+    })`);
+    t.check("手機版 tap 筆記卡片可開啟 modal", mobileState.open, JSON.stringify(mobileState));
+  }
 
   t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
 });

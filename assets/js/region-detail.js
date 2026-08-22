@@ -118,8 +118,7 @@ const regionContent = {
     food: [
       ['阿蘇紅牛丼', '阿蘇特有品種的丼飯', '阿蘇的紅牛丼專門店，使用阿蘇特有的褐色和牛「あか牛」，搭配熊本三大名物一次入手的組合餐。'],
       ['熊本拉麵老店', '1955 年創業的濃厚豚骨', '熊本拉麵代表性老店，湯頭是豚骨加焦蒜油的濃厚系，後來也在東京展店。']
-    ],
-    note: ['2025 / 04', '從阿蘇的火山草原走到市區的湧水庭園，把熊本的地景與生活整理成一頁。']
+    ]
   },
   miyazaki: {
     spots: [
@@ -130,8 +129,7 @@ const regionContent = {
       ['新別府辛拉麵', '宮崎發源的火辣拉麵', '辛麵發源地的本店，湯頭以辣椒、大蒜與豬絞肉調製，辣度可自選，是宮崎的招牌辣味。'],
       ['橘通雞肉南蠻', '雞肉南蠻的發源老店', '宮崎市中心的洋食老店，是雞肉南蠻料理的發源店，招牌是酸甜醬汁搭配塔塔醬。'],
       ['日南磯料理', '日南海岸的活跳海鮮', '沿日南海岸線的磯料理店，可品嚐伊勢龍蝦、鮑魚與螺類等近海現撈海鮮。']
-    ],
-    note: ['2025 / 04', '沿著日向灘與高千穗的峽谷移動，把神話留在地形裡的痕跡收進旅程。']
+    ]
   },
   gifu: {
     spots: [
@@ -162,8 +160,7 @@ const regionContent = {
     food: [
       ['由布院豐後牛釜飯', '由布院米與豐後牛的招牌釜飯', '由布院的釜飯專門店，使用由布院產米、豐後牛與湯布地雞，土鍋悶蒸後可分三種方式享用。'],
       ['別府炭火燒肉', '燒鳥老店跨足的燒肉新店', '由經營燒鳥超過 50 年的別府老店集團開設的燒肉店，選用大分和牛與宮崎牛。']
-    ],
-    note: ['2025 / 04', '從別府的湯煙走到九重的高原與吊橋，把大分的地熱與開闊收進同一段旅程。']
+    ]
   },
   saga: {
     spots: [
@@ -172,8 +169,7 @@ const regionContent = {
     ],
     food: [
       ['鳥栖美食市集', '肉料理與海鮮丼的主題樂園', '新鳥栖車站旁集結七間店家的美食市集，供應厚切牛舌、和牛料理與約 200 種海鮮丼。']
-    ],
-    note: ['2026 / 03', '沿著唐津的松原與有明海的潮汐移動，記錄佐賀安靜的海岸信仰風景。']
+    ]
   },
   kyoto: {
     spots: [
@@ -485,9 +481,6 @@ const regionAdditionalContent = {
     ],
     stays: [
       ['別府站前', '別府站旁的城市溫泉旅宿', '從 JR 別府站東口步行即可抵達。']
-    ],
-    notes: [
-      ['2026 / 03', '在金鱗湖畔與湯布院昭和館之間散步，把由布院的湖光與懷舊街景記在福岡行程的中段。']
     ]
   },
   saga: {
@@ -588,9 +581,7 @@ const regionAdditionalContent = {
     ],
     notes: [
       ['2024 / 02', '在雪景、溫泉與海港城市之間移動，記錄北海道冬季的不同層次。'],
-      ['2024 / 07', '從富良野、美瑛到函館，將花田、青池與夜景收進同一趟旅程。'],
-      ['2024 / 12', '從定山溪的溫泉山谷延伸到富良野、美瑛的雪景與白鬚瀑布，記錄札幌以外更遼闊的道央風景。'],
-      ['2026 / 01', '在小樽運河與登別地獄谷之間往返，把運河舊街、溫泉動物園與棕熊牧場收進札幌的冬季旅程裡。']
+      ['2024 / 07', '從富良野、美瑛到函館，將花田、青池與夜景收進同一趟旅程。']
     ]
   },
   tokyo: {
@@ -656,8 +647,7 @@ const regionAdditionalContent = {
     ],
     notes: [
       ['2025 / 07', '在名古屋城與熱田神宮之間，尋找城市歷史仍留在日常裡的痕跡。'],
-      ['2025 / 08', '從榮的夜景到喫茶店早餐，記錄名古屋不急著展示的生活感。'],
-      ['2026 / 09', '從中部空港降落，晚上先在榮吃一碗關東煮，是這趟名古屋旅程的第一夜。']
+      ['2025 / 08', '從榮的夜景到喫茶店早餐，記錄名古屋不急著展示的生活感。']
     ]
   },
   osaka: {
@@ -747,8 +737,7 @@ const regionAdditionalContent = {
     ],
     notes: [
       ['2026 / 03', '從博多站出發，將神社、屋台與海港風景整理成一段福岡城市散步。'],
-      ['2026 / 04', '沿著糸島海岸慢慢移動，在市區之外記錄福岡更寬闊的藍色風景。'],
-      ['2025 / 05', '從北九州的藤園與皿倉山夜景，走到太宰府與柳川的水鄉，替四月的九州行程收尾。']
+      ['2026 / 04', '沿著糸島海岸慢慢移動，在市區之外記錄福岡更寬闊的藍色風景。']
     ]
   }
 };
@@ -2019,411 +2008,6 @@ if (detailItems.length) {
     miyazaki: {},
     saga: {}
   };
-  regionItineraries.fukuoka['2025 / 05'] = [
-    { date: '2025-04-30', theme: '', stops: [
-      { time: '13:58', place: '河內藤園', type: '景點', note: '行程；停留1小時30分', transport: '24分' },
-      { time: '15:52', place: '皿倉山展望台', type: '景點', note: '行程；19:30 離開', transport: '86分' },
-      { time: '20:56', place: '第五飯店西館', type: '住宿', note: '飯店；停留1小時', transport: '5分' },
-      { time: '22:01', place: '中洲屋台 伸龍', type: '美食', note: '晚餐；停留1小時30分', transport: '5分' },
-      { time: '23:36', place: '第五飯店西館', type: '住宿', note: '飯店；停留10小時', transport: '' },
-    ] },
-    { date: '2025-05-01', theme: '', stops: [
-      { time: '08:00', place: '第五飯店西館', type: '住宿', note: '飯店；停留1小時', transport: '34分' },
-      { time: '09:34', place: '太宰府天滿宮', type: '景點', note: '行程；停留1小時', transport: '8分' },
-      { time: '10:42', place: '九州國立博物館', type: '景點', note: '行程；停留1小時30分', transport: '39分' },
-      { time: '12:51', place: '拉麵競技場', type: '美食', note: '午餐；停留1小時', transport: '10分' },
-      { time: '14:01', place: '櫛田神社', type: '景點', note: '行程；停留1小時', transport: '16分' },
-      { time: '15:17', place: '福岡市動植物園', type: '景點', note: '行程；停留1小時', transport: '13分' },
-      { time: '16:30', place: '拉麵競技場', type: '美食', note: '晚餐；停留1小時', transport: '4分' },
-      { time: '17:34', place: '博多運河城', type: '景點', note: '看電影、柯南；停留2小時05分', transport: '11分' },
-      { time: '19:50', place: '第五飯店西館', type: '住宿', note: '飯店；停留10小時', transport: '' },
-    ] },
-    { date: '2025-05-02', theme: '', stops: [
-      { time: '08:00', place: '第五飯店西館', type: '住宿', note: '飯店；停留1小時', transport: '73分' },
-      { time: '10:13', place: '柳川觀光開發(株) 松月乘船場', type: '景點', note: '行程；停留1小時30分', transport: '6分' },
-      { time: '11:49', place: '元祖本吉屋 本店', type: '美食', note: '午餐；停留1小時', transport: '80分' },
-    ] },
-  ];
-  regionItineraries.fukuoka['2026 / 03'] = [
-    { date: '2026-03-21', theme: '', stops: [
-      { time: '11:15', place: '福岡國際機場', type: '交通', note: '抵達；停留2小時', transport: '21分' },
-      { time: '13:36', place: 'Bread, Espresso & Hakata &&', type: '美食', note: '午餐；停留1小時', transport: '10分' },
-      { time: '14:46', place: '博多阪急', type: '', note: '停留2小時', transport: '6分' },
-      { time: '16:52', place: 'check-in博多微笑飯店', type: '住宿', note: '停留1小時30分', transport: '3分' },
-      { time: '18:25', place: '博多牛雜鍋前田屋 博多店', type: '美食', note: '晚餐；停留1小時', transport: '19分' },
-      { time: '19:44', place: '天神地下街', type: '', note: '停留1小時', transport: '18分' },
-      { time: '21:02', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '' },
-    ] },
-    { date: '2026-03-22', theme: '', stops: [
-      { time: '08:00', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '36分' },
-      { time: '09:36', place: '太宰府前表参道', type: '', note: '停留1小時', transport: '6分' },
-      { time: '10:42', place: '太宰府天滿宮', type: '', note: '停留1小時', transport: '9分' },
-      { time: '11:51', place: '天開稲荷社', type: '', note: '停留1小時', transport: '自訂 0分' },
-      { time: '12:51', place: '鬼焼き瓦そばKAGURA 蕎麥麵店', type: '美食', note: '停留1小時', transport: '7分' },
-      { time: '13:58', place: '寶滿宮 竈門神社', type: '', note: '停留1小時', transport: '9分' },
-      { time: '15:07', place: '宝満山登山口 (九州自然歩道)', type: '', note: '停留1小時', transport: '自訂 0分' },
-      { time: '16:07', place: '太宰府', type: '', note: '停留1小時', transport: '33分' },
-      { time: '17:40', place: '博多爐端 魚男', type: '', note: '停留1小時', transport: '8分' },
-      { time: '18:48', place: '警固公園', type: '', note: '停留1小時', transport: '17分' },
-      { time: '20:05', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '' },
-    ] },
-    { date: '2026-03-23', theme: '', stops: [
-      { time: '08:00', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '自訂 0分' },
-      { time: '09:00', place: '746-1 Kanamaru', type: '', note: '停留1小時', transport: '自訂 0分' },
-      { time: '10:00', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '' },
-    ] },
-    { date: '2026-03-24', theme: '', stops: [
-      { time: '08:00', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '21分' },
-      { time: '09:21', place: '福岡城', type: '', note: '停留1小時', transport: '3分' },
-      { time: '10:24', place: '舞鶴公園', type: '', note: '停留1小時', transport: '27分' },
-      { time: '11:51', place: '福岡塔', type: '', note: '停留2小時', transport: '36分' },
-      { time: '14:27', place: 'MARK IS 福岡Momochi', type: '', note: '停留2小時', transport: '17分' },
-      { time: '16:44', place: '博多水炊鍋専門 橙', type: '', note: '停留2小時', transport: '22分' },
-      { time: '19:06', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '' },
-    ] },
-    { date: '2026-03-25', theme: '', stops: [
-      { time: '08:00', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '39分' },
-      { time: '11:43', place: '柳川川下り 松月乗船場', type: '', note: '停留1小時', transport: '7分' },
-      { time: '12:50', place: '元祖本吉屋 本店', type: '', note: '停留1小時', transport: '77分' },
-      { time: '15:07', place: 'AMU PLAZA博多', type: '', note: '停留2小時', transport: '14分' },
-      { time: '17:21', place: '麵屋兼虎 天神本店', type: '', note: '停留1小時', transport: '9分' },
-      { time: '18:30', place: '天神中央公園', type: '', note: '停留1小時', transport: '17分' },
-      { time: '19:47', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '' },
-    ] },
-    { date: '2026-03-26', theme: '', stops: [
-      { time: '08:00', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '8分' },
-      { time: '09:08', place: '住吉神社', type: '', note: '停留1小時', transport: '自訂 0分' },
-      { time: '10:08', place: '櫛田神社', type: '', note: '停留1小時', transport: '14分' },
-      { time: '11:22', place: 'アミュエスト 博多 大型購物中心', type: '', note: '停留1小時', transport: '6分' },
-      { time: '12:28', place: 'Shin-Shin 博多拉麵 KITTE博多店', type: '美食', note: '停留1小時', transport: '18分' },
-      { time: '13:46', place: '名產鶴乃子 石村萬盛堂 本店', type: '', note: '停留1小時', transport: '17分' },
-      { time: '15:03', place: 'The Full Full Hakata', type: '', note: '停留1小時', transport: '8分' },
-      { time: '16:11', place: 'THE FLAVOR DESIGN®︎ STORE "FUKUOKA"', type: '', note: '停留2小時', transport: '12分' },
-      { time: '18:23', place: 'Nikuichi (Yakuin Store)', type: '', note: '停留2小時', transport: '20分' },
-      { time: '20:43', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '' },
-    ] },
-    { date: '2026-03-27', theme: '', stops: [
-      { time: '08:00', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '116分' },
-      { time: '13:36', place: '門司港車站', type: '', note: '停留1小時', transport: '3分' },
-      { time: '14:39', place: 'Princess Phi Phi', type: '', note: '停留1小時', transport: '21分' },
-      { time: '16:00', place: '和布刈 第2 展望台', type: '', note: '停留1小時', transport: '62分' },
-      { time: '18:02', place: '平尾天婦羅 原田店', type: '', note: '停留1小時', transport: '26分' },
-      { time: '19:28', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '' },
-    ] },
-    { date: '2026-03-28', theme: '', stops: [
-      { time: '08:00', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '15分' },
-      { time: '09:15', place: '柳橋連合市場', type: '', note: '停留1小時', transport: '11分' },
-      { time: '10:26', place: '福岡市動植物園', type: '', note: '停留2小時', transport: '20分' },
-      { time: '12:46', place: '海鮮とおむすび', type: '', note: '停留1小時', transport: '5分' },
-      { time: '13:51', place: '白金茶房', type: '', note: '停留1小時', transport: '14分' },
-      { time: '15:05', place: '大濠公園', type: '', note: '停留2小時', transport: '17分' },
-      { time: '17:22', place: '炉端とおでん 呼炉凪来 天神店', type: '', note: '停留2小時', transport: '20分' },
-      { time: '19:42', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '' },
-    ] },
-    { date: '2026-03-29', theme: '', stops: [
-      { time: '08:00', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '150分' },
-      { time: '18:14', place: '購物中心KITTE', type: '', note: '停留1小時', transport: '6分' },
-      { time: '19:20', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '' },
-    ] },
-    { date: '2026-03-30', theme: '', stops: [
-      { time: '08:00', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '15分' },
-      { time: '09:15', place: '大丸 福岡天神店', type: '', note: '停留2小時', transport: '12分' },
-      { time: '11:27', place: 'The Full Full Hakata', type: '', note: '停留1小時', transport: '15分' },
-      { time: '12:42', place: 'Iwataya Main Store', type: '', note: '停留1小時', transport: '10分' },
-      { time: '13:52', place: 'THE FLAVOR DESIGN®︎ STORE "FUKUOKA"', type: '', note: '停留1小時', transport: '13分' },
-      { time: '15:05', place: 'BiVi Fukuoka', type: '', note: '停留2小時', transport: '6分' },
-      { time: '17:11', place: '挽肉與米 (今泉)', type: '', note: '停留1小時', transport: '22分' },
-      { time: '18:33', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '' },
-    ] },
-    { date: '2026-03-31', theme: '', stops: [
-      { time: '08:00', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '自訂 0分' },
-      { time: '09:00', place: '櫻井神社', type: '', note: '停留1小時', transport: '自訂 0分' },
-      { time: '10:00', place: '櫻井二見浦 夫婦岩', type: '', note: '停留1小時', transport: '3分' },
-      { time: '11:03', place: 'Itoshima Seafood Restaurant Futamigaura', type: '美食', note: '停留1小時', transport: '6分' },
-      { time: '12:09', place: 'Palm Beach Restaurant', type: '美食', note: '停留1小時', transport: '自訂 0分' },
-      { time: '13:09', place: '博多', type: '', note: '停留1小時', transport: '18分' },
-      { time: '14:27', place: 'Mina 天神', type: '', note: '停留2小時', transport: '17分' },
-      { time: '16:44', place: '水炊.雞肉料理 とりまぶし', type: '', note: '停留2小時', transport: '9分' },
-      { time: '18:53', place: '博多站前微笑飯店', type: '住宿', note: '停留1小時', transport: '' },
-    ] },
-  ];
-  regionItineraries.hokkaido['2024 / 12'] = [
-    { date: '2024-11-29', theme: '', stops: [
-      { time: '13:10', place: '新千歲機場 國際線航廈', type: '交通', note: '抵達；停留0小時20分', transport: '58分' },
-      { time: '14:28', place: '札幌啤酒花園', type: '', note: '停留1小時', transport: '23分' },
-      { time: '15:51', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino', type: '住宿', note: '飯店、check-in；停留0小時30分', transport: '15分' },
-      { time: '16:36', place: 'BIC CAMERA札幌店', type: '景點', note: '行程；停留1小時', transport: '15分' },
-      { time: '17:51', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2024-11-30', theme: '', stops: [
-      { time: '07:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留1小時', transport: '28分' },
-      { time: '08:58', place: '北海道神宮', type: '景點', note: '行程；停留1小時', transport: '9分' },
-      { time: '10:07', place: '星巴克 札幌宮丘店', type: '美食', note: '野餐；停留0小時20分', transport: '30分' },
-      { time: '10:57', place: 'Sandria', type: '美食', note: '野餐；停留0小時20分', transport: '13分' },
-      { time: '11:30', place: '中島公園', type: '景點', note: '行程；停留1小時', transport: '6分' },
-      { time: '12:36', place: '伊夜日子神社', type: '景點', note: '行程；停留1小時', transport: '19分' },
-      { time: '13:55', place: 'Akarenga Terrace', type: '景點', note: '行程；停留1小時30分', transport: '17分' },
-      { time: '15:42', place: '難陀', type: '美食', note: '晚餐；停留1小時40分', transport: '12分' },
-      { time: '17:34', place: '札幌電視塔', type: '交通', note: '取票、定山溪；停留0小時15分', transport: '16分' },
-      { time: '18:05', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留0小時40分', transport: '9分' },
-      { time: '18:54', place: '狸小路４丁目', type: '交通', note: '集合、拍照；停留2小時30分', transport: '9分' },
-      { time: '21:33', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2024-12-01', theme: '', stops: [
-      { time: '07:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留1小時', transport: '47分' },
-      { time: '09:17', place: 'JR Hokkaido Bus Otaru Office', type: '景點', note: '行程；途經（未停留）', transport: '自訂 0分' },
-      { time: '09:17', place: '小樽天狗山', type: '', note: '停留1小時', transport: '自訂 0分' },
-      { time: '10:17', place: 'Yabuhan Soba', type: '美食', note: '午餐；停留1小時', transport: '10分' },
-      { time: '11:27', place: '田中酒造 龜甲藏', type: '景點', note: '行程；停留1小時', transport: '50分' },
-      { time: '13:17', place: 'イオン札幌元町店', type: '景點', note: '行程；停留1小時', transport: '24分' },
-      { time: '14:41', place: 'Ramai Sapporo Chuō', type: '美食', note: '晚餐；停留1小時', transport: '16分' },
-      { time: '15:57', place: '札幌Stellar Place', type: '景點', note: '行程；停留2小時', transport: '16分' },
-      { time: '18:13', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2024-12-02', theme: '', stops: [
-      { time: '07:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留1小時', transport: '14分' },
-      { time: '08:44', place: '東急百貨札幌店', type: '交通', note: '搭車、定山溪；停留0小時15分', transport: '自訂 75分' },
-      { time: '10:14', place: '定山溪萬世閣飯店', type: '景點', note: '泡湯；停留4小時40分', transport: '自訂 90分' },
-      { time: '16:24', place: '東急百貨札幌店', type: '交通', note: '搭車、定山溪；停留1小時', transport: '16分' },
-      { time: '17:40', place: 'しろくま 札幌成吉思汗 本店', type: '美食', note: '晚餐；停留1小時', transport: '5分' },
-      { time: '18:45', place: '極致鹽味熟成 成吉思汗 YUHI', type: '美食', note: '晚餐；停留1小時', transport: '11分' },
-      { time: '19:56', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2024-12-03', theme: '', stops: [
-      { time: '07:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留1小時', transport: '23分' },
-      { time: '08:53', place: '北海道大學', type: '景點', note: '行程；停留2小時', transport: '12分' },
-      { time: '11:05', place: 'カレー食堂 心 札幌本店（Soup Curry COCORO・湯咖哩 心・スープカレーココロ）', type: '美食', note: '午餐；停留1小時', transport: '15分' },
-      { time: '12:20', place: '諏訪神社', type: '景點', note: '行程；停留1小時', transport: '30分' },
-      { time: '13:50', place: '鰻のしゅうか', type: '美食', note: '午餐；停留1小時', transport: '23分' },
-      { time: '15:13', place: '丸井今井 大通館', type: '購物', note: '逛街；停留1小時30分', transport: '6分' },
-      { time: '16:49', place: 'PARCO札幌', type: '購物', note: '逛街；停留1小時30分', transport: '11分' },
-      { time: '18:30', place: 'Den - Japanese Buffet Dining', type: '美食', note: '晚餐；停留1小時30分', transport: '12分' },
-      { time: '20:12', place: '大通公園', type: '景點', note: '行程；停留2小時', transport: '16分' },
-      { time: '22:28', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2024-12-04', theme: '', stops: [
-      { time: '06:00', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留1小時', transport: '4分' },
-      { time: '07:04', place: '札幌東急REI酒店', type: '景點', note: '行程、集合點；停留0小時36分', transport: '81分' },
-      { time: '09:01', place: '砂川服務區 (上行)', type: '景點', note: '行程、休息；停留0小時15分', transport: '61分' },
-      { time: '10:17', place: '旭山動物園', type: '景點', note: '行程；停留1小時30分', transport: '29分' },
-      { time: '12:16', place: '七星之樹', type: '景點', note: '行程；停留0小時15分', transport: '26分' },
-      { time: '12:57', place: 'ハーブガーデン富良野 (HERB GARDEN FURANO)', type: '景點', note: '行程、午餐；停留1小時', transport: '24分' },
-      { time: '14:21', place: '白鬚瀑布', type: '景點', note: '行程；停留0小時20分', transport: '50分' },
-      { time: '15:31', place: '森林精靈露台', type: '景點', note: '行程；停留0小時40分', transport: '87分' },
-      { time: '17:38', place: '岩見澤服務區 (下行)', type: '景點', note: '行程、休息；停留0小時10分', transport: '54分' },
-      { time: '18:42', place: '札幌東急REI酒店', type: '景點', note: '行程、結束；途經（未停留）', transport: '9分' },
-      { time: '18:51', place: 'Shihachi', type: '美食', note: '晚餐；停留1小時', transport: '3分' },
-      { time: '19:54', place: '狸小路', type: '', note: '停留1小時', transport: '10分' },
-      { time: '21:04', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '18分' },
-    ] },
-    { date: '2024-12-05', theme: '', stops: [
-      { time: '08:22', place: 'Sandria', type: '美食', note: '野餐；停留1小時', transport: '' },
-      { time: '07:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留1小時', transport: '12分' },
-      { time: '08:42', place: 'Sandria', type: '美食', note: '野餐；停留0小時30分', transport: '28分' },
-      { time: '09:40', place: '森彥咖啡', type: '美食', note: '野餐；停留0小時30分', transport: '11分' },
-      { time: '10:21', place: '圓山公園', type: '美食', note: '野餐；停留1小時30分', transport: '12分' },
-      { time: '12:03', place: 'Hokkaido Soup Curry Restaurant Okushiba Shoten Okushibaa chan', type: '美食', note: '午餐；停留1小時', transport: '自訂 34分' },
-      { time: '13:37', place: '西野神社', type: '景點', note: '行程；停留1小時', transport: '自訂 40分' },
-      { time: '15:17', place: 'うなぎや', type: '美食', note: '晚餐；停留1小時', transport: '19分' },
-      { time: '16:36', place: 'Akarenga Terrace', type: '景點', note: '行程；停留1小時', transport: '11分' },
-      { time: '17:47', place: '大通公園', type: '景點', note: '行程；停留2小時', transport: '16分' },
-      { time: '20:03', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2024-12-06', theme: '', stops: [
-      { time: '07:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留1小時', transport: '12分' },
-      { time: '08:42', place: 'Sandria', type: '美食', note: '野餐；停留0小時30分', transport: '42分' },
-      { time: '09:54', place: '白色戀人觀光工廠', type: '景點', note: '行程；停留2小時', transport: '13分' },
-      { time: '12:07', place: 'Tonkatsu Tamafuji', type: '美食', note: '午餐；停留1小時', transport: '79分' },
-      { time: '14:26', place: '伏見稻荷神社', type: '景點', note: '行程；停留1小時', transport: '16分' },
-      { time: '15:42', place: '藻岩山纜車山麓駅入口', type: '', note: '停留2小時30分', transport: '42分' },
-      { time: '18:54', place: 'Medicineman', type: '美食', note: '晚餐；停留1小時', transport: '22分' },
-      { time: '20:16', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2024-12-07', theme: '', stops: [
-      { time: '07:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留3小時', transport: '54分' },
-      { time: '11:24', place: '新千歲機場 國際線航廈', type: '交通', note: '出發；停留3小時', transport: '自訂 280分' },
-    ] },
-  ];
-  regionItineraries.hokkaido['2026 / 01'] = [
-    { date: '2026-01-01', theme: '', stops: [
-      { time: '13:10', place: '新千歲機場 國際線航廈', type: '交通', note: '抵達；停留1小時30分', transport: '54分' },
-      { time: '15:34', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino', type: '住宿', note: '飯店、check-in；停留0小時30分', transport: '9分' },
-      { time: '16:13', place: 'RAMEN ICHI', type: '美食', note: '晚餐；停留1小時', transport: '11分' },
-      { time: '17:24', place: '狸小路商店街', type: '購物', note: '逛街；停留1小時30分', transport: '5分' },
-      { time: '18:59', place: 'COCONOSUSUKINO', type: '', note: '買水果；停留1小時', transport: '5分' },
-      { time: '20:04', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2026-01-02', theme: '', stops: [
-      { time: '07:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留1小時', transport: '自訂 60分' },
-      { time: '09:30', place: '三井OUTLET PARK 札幌北廣島', type: '購物', note: '購物；停留3小時', transport: '自訂 0分' },
-      { time: '12:30', place: '迴轉壽司 Toriton 清田店', type: '美食', note: '午餐；停留1小時', transport: '自訂 0分' },
-      { time: '13:30', place: '野幌森林公園', type: '景點', note: '行程；停留1小時30分', transport: '自訂 0分' },
-      { time: '15:00', place: 'Shiroishi Shrine', type: '景點', note: '行程；停留1小時', transport: '28分' },
-      { time: '16:28', place: '個室焼肉つばめ本店', type: '美食', note: '晚餐；停留1小時30分', transport: '8分' },
-      { time: '18:06', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2026-01-03', theme: '', stops: [
-      { time: '07:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留1小時', transport: '28分' },
-      { time: '08:58', place: '北海道神宮', type: '景點', note: '行程；停留1小時', transport: '18分' },
-      { time: '10:16', place: '森彥咖啡', type: '景點', note: '行程；停留1小時', transport: '23分' },
-      { time: '11:39', place: '中島公園', type: '景點', note: '行程；停留1小時', transport: '17分' },
-      { time: '12:56', place: '湯咖喱 奥芝商店 站前創成寺', type: '美食', note: '午餐；停留1小時', transport: '6分' },
-      { time: '14:02', place: '札幌Stellar Place', type: '', note: '停留1小時', transport: '11分' },
-      { time: '15:13', place: '札幌電視塔', type: '景點', note: '行程；停留1小時', transport: '12分' },
-      { time: '16:25', place: '難陀', type: '美食', note: '晚餐；停留2小時', transport: '12分' },
-      { time: '18:37', place: '大通公園', type: '景點', note: '行程；停留1小時', transport: '8分' },
-      { time: '19:45', place: 'Parfait, coffee, liquor, Sato', type: '美食', note: '點心；停留1小時', transport: '12分' },
-      { time: '20:57', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2026-01-04', theme: '', stops: [
-      { time: '07:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留1小時', transport: '47分' },
-      { time: '09:17', place: 'JR Hokkaido Bus Otaru Office', type: '景點', note: '行程；途經（未停留）', transport: '自訂 60分' },
-      { time: '10:17', place: '小樽天狗山', type: '景點', note: '行程；停留1小時', transport: '自訂 60分' },
-      { time: '12:17', place: 'Yabuhan Soba', type: '美食', note: '午餐；停留1小時', transport: '10分' },
-      { time: '13:27', place: '田中酒造 龜甲藏', type: '景點', note: '行程；停留1小時', transport: '15分' },
-      { time: '14:42', place: '小樽運河', type: '景點', note: '行程；停留2小時', transport: '58分' },
-      { time: '17:40', place: 'Sandria 本店', type: '美食', note: '點心；停留1小時', transport: '18分' },
-      { time: '18:58', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2026-01-05', theme: '', stops: [
-      { time: '06:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留1小時', transport: '4分' },
-      { time: '08:00', place: '札幌東急REI酒店', type: '景點', note: '行程、集合；停留0小時30分', transport: '自訂 60分' },
-      { time: '09:30', place: 'Wonderland Sapporo', type: '美食', note: '行程+午餐；停留3小時', transport: '自訂 60分' },
-      { time: '13:30', place: 'BIC CAMERA札幌店', type: '景點', note: '行程；停留1小時', transport: '15分' },
-      { time: '14:45', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2026-01-06', theme: '', stops: [
-      { time: '07:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留1小時', transport: '自訂 40分' },
-      { time: '09:10', place: 'Nishino Shrine', type: '景點', note: '行程；停留1小時', transport: '自訂 50分' },
-      { time: '11:00', place: '北海道大學', type: '景點', note: '行程；停留1小時', transport: '23分' },
-      { time: '12:23', place: 'Soup Curry GARAKU Sapporo Main Restaurant', type: '美食', note: '午餐；停留1小時', transport: '自訂 60分' },
-      { time: '14:23', place: '前田森林公園', type: '景點', note: '行程；停留1小時30分', transport: '自訂 60分' },
-      { time: '16:53', place: 'Shihachi', type: '美食', note: '晚餐；停留1小時', transport: '8分' },
-      { time: '18:01', place: '大通公園', type: '景點', note: '行程；停留2小時', transport: '14分' },
-      { time: '20:15', place: 'Parfaiteria Pal', type: '美食', note: '點心；停留1小時', transport: '18分' },
-      { time: '21:33', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2026-01-07', theme: '', stops: [
-      { time: '07:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留1小時', transport: '111分' },
-      { time: '10:21', place: 'Soda食堂 (ソーダ食堂)', type: '美食', note: '午餐；停留1小時', transport: '自訂 40分' },
-      { time: '12:01', place: '登別棕熊牧場', type: '景點', note: '行程；停留1小時', transport: '自訂 30分' },
-      { time: '13:31', place: '登別伊達時代村', type: '景點', note: '行程；停留1小時', transport: '自訂 30分' },
-      { time: '15:01', place: '登別尼克斯海洋公園', type: '景點', note: '行程；停留1小時', transport: '92分' },
-      { time: '17:33', place: 'サッポロビール園 開拓使館', type: '美食', note: '晚餐；停留2小時', transport: '23分' },
-      { time: '19:56', place: 'Milk Mura', type: '美食', note: '酒吧；停留1小時', transport: '9分' },
-      { time: '21:05', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2026-01-08', theme: '', stops: [
-      { time: '07:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留1小時', transport: '12分' },
-      { time: '08:42', place: 'Sandria', type: '美食', note: '野餐；停留0小時30分', transport: '42分' },
-      { time: '09:54', place: '白色戀人觀光工廠', type: '景點', note: '行程；停留2小時', transport: '13分' },
-      { time: '12:07', place: 'Tonkatsu Tamafuji', type: '美食', note: '午餐；停留1小時', transport: '79分' },
-      { time: '14:26', place: '伏見稻荷神社', type: '景點', note: '行程；停留1小時', transport: '16分' },
-      { time: '15:42', place: '藻岩山纜車山麓駅入口', type: '', note: '停留2小時30分', transport: '43分' },
-      { time: '18:55', place: '牛しゃぶ 牛すき 禅', type: '美食', note: '晚餐；停留1小時', transport: '12分' },
-      { time: '20:07', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2026-01-09', theme: '', stops: [
-      { time: '07:30', place: '船舶花園薄野飯店(Vessel Hotel Campana Susukino)', type: '住宿', note: '飯店；停留3小時', transport: '54分' },
-      { time: '11:24', place: '新千歲機場 國際線航廈', type: '交通', note: '出發；停留3小時', transport: '自訂 280分' },
-    ] },
-  ];
-  regionItineraries.kumamoto['2025 / 04'] = [
-    { date: '2025-04-25', theme: '', stops: [
-      { time: '09:55', place: '國際線航廈', type: '交通', note: '抵達、熊本機場；停留2小時15分', transport: '3分' },
-      { time: '12:13', place: '日產租車 熊本機場店', type: '交通', note: '停留1小時', transport: '40分' },
-      { time: '13:53', place: '勝烈亭 新市街本店', type: '美食', note: '午餐；停留1小時', transport: '7分' },
-      { time: '15:00', place: '熊本城', type: '景點', note: '行程；停留2小時', transport: '8分' },
-      { time: '17:08', place: '相鐵 Grand Fresa 熊本飯店', type: '住宿', note: '飯店；停留1小時30分', transport: '12分' },
-      { time: '18:50', place: '上通商店街', type: '購物', note: '逛街、晚餐；停留2小時', transport: '12分' },
-      { time: '21:02', place: '相鐵 Grand Fresa 熊本飯店', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2025-04-26', theme: '', stops: [
-      { time: '08:00', place: '相鐵 Grand Fresa 熊本飯店', type: '住宿', note: '飯店；停留1小時', transport: '105分' },
-      { time: '14:59', place: '草千里（草千里之濱）', type: '景點', note: '行程；停留2小時', transport: '72分' },
-      { time: '18:11', place: '相鐵 Grand Fresa 熊本飯店', type: '住宿', note: '飯店；停留1小時', transport: '7分' },
-      { time: '19:18', place: 'Shimotori Shopping Arcade', type: '購物', note: '逛街、晚餐；停留2小時', transport: '7分' },
-      { time: '21:25', place: '相鐵 Grand Fresa 熊本飯店', type: '住宿', note: '飯店；停留10小時', transport: '' },
-    ] },
-    { date: '2025-04-27', theme: '', stops: [
-      { time: '08:00', place: '相鐵 Grand Fresa 熊本飯店', type: '住宿', note: '飯店；停留1小時', transport: '11分' },
-      { time: '09:11', place: '出水神社', type: '景點', note: '行程；停留1小時', transport: '6分' },
-      { time: '10:17', place: '水前寺成趣園', type: '景點', note: '行程；停留1小時30分', transport: '72分' },
-      { time: '12:59', place: '上色見熊野座神社', type: '景點', note: '行程；停留1小時', transport: '72分' },
-    ] },
-    { date: '2025-05-02', theme: '', stops: [
-      { time: '14:09', place: 'Nissan Rent-a-car', type: '交通', note: '還車；停留0小時30分', transport: '3分' },
-      { time: '14:42', place: 'THE BLOSSOM 熊本', type: '住宿', note: '飯店；停留1小時', transport: '6分' },
-      { time: '15:48', place: 'Bic Camera Kumamoto', type: '景點', note: '行程；停留1小時30分', transport: '7分' },
-      { time: '17:25', place: 'AMU PLAZA 熊本', type: '美食', note: '晚餐；停留2小時', transport: '5分' },
-      { time: '19:30', place: 'THE BLOSSOM 熊本', type: '住宿', note: '飯店；停留11小時', transport: '' },
-    ] },
-    { date: '2025-05-03', theme: '', stops: [
-      { time: '08:00', place: 'THE BLOSSOM 熊本', type: '住宿', note: '飯店；停留1小時', transport: '42分' },
-      { time: '09:42', place: '熊本機場', type: '交通', note: '出境；停留1小時', transport: '145分' },
-    ] },
-  ];
-  regionItineraries.miyazaki['2025 / 04'] = [
-    { date: '2025-04-26', theme: '', stops: [
-      { time: '10:45', place: '高千穗峽', type: '景點', note: '行程；停留2小時', transport: '5分' },
-      { time: '12:50', place: '高千穗神社', type: '景點', note: '行程；停留1小時', transport: '69分' },
-    ] },
-  ];
-  regionItineraries.nagoya['2026 / 09'] = [
-    { date: '2026-09-18', theme: '', stops: [
-      { time: '17:45', place: '中部國際機場(新特麗亞)', type: '交通', note: '停留1小時', transport: '46分' },
-      { time: '19:31', place: '榮（愛知）', type: '', note: '停留1小時', transport: '18分' },
-      { time: '20:49', place: '名古屋榮弗爾札飯店', type: '住宿', note: '停留0小時30分', transport: '3分' },
-      { time: '21:22', place: '關東煮屋たけし 名古屋榮店', type: '', note: '停留1小時', transport: '' },
-    ] },
-  ];
-  regionItineraries.oita['2025 / 04'] = [
-    { date: '2025-04-27', theme: '', stops: [
-      { time: '15:11', place: '九重 夢大橋', type: '景點', note: '行程；停留1小時', transport: '35分' },
-      { time: '16:46', place: '山波日式旅館', type: '住宿', note: '飯店；停留1小時', transport: '4分' },
-      { time: '17:50', place: '拉麵 侍', type: '美食', note: '晚餐；停留1小時', transport: '5分' },
-      { time: '18:55', place: '山波日式旅館', type: '住宿', note: '飯店；停留10小時', transport: '' },
-    ] },
-    { date: '2025-04-28', theme: '', stops: [
-      { time: '08:00', place: '山波日式旅館', type: '住宿', note: '飯店；停留1小時', transport: '43分' },
-      { time: '09:43', place: '大分海洋宮殿水族館 海之卵', type: '景點', note: '行程；停留2小時', transport: '11分' },
-      { time: '11:54', place: '唐吉訶德 別府店', type: '景點', note: '行程；停留1小時', transport: '5分' },
-      { time: '12:59', place: 'やよい商店街', type: '景點', note: '行程；停留1小時30分', transport: '24分' },
-      { time: '14:53', place: '十文字原展望台前', type: '景點', note: '行程；停留1小時', transport: '5分' },
-      { time: '15:58', place: '地獄蒸布丁 岡本屋', type: '美食', note: '點心；停留1小時', transport: '14分' },
-      { time: '17:12', place: '世界之塔', type: '景點', note: '行程；停留0小時20分', transport: '8分' },
-      { time: '17:40', place: '焼肉 凡', type: '美食', note: '晚餐；停留1小時30分', transport: '38分' },
-      { time: '19:48', place: '山波日式旅館', type: '住宿', note: '飯店；停留10小時', transport: '' },
-    ] },
-    { date: '2025-04-29', theme: '', stops: [
-      { time: '08:00', place: '山波日式旅館', type: '住宿', note: '飯店；05:30 離開', transport: '8分' },
-      { time: '05:38', place: '金鱗湖', type: '景點', note: '行程；停留1小時', transport: '8分' },
-      { time: '06:46', place: '山波日式旅館', type: '住宿', note: '飯店、早餐；停留1小時', transport: '30分' },
-      { time: '08:16', place: '別府地獄之旅', type: '景點', note: '行程；停留3小時30分', transport: '32分' },
-      { time: '12:18', place: '由布釜飯 「心」湯布院站前店', type: '美食', note: '午餐；停留1小時', transport: '6分' },
-      { time: '13:24', place: '史奴比茶屋', type: '購物', note: '逛街、下午茶；停留2小時', transport: '5分' },
-      { time: '15:29', place: '拉麵 侍', type: '美食', note: '晚餐；停留1小時', transport: '5分' },
-      { time: '16:34', place: '山波日式旅館', type: '住宿', note: '飯店；停留10小時', transport: '' },
-    ] },
-    { date: '2025-04-30', theme: '', stops: [
-      { time: '08:00', place: '山波日式旅館', type: '住宿', note: '飯店；停留1小時', transport: '5分' },
-      { time: '09:05', place: '湯布院昭和館', type: '景點', note: '行程；停留2小時', transport: '2分' },
-      { time: '11:07', place: '湯布院花卉村', type: '景點', note: '行程；停留1小時', transport: '111分' },
-    ] },
-  ];
-  regionItineraries.oita['2026 / 03'] = [
-    { date: '2026-03-29', theme: '', stops: [
-      { time: '11:30', place: '史奴比茶屋', type: '美食', note: '停留1小時', transport: '4分' },
-      { time: '12:34', place: '由布釜飯 「心」金鱗湖本店', type: '', note: '停留1小時', transport: '5分' },
-      { time: '13:39', place: '湯布院昭和館', type: '', note: '停留1小時', transport: '7分' },
-      { time: '14:46', place: '金鱗湖', type: '', note: '停留1小時', transport: '148分' },
-    ] },
-  ];
-  regionItineraries.saga['2026 / 03'] = [
-    { date: '2026-03-25', theme: '', stops: [
-      { time: '09:39', place: 'フレスポ鳥栖 大型購物中心', type: '', note: '停留1小時', transport: '64分' },
-    ] },
-  ];
   const mapSearchUrl = (query) =>
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
   const mapCell = (name, href) => href
