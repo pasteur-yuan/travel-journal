@@ -2,7 +2,7 @@ import { sleep, suite } from "../harness.mjs";
 
 export { REGIONS } from "../regions.mjs";
 import { REGIONS } from "../regions.mjs";
-const SECTIONS = ["overview", "spots", "food", "stays", "notes"];
+const SECTIONS = ["overview", "spots", "food", "stays"];
 const page = (r) => `/countries/japan/${r}/index.html`;
 
 export const structure = suite("地區頁 · 結構與資料注入", async (b, t) => {
@@ -15,7 +15,7 @@ export const structure = suite("地區頁 · 結構與資料注入", async (b, t
       ${JSON.stringify(SECTIONS)}.forEach(id => {
         const el = document.querySelector("#" + id);
         counts[id] = el ? el.querySelectorAll(
-          ".region-content-card, .region-content-list article, .region-note").length : -1;
+          ".region-content-card, .region-content-list article").length : -1;
       });
       const staySection = document.querySelector("#stays");
       return {

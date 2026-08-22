@@ -1,34 +1,8 @@
-// 時間軸的樣板行為：新增一筆旅程資料時，年份群組、互動與統計是否自動涵蓋。
-// 需要在載入前就改動 HTML，因此把變體寫成 repo 根目錄的暫存檔（相對路徑才會正確），
-// 檔名前綴 _test- 已列入 .gitignore，每個案例結束後刪除。
-import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+// 時間軸的樣板行為：新增一趟旅程資料時，年份群組、互動與統計是否自動涵蓋。
 import { suite } from "../harness.mjs";
+import { tripScript, withTripVariant } from "../timeline-fixtures.mjs";
 
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const baseHtml = readFileSync(join(repoRoot, "index.html"), "utf8");
-const ANCHOR = '<span class="timeline-year-marker">2026</span>';
 const YEAR = new Date().getFullYear();
-
-const entryHtml = ({ date, country = "🇹🇹 測試國", region = "測試地區" }) =>
-  `<a class="timeline-entry timeline-entry-japan"${date ? ` data-date="${date}"` : ""}` +
-  ` data-country="${country}" data-region="${region}" href="countries/japan/index.html"` +
-  ` aria-label="測試項目"><span class="timeline-dot" aria-hidden="true"></span>` +
-  `<span class="timeline-card"><span class="timeline-code">測試</span><strong>${region}</strong>` +
-  `<span>測試</span></span></a>`;
-
-async function withVariant(b, injected, fn) {
-  const name = `_test-timeline-${Math.random().toString(36).slice(2, 8)}.html`;
-  const file = join(repoRoot, name);
-  writeFileSync(file, baseHtml.replace(ANCHOR, injected + ANCHOR));
-  try {
-    await b.goto(`/${name}`, { settle: 1200 });
-    return await fn();
-  } finally {
-    try { unlinkSync(file); } catch { /* 已刪除 */ }
-  }
-}
 
 const layout = (b) => b.eval(`(() => {
   const groups = [...document.querySelectorAll(".timeline-year-group")];
@@ -45,7 +19,7 @@ export const template = suite("時間軸 · 新增資料的樣板行為", async 
   await b.desktop();
 
   // 既有年份範圍內新增
-  await withVariant(b, entryHtml({ date: `${YEAR - 1}-03-02` }), async () => {
+  await withTripVariant(b, tripScript({ date: `${YEAR - 1}-03-02` }), async () => {
     const info = await layout(b);
     t.check("既有年份新增一筆會出現在該年份群組",
       info.perYear[String(YEAR - 1)] >= 1 && info.inTrack === info.inDocument,
@@ -53,7 +27,7 @@ export const template = suite("時間軸 · 新增資料的樣板行為", async 
   });
 
   // 早於現有最早年份
-  await withVariant(b, entryHtml({ date: `${YEAR - 4}-08-01` }), async () => {
+  await withTripVariant(b, tripScript({ date: `${YEAR - 4}-08-01` }), async () => {
     const info = await layout(b);
     t.check("更早的年份會自動延伸年份軸",
       info.years.includes(String(YEAR - 4)), info.years.join(", "));
@@ -62,7 +36,7 @@ export const template = suite("時間軸 · 新增資料的樣板行為", async 
   });
 
   // 超過 currentYear + 1 的未來年份：先前會被靜默丟棄
-  await withVariant(b, entryHtml({ date: `${YEAR + 2}-05-05` }), async () => {
+  await withTripVariant(b, tripScript({ date: `${YEAR + 2}-05-05` }), async () => {
     const info = await layout(b);
     t.check("超過預留年份的未來旅程不會被丟棄",
       info.years.includes(String(YEAR + 2)) && info.inTrack === info.inDocument,
@@ -72,8 +46,8 @@ export const template = suite("時間軸 · 新增資料的樣板行為", async 
     t.check("已排定行程的未來年份可以點開", clickable);
   });
 
-  // 缺少 data-date：先前會讓整條時間軸消失
-  await withVariant(b, entryHtml({ date: null }), async () => {
+  // 缺少日期：先前會讓整條時間軸消失
+  await withTripVariant(b, tripScript({ date: null }), async () => {
     const info = await layout(b);
     t.check("單筆日期無法解析時，其餘項目照常顯示",
       info.years.length > 0 && info.inTrack > 0,
@@ -84,7 +58,7 @@ export const template = suite("時間軸 · 新增資料的樣板行為", async 
   });
 
   // 統計數字要跟著新資料更新
-  await withVariant(b, entryHtml({ date: `${YEAR - 1}-04-04`, country: "🇹🇹 測試國", region: "測試地區" }), async () => {
+  await withTripVariant(b, tripScript({ date: `${YEAR - 1}-04-04`, country: "🇹🇹 測試國", regions: ["測試地區"] }), async () => {
     const info = await layout(b);
     t.check("新增旅程後國家數自動更新",
       info.stats[0] !== "01 國家" && /^\d{2} 國家$/.test(info.stats[0]), info.stats[0]);

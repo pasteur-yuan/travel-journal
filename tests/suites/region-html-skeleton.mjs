@@ -13,17 +13,15 @@ const FIXED_SECTIONS = [
   { id: "overview", label: "01", eyebrow: "A SLOW JOURNEY" },
   { id: "spots", label: "02", eyebrow: "PLACES", h2: "景點" },
   { id: "food", label: "03", eyebrow: "TABLE", h2: "美食" },
-  { id: "stays", label: "04", eyebrow: "STAY &amp; MOVE", h2: "住宿與交通" },
-  { id: "notes", label: "05", eyebrow: "JOURNAL", h2: "旅行筆記" }
+  { id: "stays", label: "04", eyebrow: "STAY &amp; MOVE", h2: "住宿與交通" }
 ];
 const NAV_LINKS = [
   ["#overview", "旅程摘要"], ["#spots", "景點"], ["#food", "美食"],
-  ["#stays", "住宿"], ["#notes", "旅行筆記"]
+  ["#stays", "住宿"]
 ];
 const SCRIPTS = [
   "../../../assets/js/themes.js",
   "../../../assets/js/theme-switcher.js",
-  "../../../assets/js/region-notes.js",
   "../../../assets/js/region-detail.js"
 ];
 
@@ -53,15 +51,15 @@ export const regionSkeleton = suite("地區頁 · HTML 骨架一致性", async (
 
     const navLinks = html.match(/<nav class="region-section-nav"[^>]*>(.*?)<\/nav>/s)?.[1] ?? "";
     const actualNav = [...navLinks.matchAll(/<a href="([^"]+)">([^<]+)<\/a>/g)].map((m) => [m[1], m[2]]);
-    p("導覽列 5 個連結、順序與文字正確",
+    p("導覽列 4 個連結、順序與文字正確",
       JSON.stringify(actualNav) === JSON.stringify(NAV_LINKS), JSON.stringify(actualNav));
 
     const sectionMatches = [...html.matchAll(
       /<section id="(\w+)" class="region-section"><div class="region-section-label">(\d+)<\/div><div><p class="eyebrow">([^<]+)<\/p><h2>([^<]*)/g
     )];
     const actualSections = sectionMatches.map((m) => ({ id: m[1], label: m[2], eyebrow: m[3], h2: m[4] }));
-    p("五個章節 id／編號／eyebrow 依序出現",
-      actualSections.length === 5
+    p("四個章節 id／編號／eyebrow 依序出現",
+      actualSections.length === 4
         && FIXED_SECTIONS.every((expected, i) =>
           actualSections[i]?.id === expected.id
           && actualSections[i]?.label === expected.label
@@ -69,7 +67,7 @@ export const regionSkeleton = suite("地區頁 · HTML 骨架一致性", async (
       JSON.stringify(actualSections));
     const nonOverviewOk = FIXED_SECTIONS.slice(1).every((expected, i) =>
       actualSections[i + 1]?.h2 === expected.h2);
-    p("spots／food／stays／notes 的標題文字固定正確（overview 是自由敘述，不檢查）",
+    p("spots／food／stays 的標題文字固定正確（overview 是自由敘述，不檢查）",
       nonOverviewOk, JSON.stringify(actualSections.slice(1).map((s) => s.h2)));
 
     p("footer 文字正確", html.includes('<footer class="site-footer">Travel Journal</footer>'));

@@ -256,8 +256,9 @@ export const summary = suite("首頁 · 已探索與旅行足跡（由時間軸�
   const data = await b.eval(`(() => {
     const entries = [...document.querySelectorAll(".timeline-entry")];
     const countries = [...new Set(entries.map(e => e.dataset.country).filter(Boolean))];
-    const regions = new Set(entries.filter(e => e.dataset.country && e.dataset.region)
-      .map(e => e.dataset.country + "/" + e.dataset.region));
+    // 地區改用 tag 方式統計：一個節點可能同時標記多個地區（見 dataset.regions，
+    // 逗號分隔），地區數是攤平去重後的真實地區數，不是「節點數」。
+    const regions = new Set(entries.flatMap(e => (e.dataset.regions || "").split(",").filter(Boolean)));
     return {
       countries, regionCount: regions.size, entryCount: entries.length,
       legend: [...document.querySelectorAll(".map-legend > span:not(.map-legend-label)")].map(s => s.textContent),
@@ -265,7 +266,7 @@ export const summary = suite("首頁 · 已探索與旅行足跡（由時間軸�
     };
   })()`);
 
-  t.check("每個時間軸項目都有 data-country / data-region",
+  t.check("每個時間軸項目都有 data-country / data-regions",
     data.countries.length > 0 && data.regionCount > 0,
     `國家 ${data.countries.length}、地區 ${data.regionCount}`);
   t.check("已探索清單等於時間軸出現過的國家",
@@ -273,10 +274,10 @@ export const summary = suite("首頁 · 已探索與旅行足跡（由時間軸�
     `清單 ${JSON.stringify(data.legend)} vs 資料 ${JSON.stringify(data.countries)}`);
   t.check("國家數與清單一致",
     data.stats[0] === `${String(data.countries.length).padStart(2, "0")} 國家`, data.stats[0]);
-  t.check("地區數由 國家+地區 組合推導",
+  t.check("地區數由地區 tag 真實統計（可能不等於節點數）",
     data.stats[1] === `${String(data.regionCount).padStart(2, "0")} 地區`, data.stats[1]);
-  t.check("旅行節點數等於時間軸項目數",
-    data.stats[2] === `${String(data.entryCount).padStart(2, "0")} 旅行節點`, data.stats[2]);
+  t.check("不再顯示旅行節點統計",
+    data.stats.length === 2, JSON.stringify(data.stats));
   t.check("數字皆為兩位數補零", data.stats.every((s) => /^\d{2} /.test(s)), JSON.stringify(data.stats));
 });
 

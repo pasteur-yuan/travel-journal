@@ -403,32 +403,6 @@ if (currentRegionContent) {
   if (stay && currentRegionContent.stay) stay.textContent = currentRegionContent.stay;
 }
 
-// 旅行筆記（含行程軌跡）改由 region-notes.js 的全域 regionNotes 提供，見該檔案
-// 開頭註解。跟 spots/food/stays 不同，筆記卡片只有兩個欄位（標籤、敘述，沒有
-// h3 標題），所以用專屬的 createNoteItem，不能沿用 createRegionContentItem('list')——
-// 沿用的話會把敘述文字塞進 h3、留下永遠空白的 p，這是修這次改動前就存在的 bug。
-const createNoteItem = () => {
-  const item = document.createElement('article');
-  item.className = 'region-note';
-  item.innerHTML = '<span></span><p></p>';
-  return item;
-};
-const currentRegionNotes = regionNotes[regionKey] || [];
-if (currentRegionNotes.length) {
-  const notesContainer = document.querySelector('#notes h2')?.parentElement;
-  if (notesContainer) {
-    const notesList = document.createElement('div');
-    notesList.className = 'region-content-list';
-    currentRegionNotes.forEach((note) => {
-      const item = createNoteItem();
-      item.querySelector('span').textContent = note.label;
-      item.querySelector('p').textContent = note.description;
-      notesList.append(item);
-    });
-    notesContainer.append(notesList);
-  }
-}
-
 const stayBaseContent = {
   hokkaido: ['札幌', '札幌市區與定山溪溫泉', '札幌適合以車站、大通與薄野作為城市據點；想放慢步調時，可安排定山溪溫泉旅館。'],
   tokyo: ['新宿', '新宿城市住宿', '以新宿作為交通據點，方便前往澀谷、淺草、上野與東京近郊。'],
@@ -750,19 +724,18 @@ if (additionalContent) {
   appendItems('#stays .region-content-list', additionalContent.stays, 'list');
 }
 
-const detailItems = [...document.querySelectorAll('#spots .region-content-card, #food .region-content-list article, #stays .region-content-list article, #notes .region-content-list article')];
+const detailItems = [...document.querySelectorAll('#spots .region-content-card, #food .region-content-list article, #stays .region-content-list article')];
 if (detailItems.length) {
   const modal = document.createElement('div');
   modal.className = 'spot-modal';
   modal.setAttribute('aria-hidden', 'true');
-  modal.innerHTML = '<div class="spot-modal-backdrop" data-spot-modal-close></div><section class="spot-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="spot-modal-title"><button class="spot-modal-close" type="button" aria-label="關閉旅行內容視窗" data-spot-modal-close>×</button><span class="spot-modal-label" id="spot-modal-label"></span><h2 id="spot-modal-title"></h2><p class="spot-modal-placeholder"></p><div class="spot-modal-table-wrap"><table class="spot-modal-table"><thead><tr><th scope="col">地名</th><th scope="col">資訊</th><th scope="col">交通方式</th><th scope="col">Google Map</th></tr></thead><tbody></tbody></table></div><div class="spot-modal-itinerary" hidden></div></section>';
+  modal.innerHTML = '<div class="spot-modal-backdrop" data-spot-modal-close></div><section class="spot-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="spot-modal-title"><button class="spot-modal-close" type="button" aria-label="關閉旅行內容視窗" data-spot-modal-close>×</button><span class="spot-modal-label" id="spot-modal-label"></span><h2 id="spot-modal-title"></h2><p class="spot-modal-placeholder"></p><div class="spot-modal-table-wrap"><table class="spot-modal-table"><thead><tr><th scope="col">地名</th><th scope="col">資訊</th><th scope="col">交通方式</th><th scope="col">Google Map</th></tr></thead><tbody></tbody></table></div></section>';
   document.body.append(modal);
   const title = modal.querySelector('#spot-modal-title');
   const label = modal.querySelector('#spot-modal-label');
   const placeholder = modal.querySelector('.spot-modal-placeholder');
   const tableBody = modal.querySelector('.spot-modal-table tbody');
   const tableWrap = modal.querySelector('.spot-modal-table-wrap');
-  const itineraryWrap = modal.querySelector('.spot-modal-itinerary');
   // 北海道原本散在外面的專屬陣列也併進來，讓六個地區走同一條查表路徑。
   const regionalVenueData = {
     kumamoto: {
@@ -1980,55 +1953,11 @@ if (detailItems.length) {
     `<tr><td>${name}</td><td>${info}</td><td>${transport}</td>${mapCell(name, mapUrl || mapSearchUrl(name))}</tr>`
   ).join('');
 
-  // 一天的停留點清單：時間、地名、類型（可能是空字串，原始資料本來就有些
-  // 項目沒填類型）、備註，最後用 transport 串到下一個停留點；最後一站沒有
-  // transport 就不畫連接線，符合「移動那欄是箭頭上的文字，沒有它箭頭只是裝飾」。
-  const renderItineraryStop = (stop, isLast) => {
-    const typeTag = stop.type ? `<span class="spot-modal-itinerary-type">${stop.type}</span>` : '';
-    const noteText = stop.note ? `<p class="spot-modal-itinerary-note">${stop.note}</p>` : '';
-    const stopHtml = `<li class="spot-modal-itinerary-stop"><span class="spot-modal-itinerary-time">${stop.time}</span><div class="spot-modal-itinerary-body"><strong class="spot-modal-itinerary-place">${stop.place}</strong>${typeTag}${noteText}</div></li>`;
-    if (isLast || !stop.transport) return stopHtml;
-    return `${stopHtml}<li class="spot-modal-itinerary-connector" aria-hidden="true"><span>${stop.transport}</span></li>`;
-  };
-  const renderItineraryDay = (day) => {
-    const themeHtml = day.theme ? `<span class="spot-modal-itinerary-theme">${day.theme}</span>` : '';
-    const stopsHtml = day.stops.map((stop, index) => renderItineraryStop(stop, index === day.stops.length - 1)).join('');
-    return `<div class="spot-modal-itinerary-day"><div class="spot-modal-itinerary-date">${day.date}${themeHtml}</div><ol class="spot-modal-itinerary-stops">${stopsHtml}</ol></div>`;
-  };
-  const renderItinerary = (days) => days.map(renderItineraryDay).join('');
-
   const renderItemTable = (item) => {
     if (!tableBody) return;
     const place = item.querySelector('span')?.textContent?.trim() || '待補充地點';
     const info = item.querySelector('p')?.textContent?.trim() || '待補充資訊';
     const sectionName = item.closest('.region-section')?.id || 'travel';
-
-    // 旅行筆記若有對應的行程軌跡資料，改顯示時間軸式的停留點清單，
-    // 不使用「地名、資訊、交通方式、Google Map」四欄表格——查表方式是在
-    // region-notes.js 的 regionNotes[地區] 陣列裡找標籤文字相符的那筆筆記，
-    // 讀它的 itinerary 欄位（筆記文字與行程軌跡現在放在同一個物件裡，
-    // 不必再靠兩份資料的標籤字串互相對應）。
-    if (sectionName === 'notes') {
-      const days = (regionNotes[regionKey] || []).find((n) => n.label === place)?.itinerary;
-      if (days?.length) {
-        if (itineraryWrap) {
-          itineraryWrap.innerHTML = renderItinerary(days);
-          itineraryWrap.hidden = false;
-        }
-        // 清空 tbody：雖然 tableWrap.hidden 讓使用者看不到，但如果上一個開啟的項目
-        // 是有地圖資料的景點／美食／住宿，殘留的資料列還是會留在 DOM 裡沒清掉。
-        tableBody.innerHTML = '';
-        if (tableWrap) tableWrap.hidden = true;
-        return;
-      }
-      // 筆記的標籤是年月而不是地點，資料表的四個欄位沒有一欄填得出真實內容，
-      // 硬填只會產生看起來像資料的假資料。還沒有對應行程資料前，這裡兩者都不顯示。
-      tableBody.innerHTML = '';
-      if (tableWrap) tableWrap.hidden = true;
-      if (itineraryWrap) itineraryWrap.hidden = true;
-      return;
-    }
-    if (itineraryWrap) itineraryWrap.hidden = true;
 
     const rows = regionalVenueData[regionKey]?.[sectionName]?.[place];
     if (rows) {
@@ -2060,13 +1989,10 @@ if (detailItems.length) {
   };
   const openModal = (item) => {
     previousFocus = document.activeElement;
-    label.textContent = item.querySelector('span')?.textContent || 'TRAVEL NOTE';
-    // 旅行筆記只有 span + p，標題會落在 p 上；此時不要再把同一段文字重複成內文。
-    const headingText = item.querySelector('h3, strong')?.textContent?.trim();
-    const bodyText = item.querySelector('p')?.textContent?.trim();
-    title.textContent = headingText || bodyText || '旅行內容';
+    label.textContent = item.querySelector('span')?.textContent || '';
+    title.textContent = item.querySelector('h3')?.textContent?.trim() || '旅行內容';
     if (placeholder) {
-      placeholder.textContent = headingText ? bodyText || '' : '';
+      placeholder.textContent = item.querySelector('p')?.textContent?.trim() || '';
       placeholder.hidden = !placeholder.textContent;
     }
     renderItemTable(item);

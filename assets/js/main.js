@@ -6,7 +6,50 @@ const countryTooltip = document.querySelector("#country-tooltip");
 const nightZones = [...document.querySelectorAll(".night-zone")];
 const countryStrip = document.querySelector(".country-strip");
 const countryCards = [...document.querySelectorAll(".country-card")];
-const timelineEntries = document.querySelectorAll(".timeline-entry");
+
+// 時間軸節點從 trips.js 的全域 trips 動態產生，不再手寫在 index.html 裡——
+// 新增一趟旅程只要在 trips.js 加一筆，這裡會自動長出對應節點，不用碰 HTML。
+// trips 裡沒有的假資料／示範節點一律不存在，時間軸只反映真的有行程資料的旅程。
+const buildTimelineEntry = (trip) => {
+  const entry = document.createElement("div");
+  entry.className = trip.country.includes("日本") ? "timeline-entry timeline-entry-japan" : "timeline-entry";
+  entry.dataset.date = trip.date || "";
+  entry.dataset.country = trip.country;
+  // 逗號分隔的地區 tag 字串：一趟旅程可能踏過多個地區，「已探索」「旅行足跡」
+  // 的地區數要能反映真實數字，即使時間軸上只顯示一個節點。
+  entry.dataset.regions = trip.regions.join(",");
+  entry.tabIndex = 0;
+  entry.setAttribute("role", "button");
+  // 單筆 date 缺失或無法解析不能讓整個 trips.map() 拋例外、拖垮其餘旅程——
+  // 沿用原本「單一筆 data-date 有問題只略過那一筆」的容錯，下面
+  // datedTimelineEntries 的篩選邏輯之後會把這筆從時間軸排除掉。
+  const dateOk = trip.date && Number.isFinite(new Date(trip.date).getFullYear());
+  const [year, month] = dateOk ? trip.date.split("-") : ["", ""];
+  const countryName = trip.country.split(" ").pop();
+  entry.setAttribute("aria-label", `${year}年${Number(month)}月，${countryName}${trip.regions.join("、")}`);
+  const dot = document.createElement("span");
+  dot.className = "timeline-dot";
+  dot.setAttribute("aria-hidden", "true");
+  const card = document.createElement("span");
+  card.className = "timeline-card";
+  const code = document.createElement("span");
+  code.className = "timeline-code";
+  code.textContent = `${year}.${month} · ${trip.country}`;
+  // <strong> 只放第一個地區（regions 陣列的順序視為「主要地區」在前）：
+  // .timeline-card 的 strong 是 1.7rem 大字，卡片本身只有約 190px 寬，
+  // 三個地區串起來會換行到把上面的日期擠出可視範圍（overflow: hidden）。
+  // 完整地區清單仍然在 dataset.regions／aria-label 裡，不影響地區數統計。
+  const regionLabel = document.createElement("strong");
+  regionLabel.textContent = trip.regions[0];
+  const teaser = document.createElement("span");
+  teaser.textContent = trip.teaser;
+  card.append(code, regionLabel, teaser);
+  entry.append(dot, card);
+  // 掛在節點上供點擊／鍵盤開啟彈窗時直接取用，不用另外查表。
+  entry.trip = trip;
+  return entry;
+};
+const timelineEntries = trips.map(buildTimelineEntry);
 const mapLegend = document.querySelector(".map-legend");
 const mapStats = document.querySelector(".map-stats");
 const mapControls = document.querySelector(".map-controls");
@@ -122,12 +165,13 @@ const datedTimelineEntries = [...timelineEntries].filter((entry) => {
 });
 
 // 「已探索」清單與「旅行足跡」數字改由時間軸項目推導：新增一次旅行就會自動更新，
-// 不必再手動維護三處寫死的內容（原本的 01 國家 / 03 地區已經與實際資料對不上）。
+// 不必再手動維護寫死的內容。地區數改用 tag 方式統計（見 buildTimelineEntry 的
+// dataset.regions）：一趟旅程即使橫跨多個地區、時間軸上只顯示一個節點，
+// 地區數仍要反映真實踏過的地區，不是「節點數」。
 if (datedTimelineEntries.length && (mapLegend || mapStats)) {
   const countries = [...new Set(datedTimelineEntries.map((entry) => entry.dataset.country).filter(Boolean))];
   const regions = new Set(datedTimelineEntries
-    .filter((entry) => entry.dataset.country && entry.dataset.region)
-    .map((entry) => `${entry.dataset.country} / ${entry.dataset.region}`));
+    .flatMap((entry) => (entry.dataset.regions || "").split(",").filter(Boolean)));
   const pad = (value) => String(value).padStart(2, "0");
   const cell = (nodes) => {
     const span = document.createElement("span");
@@ -141,7 +185,7 @@ if (datedTimelineEntries.length && (mapLegend || mapStats)) {
     );
   }
   if (mapStats) {
-    const counts = [[countries.length, "國家"], [regions.size, "地區"], [datedTimelineEntries.length, "旅行節點"]];
+    const counts = [[countries.length, "國家"], [regions.size, "地區"]];
     mapStats.replaceChildren(
       mapStats.querySelector(".map-stats-label"),
       ...counts.map(([value, name]) => {
@@ -284,6 +328,63 @@ if (mapStats && timezoneLabel) {
   });
 }
 
+// 旅程彈窗：比照地區頁原本旅行筆記的 .spot-modal 樣式，資訊卡展開後點擊卡片
+// （或鍵盤聚焦後按 Enter／Space）開啟，顯示該趟旅程完整的時間軸式停留點清單。
+// 不需要地區頁 modal 的四欄表格（.spot-modal-table-wrap），只有行程軌跡。
+const tripModal = document.createElement("div");
+tripModal.className = "spot-modal";
+tripModal.setAttribute("aria-hidden", "true");
+tripModal.innerHTML = '<div class="spot-modal-backdrop" data-spot-modal-close></div><section class="spot-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="trip-modal-title"><button class="spot-modal-close" type="button" aria-label="關閉旅程視窗" data-spot-modal-close>×</button><span class="spot-modal-label" id="trip-modal-label"></span><h2 id="trip-modal-title"></h2><div class="spot-modal-itinerary"></div></section>';
+document.body.append(tripModal);
+const tripModalLabel = tripModal.querySelector("#trip-modal-label");
+const tripModalTitle = tripModal.querySelector("#trip-modal-title");
+const tripModalItinerary = tripModal.querySelector(".spot-modal-itinerary");
+const tripModalCloseButton = tripModal.querySelector(".spot-modal-close");
+
+// 一天的停留點清單：時間、地名、類型（可能是空字串，原始資料本來就有些項目
+// 沒填類型）、備註，最後用 transport 串到下一個停留點；最後一站沒有 transport
+// 就不畫連接線，符合「移動那欄是箭頭上的文字，沒有它箭頭只是裝飾」。
+const renderTripItineraryStop = (stop, isLast) => {
+  const typeTag = stop.type ? `<span class="spot-modal-itinerary-type">${stop.type}</span>` : "";
+  const noteText = stop.note ? `<p class="spot-modal-itinerary-note">${stop.note}</p>` : "";
+  const stopHtml = `<li class="spot-modal-itinerary-stop"><span class="spot-modal-itinerary-time">${stop.time}</span><div class="spot-modal-itinerary-body"><strong class="spot-modal-itinerary-place">${stop.place}</strong>${typeTag}${noteText}</div></li>`;
+  if (isLast || !stop.transport) return stopHtml;
+  return `${stopHtml}<li class="spot-modal-itinerary-connector" aria-hidden="true"><span>${stop.transport}</span></li>`;
+};
+const renderTripItineraryDay = (day) => {
+  const themeHtml = day.theme ? `<span class="spot-modal-itinerary-theme">${day.theme}</span>` : "";
+  const stopsHtml = day.stops.map((stop, index) => renderTripItineraryStop(stop, index === day.stops.length - 1)).join("");
+  return `<div class="spot-modal-itinerary-day"><div class="spot-modal-itinerary-date">${day.date}${themeHtml}</div><ol class="spot-modal-itinerary-stops">${stopsHtml}</ol></div>`;
+};
+const renderTripItinerary = (days) => days.map(renderTripItineraryDay).join("");
+
+let tripModalPreviousFocus = null;
+const closeTripModal = () => {
+  tripModal.classList.remove("is-open");
+  tripModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-is-open");
+  const focusTarget = tripModalPreviousFocus;
+  tripModalPreviousFocus = null;
+  focusTarget?.focus();
+};
+const openTripModal = (trip) => {
+  if (!trip) return;
+  tripModalPreviousFocus = document.activeElement;
+  tripModalLabel.textContent = trip.label;
+  tripModalTitle.textContent = trip.description;
+  tripModalItinerary.innerHTML = renderTripItinerary(trip.itinerary);
+  tripModal.classList.add("is-open");
+  tripModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-is-open");
+  tripModalCloseButton.focus();
+};
+tripModal.addEventListener("click", (event) => {
+  if (event.target.matches("[data-spot-modal-close]")) closeTripModal();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && tripModal.classList.contains("is-open")) closeTripModal();
+});
+
 // 卡片預設用 :hover／:focus-visible 顯示，觸控裝置沒有 hover，不管寬度多寬
 // 都需要「點圓點來顯示／收起卡片」這條路徑才看得到內容——這跟 isMobileTimeline()
 // 決定的垂直堆疊排版是兩件事：桌面版橫向排版本身就撐得下 .is-expanded 直接生效
@@ -330,11 +431,20 @@ timelineEntries.forEach((entry) => {
     if (entry.classList.contains("is-expanded")) collapseEntryCard();
     else activateEntryYear();
   });
+  // 資訊卡展開後點擊卡片本身開啟旅程彈窗；卡片還沒展開前點到（理論上不會發生，
+  // 因為 CSS 讓未展開的卡片 pointer-events: none）就只當作展開，不開彈窗。
   entry.addEventListener("click", (event) => {
     const clickedCard = event.target.closest(".timeline-card");
     const clickedDot = event.target.closest(".timeline-dot");
-    if (clickedDot) { event.preventDefault(); return; }
-    if (timelineTapReveal() && (!clickedCard || !entry.classList.contains("is-expanded"))) event.preventDefault();
+    if (clickedDot) return;
+    if (clickedCard && entry.classList.contains("is-expanded")) openTripModal(entry.trip);
+  });
+  // 鍵盤：Tab 聚焦到節點時 CSS 的 :focus-visible 已經讓卡片可見，
+  // 這時按 Enter／Space 直接開彈窗，不用像觸控裝置那樣先「展開」再「開啟」兩步。
+  entry.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openTripModal(entry.trip);
   });
 });
 
