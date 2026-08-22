@@ -7,27 +7,29 @@ const nightZones = [...document.querySelectorAll(".night-zone")];
 const countryStrip = document.querySelector(".country-strip");
 const countryCards = [...document.querySelectorAll(".country-card")];
 
-// 中文地區名 → 地區頁 slug，讓時間軸資訊卡背景圖能依 trip.regions[0] 換成
-// 對應地區頁已經在用的主視覺（assets/images/<slug>.jpg），不用另外準備一套圖庫。
+// 中文地區名 → 地區頁主視覺的檔名（含副檔名，不只是 slug），讓時間軸資訊卡
+// 背景圖能依 trip.regions[0] 換成對應地區頁已經在用的圖。副檔名要跟
+// style.css 的 .region-hero-<slug> 完全一致——新地區頁通常是 assets/images/<slug>.svg
+// 的漸層佔位圖（例：福井），有實拍照片後兩邊會一起換成 .jpg，不能在這裡寫死 .jpg。
 // 跟 region-detail.js 的 regionNames（slug → 中文名，方向相反）與 tests/regions.mjs
 // 的 REGION_NAMES 是同一份地區清單的三份副本，新增地區頁時三處都要同步更新。
 const regionImageSlugs = {
-  '北海道': 'hokkaido', '東京': 'tokyo', '栃木': 'tochigi', '名古屋': 'nagoya',
-  '大阪': 'osaka', '伊勢志摩': 'ise-shima', '福岡': 'fukuoka', '熊本': 'kumamoto',
-  '宮崎': 'miyazaki', '岐阜': 'gifu', '鹿兒島': 'kagoshima', '大分': 'oita',
-  '佐賀': 'saga', '京都': 'kyoto', '神戶': 'kobe', '長野': 'nagano',
-  '香川': 'kagawa', '神奈川': 'kanagawa', '四日市・鈴鹿': 'yokkaichi', '愛媛': 'ehime',
-  '高知': 'kochi', '石川': 'ishikawa', '富山': 'toyama', '靜岡': 'shizuoka',
-  '山梨': 'yamanashi', '滋賀': 'shiga', '岡山': 'okayama', '島根': 'shimane',
-  '長崎': 'nagasaki'
+  '北海道': 'hokkaido.jpg', '東京': 'tokyo.jpg', '栃木': 'tochigi.jpg', '名古屋': 'nagoya.jpg',
+  '大阪': 'osaka.jpg', '伊勢志摩': 'ise-shima.jpg', '福岡': 'fukuoka.jpg', '熊本': 'kumamoto.jpg',
+  '宮崎': 'miyazaki.jpg', '岐阜': 'gifu.jpg', '鹿兒島': 'kagoshima.jpg', '大分': 'oita.jpg',
+  '佐賀': 'saga.jpg', '京都': 'kyoto.jpg', '神戶': 'kobe.jpg', '長野': 'nagano.jpg',
+  '香川': 'kagawa.jpg', '神奈川': 'kanagawa.jpg', '四日市・鈴鹿': 'yokkaichi.jpg', '愛媛': 'ehime.jpg',
+  '高知': 'kochi.jpg', '石川': 'ishikawa.jpg', '富山': 'toyama.jpg', '靜岡': 'shizuoka.jpg',
+  '山梨': 'yamanashi.jpg', '滋賀': 'shiga.jpg', '岡山': 'okayama.jpg', '島根': 'shimane.jpg',
+  '長崎': 'nagasaki.jpg', '福井': 'fukui.jpg'
 };
 // 依 trip.regions[0] 查對應地區頁的主視覺，時間軸資訊卡與旅程彈窗共用同一份
-// 圖，換地區時兩處要一起換。查不到對應 slug（地區還沒收錄，或非日本旅程）
+// 圖，換地區時兩處要一起換。查不到對應檔名（地區還沒收錄，或非日本旅程）
 // 就退回 japan.jpg，不留空白背景。回傳值可以直接指定成 CSS 的 background 值：
 // url() 的相對路徑是相對「引用它的樣式表」（assets/css/style.css）解析，不是
 // 相對 index.html，所以要跟 style.css 既有的 .region-hero-<slug> 一樣用
-// ../images/，不能寫 assets/images/。
-const regionCardImage = (trip) => `url("../images/${regionImageSlugs[trip.regions[0]] || "japan"}.jpg")`;
+// ../images/。
+const regionCardImage = (trip) => `url("../images/${regionImageSlugs[trip.regions[0]] || "japan.jpg"}")`;
 
 // 時間軸節點從 trips.js 的全域 trips 動態產生，不再手寫在 index.html 裡——
 // 新增一趟旅程只要在 trips.js 加一筆，這裡會自動長出對應節點，不用碰 HTML。
@@ -94,7 +96,7 @@ const countryRegions = {
     "北海道", "東京", "栃木", "名古屋", "大阪", "伊勢志摩", "福岡",
     "熊本", "宮崎", "岐阜", "鹿兒島", "大分", "佐賀", "京都", "神戶", "長野",
     "香川", "神奈川", "四日市・鈴鹿", "愛媛", "高知", "石川", "富山",
-    "靜岡", "山梨", "滋賀", "岡山", "島根", "長崎"
+    "靜岡", "山梨", "滋賀", "岡山", "島根", "長崎", "福井"
   ]
 };
 

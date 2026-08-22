@@ -154,7 +154,8 @@ const EXPECTED_ROWS = {
   hokkaido: 93, tokyo: 59, nagoya: 40, osaka: 21, "ise-shima": 20, fukuoka: 93, kumamoto: 18,
   miyazaki: 17, gifu: 12, kagoshima: 11, oita: 11, saga: 9, kyoto: 17, kobe: 14, nagano: 8,
   kagawa: 7, kanagawa: 8, yokkaichi: 6, ehime: 4, kochi: 5, ishikawa: 3, toyama: 5,
-  shizuoka: 7, yamanashi: 4, shiga: 4, okayama: 4, shimane: 4, nagasaki: 4, tochigi: 6
+  shizuoka: 7, yamanashi: 4, shiga: 4, okayama: 4, shimane: 4, nagasaki: 4, tochigi: 6,
+  fukui: 6
 };
 
 export const dataDepth = suite("地區頁 · 彈窗地點資料深度", async (b, t) => {

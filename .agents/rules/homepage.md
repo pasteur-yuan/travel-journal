@@ -50,7 +50,7 @@
 
 卡片以 `flex-direction: column; justify-content: end; align-items: flex-start` 對齊，地區名在下方靠左。不要在 `<strong>` 與 `<span>` 之間插入額外文字元素。
 
-卡片背景圖依 `regions[0]` 換成對應地區頁主視覺，不是全日本共用一張：`main.js` 的 `regionCardImage(trip)` 用 `regionImageSlugs`（中文地區名 → slug）查出 slug，回傳 `url("../images/<slug>.jpg")`；查不到就退回 `japan.jpg`。**要寫 `../images/<slug>.jpg`，不能寫 `assets/images/<slug>.jpg`**——自訂屬性裡的相對路徑是相對 `style.css` 解析，不是相對 `index.html`。
+卡片背景圖依 `regions[0]` 換成對應地區頁主視覺，不是全日本共用一張：`main.js` 的 `regionCardImage(trip)` 用 `regionImageSlugs`（中文地區名 → 檔名，**含副檔名**，例如 `'福井': 'fukui.svg'`）查出檔名，回傳 `url("../images/<檔名>")`；查不到就退回 `japan.jpg`。**要寫 `../images/...`，不能寫 `assets/images/...`**——自訂屬性裡的相對路徑是相對 `style.css` 解析，不是相對 `index.html`。新地區頁通常先是 `.svg` 佔位圖，副檔名不能寫死 `.jpg`。
 
 `regionCardImage()` 同時餵給資訊卡（`--timeline-card-image`）與旅程彈窗頂部（`--spot-modal-image`，`.spot-modal-hero` 包住彈窗的 label／h2，只有首頁旅程彈窗有這層，地區頁地點彈窗不受影響），換地區時兩處自動一起換，讓從資訊卡點進去的彈窗視覺上是同一張圖的延伸。
 

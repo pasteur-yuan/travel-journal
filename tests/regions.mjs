@@ -7,7 +7,7 @@ export const REGION_NAMES = {
   kagawa: "香川", kanagawa: "神奈川", yokkaichi: "四日市・鈴鹿",
   ehime: "愛媛", kochi: "高知", ishikawa: "石川", toyama: "富山",
   shizuoka: "靜岡", yamanashi: "山梨", shiga: "滋賀", okayama: "岡山",
-  shimane: "島根", nagasaki: "長崎"
+  shimane: "島根", nagasaki: "長崎", fukui: "福井"
 };
 
 export const REGIONS = Object.keys(REGION_NAMES);

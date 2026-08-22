@@ -37,7 +37,8 @@ if (regionHero) {
     'region-hero-shiga': 'SHIGA',
     'region-hero-okayama': 'OKAYAMA',
     'region-hero-shimane': 'SHIMANE',
-    'region-hero-nagasaki': 'NAGASAKI'
+    'region-hero-nagasaki': 'NAGASAKI',
+    'region-hero-fukui': 'FUKUI'
   };
   const regionClass = [...regionHero.classList].find((name) => regionNames[name]);
   const eyebrow = regionHero.querySelector('.eyebrow');
@@ -75,7 +76,8 @@ const regionSearchNames = {
   'region-hero-shiga': '滋賀',
   'region-hero-okayama': '岡山',
   'region-hero-shimane': '島根',
-  'region-hero-nagasaki': '長崎'
+  'region-hero-nagasaki': '長崎',
+  'region-hero-fukui': '福井'
 };
 const currentRegionSearchName = regionHero
   && regionSearchNames[[...regionHero.classList].find((name) => regionSearchNames[name])] || '';
@@ -377,6 +379,13 @@ const regionContent = {
       ['中洲屋台', '夜晚的流動餐桌', '沿著中洲與那珂川尋找屋台，在小桌與陌生人共享的短暫時光裡，感受福岡夜晚的親近感。']
     ],
     stay: '博多站・天神一帶'
+  },
+  fukui: {
+    spots: [
+      ['東尋坊', '日本海的柱狀節理斷崖', '越前海岸的東尋坊由輝石安山岩柱狀節理構成，是世界少見的地質景觀，浪濤拍打斷崖的氣勢是福井海岸線最鮮明的畫面。'],
+      ['白山平泉寺', '苔蘚參道的古社', '勝山市的白山平泉寺舊為白山信仰的據點之一，整片杉林與青苔覆蓋的石疊參道，走起來安靜而深邃。'],
+      ['越前大佛', '山中的巨型佛像', '勝山市清大寺內的越前大佛是日本數一數二的青銅大佛，佛殿規模宏大，與周邊山景相互映襯。']
+    ]
   }
 };
 
@@ -1839,6 +1848,19 @@ if (detailItems.length) {
         ],
         '天神': [
           ['福岡天神東急REI酒店', '適合購物、屋台與市中心散步的住宿。', '由天神站步行前往。']
+        ]
+      }
+    },
+    fukui: {
+      spots: {
+        '東尋坊': [
+          ['東尋坊', '輝石安山岩柱狀節理構成的斷崖，綿延約 1 公里，是日本少數與挪威、韓國並列的同類地質景觀之一。', '由えちぜん鉄道三国站搭乘巴士前往，或自駕經北陸自動車道三國 IC。', 'https://www.google.com/maps/search/?api=1&query=東尋坊']
+        ],
+        '白山平泉寺': [
+          ['白山平泉寺', '舊為白山信仰三大據點之一，境內杉木參天，石疊參道終年覆滿青苔，氣氛清幽。', '由えちぜん鉄道勝山站搭乘社區巴士或計程車前往。', 'https://www.google.com/maps/search/?api=1&query=白山平泉寺']
+        ],
+        '越前大佛': [
+          ['越前大佛（清大寺）', '清大寺內的青銅大佛高約 17 公尺，連同大佛殿的規模在日本國內數一數二。', '由えちぜん鉄道勝山站搭乘計程車或自駕前往。', 'https://www.google.com/maps/search/?api=1&query=越前大佛清大寺']
         ]
       }
     }
