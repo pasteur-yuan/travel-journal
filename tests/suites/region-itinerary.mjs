@@ -47,6 +47,12 @@ export const notesOrder = suite("地區頁 · 旅行筆記卡片順序", async (
   for (const region of ["hokkaido", "tokyo", "nagoya", "osaka", "ise-shima", "fukuoka", "oita", "kumamoto", "miyazaki", "saga"]) {
     await b.goto(page(region), { settle: 1000 });
     const items = await noteItems(b);
+    if (items.length === 0) {
+      // 目前所有地區的旅行筆記都是空的，沒有項目可以比較順序——
+      // 這不是「順序正確」，是根本沒有東西可以驗證，用 skip 誠實反映。
+      t.skip(`${region}：第一則筆記（region-note）排在其餘附加筆記之前`, "目前沒有任何筆記項目");
+      continue;
+    }
     const divIndex = items.findIndex((i) => i.tag === "DIV");
     const firstArticleIndex = items.findIndex((i) => i.tag === "ARTICLE");
     const ok = divIndex === -1 || firstArticleIndex === -1 || divIndex < firstArticleIndex;
@@ -61,17 +67,26 @@ export const itineraryContent = suite("地區頁 · 旅行筆記行程軌跡", a
 
   // 沒有行程軌跡資料的筆記：兩者都不顯示，不編造內容。這條在資料是空的
   // 現況下必然為真，資料補回來後也仍然要對「沒補資料的那些筆記」成立。
+  // 目前所有地區的旅行筆記本身都是空的（連 .region-note 都還沒有），
+  // 找不到任何項目可點時 skip，而不是對著不存在的元素硬點造成例外。
   await b.goto(page("hokkaido"), { settle: 1000 });
-  await b.eval(`document.querySelector("#notes .region-note").click()`);
-  await sleep(300);
-  const noItinerary = await b.eval(`({
-    tableHidden: document.querySelector(".spot-modal-table-wrap").hidden,
-    itineraryHidden: document.querySelector(".spot-modal-itinerary").hidden
-  })`);
-  t.check("沒有行程軌跡資料的筆記兩者都不顯示",
-    noItinerary.tableHidden && noItinerary.itineraryHidden, JSON.stringify(noItinerary));
-  await b.press("Escape");
-  await sleep(150);
+  const hasAnyNote = await b.eval(`!!document.querySelector(
+    "#notes .region-note, #notes .region-content-list article")`);
+  if (!hasAnyNote) {
+    t.skip("沒有行程軌跡資料的筆記兩者都不顯示", "目前沒有任何筆記項目可以點擊");
+  } else {
+    await b.eval(`document.querySelector(
+      "#notes .region-note, #notes .region-content-list article").click()`);
+    await sleep(300);
+    const noItinerary = await b.eval(`({
+      tableHidden: document.querySelector(".spot-modal-table-wrap").hidden,
+      itineraryHidden: document.querySelector(".spot-modal-itinerary").hidden
+    })`);
+    t.check("沒有行程軌跡資料的筆記兩者都不顯示",
+      noItinerary.tableHidden && noItinerary.itineraryHidden, JSON.stringify(noItinerary));
+    await b.press("Escape");
+    await sleep(150);
+  }
 
   // 有行程軌跡資料的筆記：不寫死是哪個地區哪個標籤，逐一搜尋，資料目前是
   // 逐筆補回來的，找不到就 skip 而不是失敗。

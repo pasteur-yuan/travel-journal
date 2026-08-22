@@ -170,9 +170,13 @@ export const mapLinks = suite("地區頁 · Google Maps 連結", async (b, t) =>
   t.check("地圖連結不會指向其他地區",
     wrongRegion.length === 0,
     wrongRegion.length ? `${wrongRegion.length} 筆，例如 ${wrongRegion[0]}` : `已檢查 ${totalItems} 個項目`);
-  t.check("沒有行程軌跡資料的旅行筆記不顯示編造的資料表",
-    noteHiddenTotal > 0 && noteHiddenOk === noteHiddenTotal,
-    `${noteHiddenOk}/${noteHiddenTotal} 筆的資料表已隱藏且無資料列`);
+  if (noteHiddenTotal > 0) {
+    t.check("沒有行程軌跡資料的旅行筆記不顯示編造的資料表",
+      noteHiddenOk === noteHiddenTotal,
+      `${noteHiddenOk}/${noteHiddenTotal} 筆的資料表已隱藏且無資料列`);
+  } else {
+    t.skip("沒有行程軌跡資料的旅行筆記不顯示編造的資料表", "目前所有地區的旅行筆記都是空的，沒有項目可以點擊");
+  }
   if (itineraryTotal > 0) {
     t.check("有行程軌跡資料的旅行筆記顯示停留點清單，不是四欄表格",
       itineraryOk === itineraryTotal,
