@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 唯一的例外是 `tests/`：一套零依賴的瀏覽器行為測試（Node 內建 HTTP server + WebSocket 直接驅動 Chrome DevTools Protocol）。它只在本機執行，不影響部署，也不引入 `package.json`。
 
-`AGENTS.md` 是本專案的設計規範（視覺風格、互動細節、資料撰寫規則），內容遠比本檔詳細；修改視覺或互動前先讀它。本檔只描述**架構與程式運作方式**。
+`AGENTS.md` 現在是規則路由器（原生給 Codex 用，Claude Code 不會自動載入），實際設計規範拆到 `.agents/rules/*.md`（architecture / design-system / homepage / country-showcase / region-detail / content-data / i18n / testing 八份）。修改視覺或互動前，依 `AGENTS.md` 的任務對照表找到對應規則檔讀取——不要只讀 `AGENTS.md` 本身就以為拿到全部細節。`TASKS.md` 是待辦清單與資料缺口，不是已完成規格；除非使用者要求執行，不要把裡面項目當成分派工作直接動手實作。本檔只描述**架構與程式運作方式**。
 
 ## 開發指令
 
@@ -18,7 +18,7 @@ open index.html                     # 直接以 file:// 開啟
 python3 -m http.server 8000         # 靜態伺服器，http://localhost:8000
 
 # 自動測試（需 Node 22+ 與 Google Chrome）
-node tests/run.mjs                  # 全部：25 個群組、涵蓋 28 個地區頁，約 90 秒
+node tests/run.mjs                  # 全部：39 個群組、涵蓋 29 個地區頁，約 125 秒
 node tests/run.mjs timeline         # 只跑檔名或群組名稱含關鍵字的
 node tests/run.mjs 手機版            # 中文關鍵字也可以
 node tests/run.mjs --jobs=1         # 完全序列（約 240 秒），除錯時較好讀
@@ -81,7 +81,7 @@ git diff --check
 
 Google Maps 連結統一由 `mapSearchUrl()` 產生（`https://www.google.com/maps/search/?api=1&query=<encodeURIComponent(名稱)>`），儲存格統一由 `mapCell()` 產生（`target="_blank" rel="noopener noreferrer"`）。渲染統一走 `renderRows()`——不要為單一地區另寫渲染函式。
 
-**內容深度落差**：目前共 28 個地區頁，資料量從北海道的 78 列到單一景點地區的 4 列不等，量少的地區較常落到 fallback。這是**資料撰寫**的差距，不是程式差異；補內容就是往 `regionalVenueData` 加項目。
+**內容深度落差**：目前共 29 個地區頁，資料量從北海道的 78 列到單一景點地區的 4 列不等，量少的地區較常落到 fallback。這是**資料撰寫**的差距，不是程式差異；補內容就是往 `regionalVenueData` 加項目。
 
 新地區頁的主視覺目前是 `assets/images/<slug>.svg` 的程式產生漸層佔位圖，取得實拍照片後直接替換同名檔案並改 CSS 的副檔名即可。
 
@@ -146,7 +146,7 @@ marker 由 `main.js` 頂端的 `travelDestinations` 陣列產生：每筆資料�
 ## 已知的遺留物
 
 - `style.css` 仍有 `hero-cover`、`region-card-action`、`region-card-featured` 三個沒有對應 HTML 的 class，因為它們夾在共用 selector 裡，單獨拔除的風險大於收益。
-- `@media (max-width: 700px)` 有 12 個區塊、`prefers-reduced-motion` 有 11 個，且有少數重複宣告（例：`.region-showcase-item` 的 `grid-template-columns` 在手機版被宣告兩次，後者勝出）。合併會改變宣告順序，要做的話得逐塊合併並每次跑測試 + 截圖比對。
+- `@media (max-width: 700px)` 有 18 個區塊、`prefers-reduced-motion` 有 13 個，且有少數重複宣告（例：`.region-showcase-item` 的 `grid-template-columns` 在手機版被宣告兩次，後者勝出）。合併會改變宣告順序，要做的話得逐塊合併並每次跑測試 + 截圖比對。
 - `style.css` 的 `.timeline-entry-japan .timeline-card` 背景圖仍指向 Unsplash CDN（全站唯一一處），與 AGENTS.md 的「圖片優先下載至 `assets/images/`」不一致。
 
 ## 新增內容的檢查點
