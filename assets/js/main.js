@@ -7,6 +7,21 @@ const nightZones = [...document.querySelectorAll(".night-zone")];
 const countryStrip = document.querySelector(".country-strip");
 const countryCards = [...document.querySelectorAll(".country-card")];
 
+// 中文地區名 → 地區頁 slug，讓時間軸資訊卡背景圖能依 trip.regions[0] 換成
+// 對應地區頁已經在用的主視覺（assets/images/<slug>.jpg），不用另外準備一套圖庫。
+// 跟 region-detail.js 的 regionNames（slug → 中文名，方向相反）與 tests/regions.mjs
+// 的 REGION_NAMES 是同一份地區清單的三份副本，新增地區頁時三處都要同步更新。
+const regionImageSlugs = {
+  '北海道': 'hokkaido', '東京': 'tokyo', '栃木': 'tochigi', '名古屋': 'nagoya',
+  '大阪': 'osaka', '伊勢志摩': 'ise-shima', '福岡': 'fukuoka', '熊本': 'kumamoto',
+  '宮崎': 'miyazaki', '岐阜': 'gifu', '鹿兒島': 'kagoshima', '大分': 'oita',
+  '佐賀': 'saga', '京都': 'kyoto', '神戶': 'kobe', '長野': 'nagano',
+  '香川': 'kagawa', '神奈川': 'kanagawa', '四日市・鈴鹿': 'yokkaichi', '愛媛': 'ehime',
+  '高知': 'kochi', '石川': 'ishikawa', '富山': 'toyama', '靜岡': 'shizuoka',
+  '山梨': 'yamanashi', '滋賀': 'shiga', '岡山': 'okayama', '島根': 'shimane',
+  '長崎': 'nagasaki'
+};
+
 // 時間軸節點從 trips.js 的全域 trips 動態產生，不再手寫在 index.html 裡——
 // 新增一趟旅程只要在 trips.js 加一筆，這裡會自動長出對應節點，不用碰 HTML。
 // trips 裡沒有的假資料／示範節點一律不存在，時間軸只反映真的有行程資料的旅程。
@@ -32,6 +47,13 @@ const buildTimelineEntry = (trip) => {
   dot.setAttribute("aria-hidden", "true");
   const card = document.createElement("span");
   card.className = "timeline-card";
+  // 卡片背景圖依主要地區換成對應地區頁的主視覺；查不到對應 slug（尚未收錄的
+  // 地區，或非日本旅程）就退回 japan.jpg 這張泛用素材，不留空白卡片。
+  // 這個自訂屬性只會被 style.css 裡的 background 宣告讀取，url() 的相對路徑是
+  // 相對「該條規則所在的樣式表」（assets/css/style.css）解析，不是相對 index.html，
+  // 所以要跟 style.css 既有的 .region-hero-<slug> 一樣用 ../images/，不能寫 assets/images/。
+  const cardImageSlug = regionImageSlugs[trip.regions[0]] || "japan";
+  card.style.setProperty("--timeline-card-image", `url("../images/${cardImageSlug}.jpg")`);
   const code = document.createElement("span");
   code.className = "timeline-code";
   code.textContent = `${year}.${month} · ${trip.country}`;
@@ -341,19 +363,83 @@ const tripModalCloseButton = tripModal.querySelector(".spot-modal-close");
 // 一天的停留點清單：時間、地名、類型（可能是空字串，原始資料本來就有些項目
 // 沒填類型）、備註，最後用 transport 串到下一個停留點；最後一站沒有 transport
 // 就不畫連接線，符合「移動那欄是箭頭上的文字，沒有它箭頭只是裝飾」。
+const tripStopTypeIcon = { 交通: "fa-route", 美食: "fa-utensils", 住宿: "fa-bed" };
 const renderTripItineraryStop = (stop, isLast) => {
-  const typeTag = stop.type ? `<span class="spot-modal-itinerary-type">${stop.type}</span>` : "";
+  const icon = tripStopTypeIcon[stop.type] ? `<i class="fa-solid ${tripStopTypeIcon[stop.type]}" aria-hidden="true"></i>` : "";
+  const typeTag = stop.type ? `<span class="spot-modal-itinerary-type">${icon}${stop.type}</span>` : "";
   const noteText = stop.note ? `<p class="spot-modal-itinerary-note">${stop.note}</p>` : "";
   const stopHtml = `<li class="spot-modal-itinerary-stop"><span class="spot-modal-itinerary-time">${stop.time}</span><div class="spot-modal-itinerary-body"><strong class="spot-modal-itinerary-place">${stop.place}</strong>${typeTag}${noteText}</div></li>`;
   if (isLast || !stop.transport) return stopHtml;
   return `${stopHtml}<li class="spot-modal-itinerary-connector" aria-hidden="true"><span>${stop.transport}</span></li>`;
 };
-const renderTripItineraryDay = (day) => {
+// dayIndex／daysArray 只用來顯示「DAY 01 / 11」這種序號（daysArray 借用 .map 原生傳入
+// 的第三個參數取總天數，不必另外傳），方便在左右翻頁時知道目前在第幾天，不影響資料本身。
+const renderTripItineraryDay = (day, dayIndex, daysArray) => {
+  const total = daysArray.length > 1 ? ` / ${daysArray.length}` : "";
+  const dayLabel = `<span class="spot-modal-itinerary-day-index">DAY ${String(dayIndex + 1).padStart(2, "0")}${total}</span>`;
   const themeHtml = day.theme ? `<span class="spot-modal-itinerary-theme">${day.theme}</span>` : "";
   const stopsHtml = day.stops.map((stop, index) => renderTripItineraryStop(stop, index === day.stops.length - 1)).join("");
-  return `<div class="spot-modal-itinerary-day"><div class="spot-modal-itinerary-date">${day.date}${themeHtml}</div><ol class="spot-modal-itinerary-stops">${stopsHtml}</ol></div>`;
+  return `<div class="spot-modal-itinerary-day"><div class="spot-modal-itinerary-date">${dayLabel}${day.date}${themeHtml}</div><ol class="spot-modal-itinerary-stops">${stopsHtml}</ol></div>`;
 };
-const renderTripItinerary = (days) => days.map(renderTripItineraryDay).join("");
+// 行程軌跡改成左右翻頁：一次只看一天，跟 .country-strip／.timeline-track 同一套
+// 「原生水平捲動＋scroll-snap＋scrollTo」慣例，不是另外刻一套輪播元件。天數只有一天時
+// 沒有頁可翻，不畫按鈕。
+const renderTripItinerary = (days) => {
+  const daysHtml = days.map(renderTripItineraryDay).join("");
+  if (days.length <= 1) return `<div class="spot-modal-itinerary-days">${daysHtml}</div>`;
+  return `<button class="spot-modal-itinerary-nav" type="button" data-itinerary-prev aria-label="上一天"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button><div class="spot-modal-itinerary-days">${daysHtml}</div><button class="spot-modal-itinerary-nav" type="button" data-itinerary-next aria-label="下一天"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button>`;
+};
+// 目前頁的按鈕啟用／停用狀態靠這兩個參照更新；modal 每次開啟都會重建整段 DOM，
+// 所以每次都要重新抓元素、重新綁事件，不能只綁一次。
+let tripItineraryPrevButton = null;
+let tripItineraryNextButton = null;
+const initTripItineraryPager = () => {
+  const daysContainer = tripModalItinerary.querySelector(".spot-modal-itinerary-days");
+  const days = [...daysContainer.children];
+  tripItineraryPrevButton = tripModalItinerary.querySelector("[data-itinerary-prev]");
+  tripItineraryNextButton = tripModalItinerary.querySelector("[data-itinerary-next]");
+  if (!tripItineraryPrevButton || !tripItineraryNextButton || days.length <= 1) return;
+  let current = 0;
+  const syncButtons = () => {
+    tripItineraryPrevButton.disabled = current === 0;
+    tripItineraryNextButton.disabled = current === days.length - 1;
+  };
+  // 每一天都是 flex: 0 0 100% 的等寬頁面，用 clientWidth 算捲動位置即可，
+  // 不能用 day.offsetLeft——它是相對最近的 positioned 祖先（.spot-modal-dialog），
+  // 不是相對這個捲動容器本身，直接拿來設 scrollLeft 會跳過頭。
+  const goTo = (index) => {
+    current = Math.max(0, Math.min(index, days.length - 1));
+    daysContainer.scrollTo({
+      left: current * daysContainer.clientWidth,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+    });
+    syncButtons();
+  };
+  tripItineraryPrevButton.addEventListener("click", () => goTo(current - 1));
+  tripItineraryNextButton.addEventListener("click", () => goTo(current + 1));
+  // 滑動／拖曳捲動不會經過 goTo()，捲動停下來後用離目前 scrollLeft 最近的那一天
+  // 校正頁碼與按鈕狀態。
+  let settleTimer = 0;
+  daysContainer.addEventListener("scroll", () => {
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(() => {
+      current = Math.round(daysContainer.scrollLeft / daysContainer.clientWidth);
+      syncButtons();
+    }, 120);
+  });
+  syncButtons();
+};
+
+// 貼頂的日期列預設沒有背景（融入版面），只有該天內容真的往上捲、
+// 底下開始有文字要被擋住時才補上會淡出的霧面背景，靜止時才不會看起來像一塊色塊。
+const initTripItineraryStickyDates = () => {
+  [...tripModalItinerary.querySelectorAll(".spot-modal-itinerary-day")].forEach((day) => {
+    const dateEl = day.querySelector(".spot-modal-itinerary-date");
+    day.addEventListener("scroll", () => {
+      dateEl.classList.toggle("is-pinned", day.scrollTop > 0);
+    });
+  });
+};
 
 let tripModalPreviousFocus = null;
 let tripModalOpenedByKeyboard = false;
@@ -378,8 +464,10 @@ const openTripModal = (trip, byKeyboard = false) => {
   tripModalPreviousFocus = document.activeElement;
   timelineEntries.forEach((entry) => entry.classList.remove("is-expanded"));
   tripModalLabel.textContent = trip.label;
-  tripModalTitle.textContent = trip.description;
+  tripModalTitle.textContent = trip.teaser;
   tripModalItinerary.innerHTML = renderTripItinerary(trip.itinerary);
+  initTripItineraryPager();
+  initTripItineraryStickyDates();
   tripModal.classList.add("is-open");
   tripModal.setAttribute("aria-hidden", "false");
   document.body.classList.add("modal-is-open");
@@ -389,7 +477,10 @@ tripModal.addEventListener("click", (event) => {
   if (event.target.matches("[data-spot-modal-close]")) closeTripModal(false);
 });
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && tripModal.classList.contains("is-open")) closeTripModal(true);
+  if (!tripModal.classList.contains("is-open")) return;
+  if (event.key === "Escape") { closeTripModal(true); return; }
+  if (event.key === "ArrowLeft" && !tripItineraryPrevButton?.disabled) tripItineraryPrevButton?.click();
+  if (event.key === "ArrowRight" && !tripItineraryNextButton?.disabled) tripItineraryNextButton?.click();
 });
 
 // 卡片預設用 :hover／:focus-visible 顯示，觸控裝置沒有 hover，不管寬度多寬

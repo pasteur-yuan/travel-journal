@@ -95,7 +95,7 @@ Google Maps 連結統一由 `mapSearchUrl()` 產生（`https://www.google.com/ma
 - **狀態 class**：`is-active`、`is-expanded`、`is-pointer-active`、`is-pressed`、`is-releasing`、`is-switching`、`is-gliding`、`is-hidden`、`is-edge-shadowless`、`is-mobile-focused`、`is-mobile-activated`、`is-region-entering/entered`、`modal-is-open`。
 - **桌機／手機分流**：斷點統一為 `window.matchMedia("(max-width: 700px)")`，時間軸、地圖與國家卡片列有完全不同的互動邏輯分支。
 - **reduced motion**：`prefers-reduced-motion` 下捲動改為瞬間跳轉、動畫停用。新增動畫必須一併處理，且要有對應測試。
-- **捲動**：容器內的捲動（時間軸橫向、國家卡片列）用原生 `scrollTo({ behavior: "smooth" })`；整頁捲動只有地區頁導覽列在用，是 `requestAnimationFrame` + 自訂 easing（`region-detail.js` 的 `ease`），並扣除 header + sticky nav 高度。**手機版時間軸點年份或點節點時，頁面完全不捲動**——這是刻意的，捲動會讓時間軸以外的內容整塊位移。
+- **捲動**：容器內的捲動（時間軸橫向、國家卡片列）用原生 `scrollTo({ behavior: "smooth" })`；整頁捲動只有地區頁導覽列在用，是 `requestAnimationFrame` + 自訂 easing（`region-detail.js` 的 `ease`），並扣除 header + sticky nav 高度。**手機版時間軸點年份或點節點時，頁面完全不捲動**——這是刻意的，捲動會讓時間軸以外的內容整塊位移。**任何容器內捲動（`overflow-x`/`overflow-y: auto`）都要加對應軸向的 `overscroll-behavior: contain`**（`.country-strip`、`.region-showcase-list`、`.spot-modal-itinerary-days`／`-day`、`.spot-modal-table-wrap`／`tbody` 皆是），不然捲到底之後剩餘的捲動量會外溢（scroll chaining）到背景頁面——modal 開著時尤其明顯，`body.modal-is-open { overflow: hidden }` 不會連帶擋住這個。新增容器內捲動時要一併加，並用 `getComputedStyle(el).overscrollBehaviorX/Y` 斷言。
 - **FLIP**：`display` 切換造成的位移 CSS transition 接不到，改用 FLIP（`main.js` 的 `glideYearGroups`）：記錄前後位置差 → 用 transform 移回原位 → 下一幀放手滑到新位置。
 
 進入地區頁時 `region-detail.js` 會加上 `is-region-entering` / `is-region-entered`，Hero 以 clip-path 由中央展開。國家頁**沒有**離場轉場（曾經有一版 `.page-transition-layer`，已移除）。
@@ -118,7 +118,7 @@ marker 由 `main.js` 頂端的 `travelDestinations` 陣列產生：每筆資料�
 
 時間軸節點完全由 `assets/js/trips.js` 的全域 `trips` 陣列動態產生（`main.js` 的 `buildTimelineEntry()`），`index.html` 的 `.timeline-track` 本身是空的——不再像其他區塊那樣有「HTML seed、JS 覆寫」的兩階段，是純粹從資料建 DOM。新增一趟旅程只要在 `trips.js` 加一筆，不用碰 `index.html`；`trips.js` 裡沒有的旅程，時間軸上就不會有對應節點，不會出現示範用的假資料。
 
-每個 trip 是 `{ label, date, country, regions, teaser, description, itinerary }`：`regions` 是這趟旅程實際踏過的地區 tag 陣列（可以不只一個，例如一趟行程橫跨多個地區時**不會**拆成多個節點，時間軸上仍是一個節點，`itinerary` 也是同一份連貫清單、不依地區拆分）；`teaser` 保留於資料結構但**目前不渲染於資訊卡**（卡片固定高度、`overflow: hidden`，額外文字會把上方元素擠出可視範圍）；`description` 是彈窗標題的完整敘述。
+每個 trip 是 `{ label, date, country, regions, teaser, description, itinerary }`：`regions` 是這趟旅程實際踏過的地區 tag 陣列（可以不只一個，例如一趟行程橫跨多個地區時**不會**拆成多個節點，時間軸上仍是一個節點，`itinerary` 也是同一份連貫清單、不依地區拆分）；`teaser` 不渲染於資訊卡（卡片固定高度、`overflow: hidden`，額外文字會把上方元素擠出可視範圍），但會顯示為旅程彈窗的標題——建議 10 字內，根據這趟旅程實際踏過的地點簡短描述；`description` 保留於資料結構但目前不渲染，供未來需要完整敘述時使用。
 
 **時間軸資訊卡 DOM 結構**：`.timeline-card` 內容固定為兩個子元素，不可多加：
 1. `<strong>` — `regions[0]`（主地區名，大字，卡片左下角）
@@ -126,9 +126,13 @@ marker 由 `main.js` 頂端的 `travelDestinations` 陣列產生：每筆資料�
 
 卡片以 `flex-direction: column; justify-content: end; align-items: flex-start` 靠左下對齊，`<strong>` 在下方。`<strong>` 只顯示 `regions[0]`（視為主要地區），完整地區清單仍在 `dataset.regions`（逗號分隔）裡供統計使用。
 
+**卡片背景圖依 `regions[0]` 換成對應地區頁的主視覺**，不是整個日本共用一張圖：`buildTimelineEntry()` 用 `main.js` 頂端的 `regionImageSlugs`（中文地區名 → 地區頁 slug）查出 slug，寫進 `.timeline-card` 的 `--timeline-card-image` 自訂屬性，`style.css` 的 `.timeline-entry-japan .timeline-card` 再用 `var(--timeline-card-image, none)` 讀出來。查不到對應 slug（地區還沒收錄，或非日本旅程）就退回 `japan.jpg`。**這個自訂屬性的 `url()` 路徑要寫 `../images/<slug>.jpg`，不能寫 `assets/images/<slug>.jpg`**——CSS 自訂屬性裡的 `url()` 是相對「引用它的那條規則所在的樣式表」（`assets/css/style.css`）解析，不是相對 `index.html`，跟 style.css 既有的 `.region-hero-<slug>` 用同一種相對路徑，寫成從網站根目錄算的路徑會 404（真的踩過這個坑）。`regionImageSlugs` 是 `region-detail.js` 的 `regionNames`（方向相反）與 `tests/regions.mjs` 的 `REGION_NAMES` 之外，第三份需要同步的地區清單。
+
 **卡片顯示控制**：CSS 選擇器只允許使用 `:hover`、`:focus-visible` 與 `.is-expanded` 三種觸發條件。**禁止使用 `:focus-within` 控制 `visibility`**——程式關閉 modal 後會呼叫 `focusTarget?.blur()` 以清除焦點殘留，`:focus-within` 會在此時意外讓已收折的卡片重新浮出一截。
 
 **點擊行為**：桌面版 hover／觸控裝置點圓點展開資訊卡是既有行為，不受這裡影響；資訊卡在展開狀態下被點擊（或節點聚焦後按 Enter／Space）才會開啟彈窗，顯示完整行程——彈窗樣式與資料流搬自地區頁原本的旅行筆記彈窗（`.spot-modal` + `.spot-modal-itinerary`，`renderTripItinerary`／`renderTripItineraryDay`／`renderTripItineraryStop` 對應搬過來），差別是首頁彈窗不需要地區頁 modal 的四欄表格。所有節點一律是 `<div>`（不是 `<a>`），點擊不會導航到國家或地區頁。
+
+**行程軌跡是左右翻頁，不是上下捲動**：`.spot-modal-itinerary-days` 一次只顯示一天，用原生水平捲動＋`scroll-snap-type: x mandatory` 換頁，跟 `.country-strip`／`.timeline-track` 同一套「原生捲動＋`scrollTo`」慣例；左右各一顆 `.spot-modal-itinerary-nav` 按鈕，捲到頭尾時對應按鈕 `disabled`，也支援鍵盤 `ArrowLeft`／`ArrowRight`（`document` keydown 直接呼叫按鈕的 `.click()`，尊重 `disabled`）與滑動手勢。換頁目標一律用 `current * daysContainer.clientWidth` 計算——**不能用 `day.offsetLeft`**，它是相對最近的 positioned 祖先 `.spot-modal-dialog`，不是相對捲動容器本身，直接拿來設 `scrollLeft` 會算錯目標頁（雖然 `mandatory` snap 常常會自行校正回最近的合法頁面，掩蓋這個錯誤，寫測試時容易誤判「看起來正常」）。天數只有一天時不畫按鈕。每天的 `.spot-modal-itinerary-day-index` 徽章文字是「DAY 01 / 11」，天數為 1 時不顯示分母。單日站數多、`.spot-modal-itinerary-day` 本身要垂直捲動時，`.spot-modal-itinerary-date`（DAY 徽章＋日期那一列）用 `position: sticky; top: 0` 貼在該天最上面，不會被捲出畫面。背景是**捲動才出現**，不是固定貼一塊色塊：預設沒有背景（融入版面），`initTripItineraryStickyDates()` 監聽每個 `.spot-modal-itinerary-day` 的 `scroll`，`scrollTop > 0` 時才幫 `.spot-modal-itinerary-date` 加上 `is-pinned`（半透明霧面背景＋`backdrop-filter` 模糊＋往下淡出的 `mask-image`），捲回頂端時移除。一開始就給不透明背景會在靜止畫面上長出一條與周圍格格不入的色塊——這是實際踩到、被使用者回報過的問題，不要走回頭路。
 
 **modal 開關與焦點管理**：`openTripModal(trip, byKeyboard)` 與 `closeTripModal(byKeyboard)` 都會先呼叫 `timelineEntries.forEach(e => e.classList.remove('is-expanded'))` 清除所有卡片展開狀態。關閉時：鍵盤（Escape）關閉只還原 `focusTarget.focus()`；滑鼠點擊關閉按鈕則在 `focus()` 之後再呼叫 `blur()`，防止節點殘留 `:focus` 狀態讓卡片重新顯示。`byKeyboard` 旗標由呼叫端傳入（keydown 事件傳 `true`，click 事件傳 `false`）。
 
@@ -147,13 +151,12 @@ marker 由 `main.js` 頂端的 `travelDestinations` 陣列產生：每筆資料�
 
 - `style.css` 仍有 `hero-cover`、`region-card-action`、`region-card-featured` 三個沒有對應 HTML 的 class，因為它們夾在共用 selector 裡，單獨拔除的風險大於收益。
 - `@media (max-width: 700px)` 有 18 個區塊、`prefers-reduced-motion` 有 13 個，且有少數重複宣告（例：`.region-showcase-item` 的 `grid-template-columns` 在手機版被宣告兩次，後者勝出）。合併會改變宣告順序，要做的話得逐塊合併並每次跑測試 + 截圖比對。
-- `style.css` 的 `.timeline-entry-japan .timeline-card` 背景圖仍指向 Unsplash CDN（全站唯一一處），與 AGENTS.md 的「圖片優先下載至 `assets/images/`」不一致。
 
 ## 新增內容的檢查點
 
 - 新增國家：`countries/<country>/index.html` + `countries/<country>/<region>/index.html`，在 `main.js` 的 `travelDestinations` 加一筆，並在首頁加 `.country-card`（尚未建頁時用非連結的 `<div>`，不可留失效連結）。
-- 新增地區頁：需要 `region-hero-<region>` class、四個章節 id（`overview` / `spots` / `food` / `stays`），並在 `region-detail.js` 的 `regionNames`、`regionSearchNames`、`regionContent`、`regionalVenueData` 補上對應 key（`stayBaseContent` 只有已累積住宿資料的地區才需要）；另外要在 `countries/japan/index.html` 加 showcase 項目、`style.css` 加 `.region-hero-<region>` 背景，以及 `tests/regions.mjs` 的 `REGION_NAMES`——測試群組的地區清單全部由那一份推導。
-- 新增一趟旅程：在 `assets/js/trips.js` 的 `trips` 加一筆（`label`／`date`／`country`／`regions`／`teaser`／`description`／`itinerary`），首頁時間軸節點與旅程彈窗會自動出現，不用碰 `index.html`。`teaser` 欄位仍需填寫以維持資料完整性，但目前不渲染於卡片畫面；卡片只顯示主地區名（`regions[0]`）與 `yyyy.mm · 🇯🇵 國名`。
+- 新增地區頁：需要 `region-hero-<region>` class、四個章節 id（`overview` / `spots` / `food` / `stays`），並在 `region-detail.js` 的 `regionNames`、`regionSearchNames`、`regionContent`、`regionalVenueData` 補上對應 key（`stayBaseContent` 只有已累積住宿資料的地區才需要）；另外要在 `countries/japan/index.html` 加 showcase 項目、`style.css` 加 `.region-hero-<region>` 背景、`main.js` 的 `regionImageSlugs` 補上中文名對 slug 的一筆（時間軸資訊卡背景圖要用），以及 `tests/regions.mjs` 的 `REGION_NAMES`——測試群組的地區清單全部由那一份推導。
+- 新增一趟旅程：在 `assets/js/trips.js` 的 `trips` 加一筆（`label`／`date`／`country`／`regions`／`teaser`／`description`／`itinerary`），首頁時間軸節點與旅程彈窗會自動出現，不用碰 `index.html`。`teaser` 是旅程彈窗的標題文字，建議 10 字內、根據這趟實際踏過的地點簡短描述；`description` 欄位仍需填寫以維持資料完整性，但目前不渲染。卡片本身只顯示主地區名（`regions[0]`）與 `yyyy.mm · 🇯🇵 國名`，不受這兩個欄位影響。
 - 景點卡片只有一張時，記得刪掉 HTML 樣板裡第二張佔位卡；沒刪的話它會產生一列 fallback 假資料與無意義的地圖查詢。
 - 圖片放 `assets/images/`，不依賴圖片 CDN。
 - GitHub Pages 大小寫敏感，路徑大小寫必須與檔案系統完全一致。

@@ -40,8 +40,8 @@
 - `date`：第一天日期，用於年份分組。
 - `country`：國旗與國名。
 - `regions`：實際踏過的地區陣列，第一筆是卡片主地區，完整陣列用於統計與可及性名稱。
-- `teaser`：保留欄位，目前**不渲染**於時間軸資訊卡；資料仍需填寫以維持結構完整。
-- `description`：整趟旅程的完整摘要（彈窗標題使用）。
+- `teaser`：旅程彈窗的標題文字，建議 10 字內、根據這趟實際踏過的地點簡短描述；不渲染於時間軸資訊卡。
+- `description`：整趟旅程的完整摘要，保留於資料結構但目前不渲染。
 - `itinerary`：依日期排列的 day 陣列；每個 stop 包含時間、地名、類型、備註及前往下一站的 `transport`。
 
 **時間軸資訊卡 DOM 結構**：`buildTimelineEntry()` 產生的 `.timeline-card` 內容順序為：
@@ -49,6 +49,8 @@
 2. `<span class="timeline-code">` — `yyyy.mm · 🇯🇵 國名`
 
 卡片以 `flex-direction: column; justify-content: end; align-items: flex-start` 對齊，地區名在下方靠左。不要在 `<strong>` 與 `<span>` 之間插入額外文字元素。
+
+卡片背景圖依 `regions[0]` 換成對應地區頁主視覺，不是全日本共用一張：`main.js` 的 `regionImageSlugs`（中文地區名 → slug）查出 slug 寫進 `--timeline-card-image`，`style.css` 的 `.timeline-entry-japan .timeline-card` 用 `var(--timeline-card-image, none)` 讀出來，查不到就退回 `japan.jpg`。**`url()` 要寫 `../images/<slug>.jpg`，不能寫 `assets/images/<slug>.jpg`**——自訂屬性裡的相對路徑是相對 `style.css` 解析，不是相對 `index.html`。
 
 規則：
 
@@ -78,6 +80,8 @@
 
 - modal 顯示整趟 `itinerary`，跨地區行程仍維持一份按日期排序的連續清單。
 - 每站依序顯示時間、地名、類型、備註與前往下一站的交通；最後一站沒有 `transport` 時不編造。
+- 天數用左右翻頁瀏覽，不是上下捲動：`.spot-modal-itinerary-days` 一次顯示一天，原生水平捲動＋`scroll-snap-type: x mandatory`，左右按鈕與 `ArrowLeft`／`ArrowRight` 都呼叫同一個 `goTo(index)`；換頁目標用 `index * clientWidth`，不要用子元素的 `offsetLeft`（相對 `.spot-modal-dialog` 量，不是相對捲動容器，會算錯）。只有一天時不畫按鈕。
+- 單日站數多時 `.spot-modal-itinerary-day` 自己垂直捲動，`.spot-modal-itinerary-date`（DAY 徽章＋日期）用 `position: sticky; top: 0` 貼在最上面。背景不是固定存在——預設沒有背景，`scrollTop > 0` 時才加 `is-pinned`（霧面背景＋blur＋往下淡出），避免靜止畫面上出現一條突兀的色塊。
 - 支援背景點擊、關閉按鈕、Escape；開啟後 focus 進入 modal，關閉後還原原焦點。
 - modal 開啟時鎖定頁面捲動；樣式與地區頁 modal 共用現有 class，不另造相似視窗系統。
 - **開關 modal 時必須清除所有節點的 `.is-expanded`**：`openTripModal()` 與 `closeTripModal()` 都呼叫 `timelineEntries.forEach(e => e.classList.remove('is-expanded'))`。

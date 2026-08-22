@@ -52,7 +52,7 @@
 
 - 桌面內容最大寬度約 1100px 並置中；手機使用較小水平內距，任何元件都不可讓整頁水平捲動。
 - 地圖、Hero、卡片與時間軸必須依容器縮放，不用只適合單一 viewport 的像素偏移定位重要內容。
-- 頁面只保留一個主要垂直捲動容器；需要內部捲動的元件必須明確限定方向與高度。
+- 頁面只保留一個主要垂直捲動容器；需要內部捲動的元件必須明確限定方向與高度，並加對應軸向的 `overscroll-behavior: contain`（不加的話捲到底會外溢到背景頁面，modal 開著時尤其明顯，`body.modal-is-open { overflow: hidden }` 不會連帶擋住）。
 - 手機上的橫向清單保留自然 `pan-x`、scroll-snap、鍵盤焦點並隱藏原生 scrollbar；觸控滑動不可誤觸發滑鼠 3D 或 hover 狀態。
 - hover-only 功能一定要有 focus、click 或 tap 替代。判斷觸控操作時不要只依 viewport 寬度；若行為取決於有無 hover，使用 `(hover: none)` 或 pointer type。
 

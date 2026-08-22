@@ -205,4 +205,4 @@ export const toggleAnimationLock = suite("全站 · 主題切換按鈕防連點"
   await b.eval(`localStorage.removeItem("travel-journal-theme")`);
 
   t.check("無 JS 例外", b.errors.length === 0, b.errors.join(" | ") || "none");
-});
+}, { serial: true });

@@ -56,6 +56,7 @@ tools/generate-region-page.mjs      新地區頁產生器
 - `assets/js/trips.js::trips` 是首頁旅程資料的唯一來源。`main.js` 依它產生 `.timeline-entry`、年份群組、已探索清單、統計與旅程 modal。
 - `main.js::travelDestinations` 是地圖 marker、tooltip、高亮與目的連結的同一來源。
 - `main.js::countryRegions` 是首頁國家卡片的地區跑馬燈來源；它必須與國家頁 showcase、實際頁面及 `REGION_NAMES` 對齊。
+- `main.js::regionImageSlugs`（中文地區名 → 地區頁 slug）決定時間軸資訊卡背景圖用哪張地區頁主視覺；同樣要與 `REGION_NAMES` 對齊，缺 key 會退回泛用的 `japan.jpg`。
 - 地區頁所有地區共用 `region-detail.js` 的 `regionNames`、`regionSearchNames`、`regionContent`、`stayBaseContent`、`regionAdditionalContent` 與 `regionalVenueData`。不得增加 `if (regionKey === ...)` 式的專屬渲染路徑。
 - `regionalVenueData` 固定為「地區 → `spots|food|stays` → 外層項目標籤 → 資料列陣列」。每個項目可以有自己的資料表，但渲染器必須共用。
 
@@ -71,6 +72,6 @@ tools/generate-region-page.mjs      新地區頁產生器
 
 - 優先使用並同步維護 `tools/generate-region-page.mjs`，再依現有頁面檢查產物。
 - 頁面要有 `region-hero-<slug>`、`overview`／`spots`／`food`／`stays` 四個章節，以及正確 breadcrumb、script 與 favicon 路徑。
-- 同步更新 `tests/regions.mjs::REGION_NAMES`、日本 showcase、`main.js::countryRegions`、`style.css` 的 Hero 圖片，以及 `region-detail.js` 所需資料 key。
+- 同步更新 `tests/regions.mjs::REGION_NAMES`、日本 showcase、`main.js::countryRegions`、`main.js::regionImageSlugs`、`style.css` 的 Hero 圖片，以及 `region-detail.js` 所需資料 key。
 - `regionNames` 缺 key 時 Hero 英文小標會留下佔位文字；`regionSearchNames` 缺 key 時 fallback 地圖查詢可能錯區。
 - 新增的本地照片同步記錄 attribution；不要重新引用歷史 SVG 佔位圖。

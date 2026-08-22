@@ -27,7 +27,9 @@ export const modal = suite("地區頁 · 內容彈窗", async (b, t) => {
       rows: m.querySelectorAll(".spot-modal-table tbody tr").length,
       bodyLocked: document.body.classList.contains("modal-is-open"),
       focusInside: m.contains(document.activeElement),
-      dialogRole: m.querySelector('[role="dialog"]')?.getAttribute("aria-modal")
+      dialogRole: m.querySelector('[role="dialog"]')?.getAttribute("aria-modal"),
+      wrapOverscroll: getComputedStyle(m.querySelector(".spot-modal-table-wrap")).overscrollBehaviorX,
+      tbodyOverscroll: getComputedStyle(m.querySelector(".spot-modal-table tbody")).overscrollBehaviorY
     };
   })()`);
 
@@ -42,6 +44,10 @@ export const modal = suite("地區頁 · 內容彈窗", async (b, t) => {
   t.check("開啟時鎖住背景捲動", opened.bodyLocked);
   t.check("焦點移入彈窗", opened.focusInside);
   t.check("彈窗標記為 aria-modal", opened.dialogRole === "true", opened.dialogRole);
+  // 表格捲到底時不能把剩餘捲動量外溢到背景頁面（scroll chaining）。
+  t.check("資料表的水平／垂直捲動容器都設定 overscroll-behavior: contain",
+    opened.wrapOverscroll === "contain" && opened.tbodyOverscroll === "contain",
+    `wrap=${opened.wrapOverscroll} tbody=${opened.tbodyOverscroll}`);
 
   // Escape 關閉
   await b.press("Escape");

@@ -24,11 +24,11 @@
 ## 首頁旅程資料
 
 - 真實旅程只寫入 `assets/js/trips.js::trips`，不要同時在首頁 HTML 或地區頁維護副本。
-- 每趟旅程包含 `label`、第一天 `date`、`country`、全部 `regions`、`teaser`（保留欄位，不渲染於卡片）、完整 `description` 與按日期排序的 `itinerary`。
+- 每趟旅程包含 `label`、第一天 `date`、`country`、全部 `regions`、`teaser`（10 字內，彈窗標題文字，不渲染於卡片）、完整 `description`（保留欄位，目前不渲染）與按日期排序的 `itinerary`。
 - 一趟跨多地區仍是一個 trip；`regions` 列出實際踏過的所有地區，第一項視為時間軸主標籤。
 - itinerary 每天包含 `date`、可選 `theme` 與依序排列的 `stops`。每站欄位為 `time`、`place`、可選 `type`、可選 `note`、可選 `transport`。
 - `transport` 表示前往下一站的方式與耗時；最後一站通常不填。原始資料沒有交通時保持空白，不補假的箭頭文字。
-- `teaser` 欄位保留以維持資料結構完整性，但**目前不渲染於時間軸資訊卡**；資訊卡只顯示 `regions[0]`（地區名）與 `yyyy.mm · 國名` 兩行。`description` 描述整趟行程，用於旅程彈窗標題，不拆成互相矛盾的地區片段。
+- `teaser` 不渲染於時間軸資訊卡（資訊卡只顯示 `regions[0]`（地區名）與 `yyyy.mm · 國名` 兩行），改用於旅程彈窗標題，建議 10 字內、根據這趟實際踏過的地點簡短描述。`description` 描述整趟行程，保留於資料結構但目前不渲染，不拆成互相矛盾的地區片段。
 - 不為展示效果加入虛構 Coming soon 旅程；時間軸、統計與 modal 只反映有資料的真實旅程。
 
 ## Google Maps 與圖片

@@ -269,7 +269,9 @@ export class Browser {
       Escape: { windowsVirtualKeyCode: 27, key: "Escape", code: "Escape" },
       Enter: { windowsVirtualKeyCode: 13, key: "Enter", code: "Enter", text: "\r" },
       " ": { windowsVirtualKeyCode: 32, key: " ", code: "Space", text: " " },
-      Tab: { windowsVirtualKeyCode: 9, key: "Tab", code: "Tab" }
+      Tab: { windowsVirtualKeyCode: 9, key: "Tab", code: "Tab" },
+      ArrowLeft: { windowsVirtualKeyCode: 37, key: "ArrowLeft", code: "ArrowLeft" },
+      ArrowRight: { windowsVirtualKeyCode: 39, key: "ArrowRight", code: "ArrowRight" }
     };
     const spec = codes[key];
     if (!spec) throw new Error(`未支援的按鍵：${key}`);

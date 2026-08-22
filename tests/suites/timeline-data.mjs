@@ -57,6 +57,26 @@ export const template = suite("時間軸 · 新增資料的樣板行為", async 
       `track ${info.inTrack} / document ${info.inDocument}`);
   });
 
+  // 資訊卡背景圖依 regions[0] 換成對應地區頁的主視覺
+  await withTripVariant(b, tripScript({ date: `${YEAR - 1}-06-01`, country: "🇯🇵 日本", regions: ["福岡"] }), async () => {
+    const bg = await b.eval(`(() => {
+      const entry = [...document.querySelectorAll(".timeline-entry")]
+        .find(e => e.dataset.regions === "福岡");
+      return entry?.querySelector(".timeline-card").style.getPropertyValue("--timeline-card-image");
+    })()`);
+    t.check("已收錄的地區換成對應地區頁的圖（../images/<slug>.jpg，相對 style.css 解析）",
+      bg === 'url("../images/fukuoka.jpg")', bg);
+  });
+  await withTripVariant(b, tripScript({ date: `${YEAR - 1}-06-02`, country: "🇯🇵 日本", regions: ["尚未收錄的地區"] }), async () => {
+    const bg = await b.eval(`(() => {
+      const entry = [...document.querySelectorAll(".timeline-entry")]
+        .find(e => e.dataset.regions === "尚未收錄的地區");
+      return entry?.querySelector(".timeline-card").style.getPropertyValue("--timeline-card-image");
+    })()`);
+    t.check("查不到對應地區頁時退回泛用的 japan.jpg，不留空白卡片",
+      bg === 'url("../images/japan.jpg")', bg);
+  });
+
   // 統計數字要跟著新資料更新
   await withTripVariant(b, tripScript({ date: `${YEAR - 1}-04-04`, country: "🇹🇹 測試國", regions: ["測試地區"] }), async () => {
     const info = await layout(b);
